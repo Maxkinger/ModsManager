@@ -757,7 +757,7 @@ export const useLibraryStore = defineStore("library", () => {
     await persist();
   }
 
-  async function loadNexusMods(page = nexusPage.value) {
+  async function loadNexusMods(page = nexusPage.value, append = false) {
     if (!nexusPreset.value?.nexusDomain) {
       error.value = "没有选择带 Nexus 配置的游戏。";
       return;
@@ -786,7 +786,11 @@ export const useLibraryStore = defineStore("library", () => {
         }
       });
 
-      nexusMods.value = result.items;
+      if (append) {
+        nexusMods.value = [...nexusMods.value, ...result.items];
+      } else {
+        nexusMods.value = result.items;
+      }
       nexusPage.value = result.page;
       nexusTotalCount.value = result.totalCount;
       nexusTotalPages.value = result.totalPages;

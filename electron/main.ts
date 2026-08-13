@@ -92,6 +92,7 @@ function createWindow() {
     title: "Mayfly Mod Manager",
     icon: getResourcePath("icon.ico"),
     backgroundColor: "#0f1216",
+    autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, "../preload/preload.cjs"),
       contextIsolation: true,
@@ -328,10 +329,14 @@ function buildNexusWebsite(gameDomain: string, modId: string, fileId?: string) {
 }
 
 async function readJsonResponse<T>(response: Response, fallbackMessage: string) {
-  const payload = await response.json().catch(() => ({})) as T & { message?: string };
+  const payload = await response.json().catch(() => ({})) as T & { message?: string, errors?: Array<{message?: string}> };
 
   if (!response.ok) {
     throw new Error(payload?.message || fallbackMessage);
+  }
+
+  if (payload?.errors && payload.errors.length > 0) {
+    throw new Error(payload.errors[0]?.message || fallbackMessage);
   }
 
   return payload as T;
@@ -1334,11 +1339,7 @@ electron.ipcMain.handle("nexus:listMods", async (_event, options: {
   const gql = `
     query ModsListing($count: Int = 0, $filter: ModsFilter, $offset: Int, $sort: [ModsSort!]) {
       mods(count: $count, filter: $filter, offset: $offset, sort: $sort, viewUserBlockedContent: false) {
-        facetsData {
-          categoryName
-          languageName
-          tag
-        }
+        facetsData
         nodes {
           adultContent
           createdAt
@@ -1370,7 +1371,7 @@ electron.ipcMain.handle("nexus:listMods", async (_event, options: {
         ? {
             name: {
               op: "WILDCARD",
-              value: searchText
+              value: searchText.includes("*") ? searchText : `*${searchText}*`
             }
           }
         : {}),
