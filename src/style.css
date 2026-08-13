@@ -1,0 +1,1158 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #0e1116;
+  color: #eef2f7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 1080px;
+  min-height: 680px;
+  background: #0e1116;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.toast {
+  position: fixed;
+  top: 18px;
+  right: 20px;
+  z-index: 20;
+  max-width: 420px;
+  border: 1px solid #2c3542;
+  border-radius: 8px;
+  background: #202936;
+  box-shadow: 0 12px 34px rgb(0 0 0 / 0.28);
+  color: #eef2f7;
+  padding: 12px 14px;
+}
+
+.theme-light {
+  color: #18202b;
+}
+
+.theme-light .content,
+.theme-light.sidebar {
+  background: #f5f7fb;
+}
+
+.sidebar {
+  display: flex;
+  width: 230px;
+  flex-direction: column;
+  border-right: 1px solid #252c36;
+  background: #11161d;
+  padding: 18px 14px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 22px;
+}
+
+.brandMark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 8px;
+  background: #4f8cff;
+  color: white;
+  font-weight: 800;
+}
+
+.brand strong,
+.brand span {
+  display: block;
+}
+
+.brand span {
+  color: #8f9bab;
+  font-size: 12px;
+}
+
+.nav {
+  display: grid;
+  gap: 6px;
+}
+
+.nav button,
+.gameItem,
+.presetItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border-radius: 7px;
+  background: transparent;
+  color: #aeb8c7;
+  padding: 10px 11px;
+  text-align: left;
+}
+
+.nav button:hover,
+.gameItem:hover {
+  background: #1b232e;
+  color: #f5f7fb;
+}
+
+.nav button.active,
+.gameItem.selected {
+  background: #253247;
+  color: #ffffff;
+}
+
+.gameItem span {
+  display: grid;
+  gap: 2px;
+}
+
+.gameItem img {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.gameItem small {
+  color: #7f8b9a;
+  font-size: 11px;
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  border-top: 1px solid #252c36;
+  padding: 14px 8px 0;
+}
+
+.sidebarFooter span,
+.sidebarFooter strong {
+  display: block;
+}
+
+.sidebarFooter span {
+  color: #7f8b9a;
+  font-size: 12px;
+}
+
+.sidebarFooter strong {
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+  color: #c8d2df;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background: #0e1116;
+}
+
+.page {
+  padding: 26px;
+}
+
+.page.narrow {
+  max-width: 940px;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.pageHeader h1 {
+  margin: 3px 0 6px;
+  font-size: 28px;
+  letter-spacing: 0;
+}
+
+.pageHeader p {
+  margin: 0;
+  color: #8f9bab;
+}
+
+.eyebrow {
+  color: #65d6ad !important;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.headerActions,
+.compactActions,
+.modActions,
+.pathPicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.primary,
+.secondary,
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  border-radius: 7px;
+  padding: 0 13px;
+  color: #fff;
+}
+
+.primary {
+  background: #4f8cff;
+}
+
+.primary:hover {
+  background: #6ca0ff;
+}
+
+.secondary {
+  background: #202936;
+}
+
+.secondary:hover,
+.iconButton:hover {
+  background: #2a3545;
+}
+
+.iconButton {
+  width: 36px;
+  padding: 0;
+  background: #202936;
+}
+
+.danger {
+  color: #ff9d9d;
+}
+
+.workspaceGrid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.panel {
+  border: 1px solid #252c36;
+  border-radius: 8px;
+  background: #151a22;
+}
+
+.gamePanel,
+.managerPanel,
+.settingsPanel,
+.gameLibraryPanel {
+  padding: 16px;
+}
+
+.managerPanel {
+  position: relative;
+}
+
+.managerPanel.dragging {
+  border-color: #4f8cff;
+}
+
+.dropOverlay {
+  position: absolute;
+  inset: 10px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  border: 1px dashed #6ca0ff;
+  border-radius: 8px;
+  background: rgb(15 20 27 / 0.88);
+  color: #dce6f5;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.panelHeader,
+.activeGameBar,
+.toolsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.panelHeader {
+  margin-bottom: 12px;
+}
+
+.presetPicker {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #252c36;
+  border-radius: 8px;
+  background: #10151c;
+  margin-bottom: 12px;
+  padding: 10px;
+}
+
+.presetSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #2c3542;
+  border-radius: 7px;
+  background: #0f141b;
+  padding: 0 9px;
+}
+
+.presetSearch input {
+  border: 0;
+  padding: 0;
+}
+
+.presetList {
+  display: grid;
+  max-height: 360px;
+  gap: 5px;
+  overflow: auto;
+  padding-right: 3px;
+}
+
+.presetItem {
+  min-height: 52px;
+  padding: 7px;
+}
+
+.presetItem img {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.presetItem div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.presetItem strong,
+.presetItem span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presetItem span {
+  color: #8f9bab;
+  font-size: 12px;
+}
+
+.presetPicker.wide {
+  margin-bottom: 16px;
+}
+
+.presetGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 420px;
+  gap: 6px;
+  overflow: auto;
+  padding-right: 3px;
+}
+
+.customGameForm.wide {
+  max-width: 760px;
+}
+
+.gameLibraryList {
+  display: grid;
+  gap: 10px;
+}
+
+.gameLibraryItem {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid #252c36;
+  border-radius: 8px;
+  background: #10151c;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.gameLibraryItem:hover,
+.gameLibraryItem.selected {
+  border-color: #4f8cff;
+  background: #172235;
+}
+
+.gameLibraryItem > img,
+.gameLibraryIcon {
+  width: 72px;
+  height: 54px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.gameLibraryIcon {
+  display: grid;
+  place-items: center;
+  background: #202936;
+  color: #9facbd;
+}
+
+.gameLibraryItem small {
+  display: block;
+  max-width: 540px;
+  margin-top: 4px;
+  overflow: hidden;
+  color: #8f9bab;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gameLibraryItem .gameNameInput {
+  max-width: 480px;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.customGameForm {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #252c36;
+  border-radius: 8px;
+  background: #10151c;
+  margin-bottom: 12px;
+  padding: 10px;
+}
+
+.panelHeader h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.panelHeader span,
+.stats,
+.activeGameBar span,
+.activeGameBar small,
+.modBody small,
+.modBody p,
+.settingsPanel p {
+  color: #8f9bab;
+}
+
+.activeGameBar {
+  border-bottom: 1px solid #252c36;
+  padding-bottom: 14px;
+}
+
+.activeGameBar strong,
+.activeGameBar small {
+  display: block;
+}
+
+.activeGameBar strong {
+  margin: 4px 0;
+  font-size: 18px;
+}
+
+.activeGameCover {
+  display: block;
+  width: 86px;
+  height: 48px;
+  border-radius: 7px;
+  margin-top: 6px;
+  object-fit: cover;
+}
+
+.gameNameInput {
+  display: block;
+  max-width: 420px;
+  border-color: transparent;
+  background: transparent;
+  margin: 2px 0;
+  padding-left: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.gameMeta,
+.typeStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.gameMeta span,
+.typeStrip span {
+  border: 1px solid #2c3542;
+  border-radius: 999px;
+  background: #10151c;
+  color: #aeb8c7;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.typeStrip {
+  margin-bottom: 14px;
+}
+
+.toolsRow {
+  margin: 14px 0;
+}
+
+.searchBox {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #2c3542;
+  border-radius: 7px;
+  background: #0f141b;
+  padding: 0 11px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #2c3542;
+  border-radius: 7px;
+  background: #0f141b;
+  color: #eef2f7;
+  outline: none;
+  padding: 0 11px;
+}
+
+textarea {
+  min-height: 58px;
+  resize: vertical;
+  padding: 9px 11px;
+  line-height: 1.45;
+}
+
+.searchBox input {
+  border: 0;
+  padding: 0;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #4f8cff;
+}
+
+select:focus {
+  border-color: #4f8cff;
+}
+
+.stats {
+  display: flex;
+  gap: 10px;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.installPathRow {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.installPathRow label,
+.settingsPanel label {
+  color: #c8d2df;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.modRow {
+  display: grid;
+  grid-template-columns: 24px 34px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  border-top: 1px solid #252c36;
+  padding: 14px 0;
+}
+
+.rowCheck {
+  display: grid;
+  place-items: center;
+}
+
+.rowCheck input {
+  width: 16px;
+  min-height: 16px;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggleRow input {
+  width: 16px;
+  min-height: 16px;
+}
+
+.typeFilter {
+  width: 170px;
+}
+
+.sortFilter {
+  width: 150px;
+}
+
+.batchBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #252c36;
+  border-radius: 7px;
+  background: #10151c;
+  margin-bottom: 12px;
+  padding: 10px;
+}
+
+.batchBar span {
+  color: #8f9bab;
+  font-size: 13px;
+  margin-right: 4px;
+}
+
+.batchEditPanel {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  gap: 8px;
+  border: 1px solid #252c36;
+  border-radius: 7px;
+  background: #10151c;
+  margin-bottom: 12px;
+  padding: 10px;
+}
+
+.batchEditPanel input,
+.batchEditPanel select {
+  min-height: 34px;
+}
+
+.gmmExportPanel {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+}
+
+.statusIcon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 7px;
+  background: #202936;
+  color: #9facbd;
+}
+
+.statusIcon.installed {
+  background: #163629;
+  color: #65d6ad;
+}
+
+.statusIcon img {
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.modTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modTitle input {
+  max-width: 380px;
+  border-color: transparent;
+  background: transparent;
+  font-weight: 700;
+  padding-left: 0;
+}
+
+.modBody p,
+.modBody small {
+  display: block;
+  margin: 3px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  gap: 8px;
+}
+
+.modMetaRow label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8f9bab;
+  font-size: 12px;
+}
+
+.modMetaRow select {
+  width: 180px;
+  min-height: 30px;
+  padding: 0 8px;
+  color: #c8d2df;
+}
+
+.modMetaRow input {
+  width: 150px;
+  min-height: 30px;
+  padding: 0 8px;
+  color: #c8d2df;
+}
+
+.modDescription {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  color: #8f9bab;
+  font-size: 12px;
+}
+
+.modDescription textarea {
+  color: #c8d2df;
+}
+
+.modActions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 126px;
+}
+
+.modDetails {
+  grid-column: 3 / -1;
+  display: grid;
+  gap: 8px;
+  border: 1px solid #252c36;
+  border-radius: 7px;
+  background: #10151c;
+  padding: 10px;
+}
+
+.modDetails strong {
+  font-size: 13px;
+}
+
+.modDetails p {
+  margin: 0;
+  color: #8f9bab;
+  font-size: 12px;
+}
+
+.modDetails ul {
+  display: grid;
+  max-height: 220px;
+  gap: 4px;
+  overflow: auto;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.modDetails li {
+  color: #c8d2df;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.modDetails li.conflict,
+.conflictText {
+  color: #ffb4b4;
+}
+
+.badge {
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.badge.ok {
+  background: #163629;
+  color: #65d6ad;
+}
+
+.badge.muted {
+  background: #202936;
+  color: #9facbd;
+}
+
+.tagBadge {
+  border: 1px solid;
+  border-radius: 999px;
+  background: #10151c;
+  padding: 3px 7px;
+  font-size: 12px;
+}
+
+.empty,
+.alert,
+.loadingLine {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: 7px;
+  background: #10151c;
+  color: #9facbd;
+  padding: 14px;
+  line-height: 1.55;
+}
+
+.alert {
+  margin-bottom: 14px;
+  border: 1px solid #5d2a32;
+  background: #24151a;
+  color: #ffb4b4;
+}
+
+.modEmpty,
+.loadingLine {
+  margin-top: 12px;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+.settingsPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.nexusAuthPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.7fr) minmax(220px, 0.7fr);
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.nexusAuthPanel label {
+  display: block;
+  margin-bottom: 8px;
+  color: #c8d2df;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nexusUserBox {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #252c36;
+  border-radius: 7px;
+  background: #10151c;
+  padding: 10px;
+}
+
+.nexusUserBox span {
+  color: #8f9bab;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.advancedAuth {
+  margin-top: 10px;
+}
+
+.advancedAuth summary {
+  color: #8f9bab;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.advancedAuth .pathPicker {
+  margin-top: 8px;
+}
+
+.nexusGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 16px;
+}
+
+.nexusListPanel,
+.nexusDetailPanel,
+.downloadPanel,
+.logPanel,
+.backupPanel {
+  padding: 16px;
+}
+
+.nexusGamePicker {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 12px;
+  border-bottom: 1px solid #252c36;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+}
+
+.nexusGamePicker label {
+  color: #c8d2df;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nexusGamePicker span {
+  grid-column: 2;
+  color: #8f9bab;
+  font-size: 12px;
+}
+
+.nexusFilterRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.nexusModRow,
+.fileRow,
+.downloadRow {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  border-top: 1px solid #252c36;
+  padding: 12px 0;
+}
+
+.fileRow,
+.downloadRow {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.customDownloadBox {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.7fr) auto;
+  gap: 8px;
+  border: 1px solid #252c36;
+  border-radius: 8px;
+  background: #10151c;
+  margin-bottom: 12px;
+  padding: 10px;
+}
+
+.nexusModRow.selected {
+  background: #10151c;
+}
+
+.nexusCover {
+  display: grid;
+  width: 72px;
+  height: 48px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 7px;
+  background: #202936;
+  color: #9facbd;
+  padding: 0;
+}
+
+.nexusCover img,
+.detailHero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.linkButton {
+  display: block;
+  width: 100%;
+  background: transparent;
+  color: #eef2f7;
+  font-weight: 800;
+  line-height: 1.35;
+  padding: 0;
+  text-align: left;
+}
+
+.linkButton:hover {
+  color: #8bd3ff;
+}
+
+.nexusModRow p,
+.fileRow span,
+.downloadRow p,
+.downloadRow small {
+  display: block;
+  margin: 4px 0 0;
+  color: #8f9bab;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.downloadRow small {
+  overflow-wrap: anywhere;
+}
+
+.backupNameInput {
+  max-width: 280px;
+  border-color: transparent;
+  background: transparent;
+  font-weight: 800;
+  padding-left: 0;
+}
+
+.paginationBar,
+.detailActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-top: 1px solid #252c36;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.paginationBar span {
+  color: #8f9bab;
+  font-size: 13px;
+}
+
+.detailHero {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.detailHero img {
+  height: 76px;
+  border-radius: 7px;
+  background: #202936;
+}
+
+.detailHero h2,
+.nexusDetailPanel h3 {
+  margin: 0;
+}
+
+.detailHero p {
+  margin: 6px 0 0;
+  color: #8f9bab;
+  line-height: 1.45;
+}
+
+.nexusDetailPanel h3 {
+  border-top: 1px solid #252c36;
+  margin-top: 14px;
+  padding-top: 14px;
+  font-size: 16px;
+}
+
+.dangerBadge {
+  background: #3a1820;
+  color: #ffb4b4;
+}
+
+.logPanel {
+  display: grid;
+  gap: 10px;
+}
+
+.logRow {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #252c36;
+  border-radius: 8px;
+  background: #10151c;
+  padding: 12px;
+}
+
+.logRow > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logRow small {
+  color: #8f9bab;
+}
+
+.logRow pre {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid #252c36;
+  border-radius: 7px;
+  background: #0f141b;
+  color: #c8d2df;
+  margin: 0;
+  padding: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.pathPicker input {
+  flex: 1;
+}
+
+code {
+  border: 1px solid #2c3542;
+  border-radius: 6px;
+  background: #0f141b;
+  color: #dce6f5;
+  padding: 3px 6px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

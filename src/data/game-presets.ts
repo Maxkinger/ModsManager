@@ -1,0 +1,2619 @@
+import type { GamePreset } from "@/types/domain";
+
+// Generated from Gloss Mod Manager game metadata.
+// Online source scope is NexusMods-only. 3DM/Gloss, Thunderstore, mod.io, CurseForge and GameBanana are intentionally excluded.
+export const gamePresets: GamePreset[] = [
+  {
+    "id": "7daystodie",
+    "name": "7 Days to Die",
+    "sourceFile": "7DaystoDie.ts",
+    "glossGameId": 40,
+    "steamAppId": 251570,
+    "nexusDomain": "7daystodie",
+    "nexusGameId": 1059,
+    "exeNames": [
+      "7DaysToDie.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/40.jpg",
+    "typeNames": [
+      "Mods",
+      "Avatars",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "ace7game",
+    "name": "ACE COMBAT 7",
+    "sourceFile": "Ace7Game.ts",
+    "glossGameId": 341,
+    "steamAppId": 502500,
+    "nexusDomain": "acecombat7skiesunknown",
+    "nexusGameId": 2777,
+    "exeNames": [
+      "Ace7Game.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65f174af429dd.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "americantrucksimulator",
+    "name": "American Truck Simulator",
+    "sourceFile": "AmericanTruckSimulator.ts",
+    "glossGameId": 52,
+    "steamAppId": 270880,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "amtrucks.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/52.jpg",
+    "typeNames": [
+      "scs",
+      "manifest",
+      "versions",
+      "游戏根目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "anno117",
+    "name": "Anno 117 - Pax Romana",
+    "sourceFile": "Anno117.ts",
+    "glossGameId": 473,
+    "steamAppId": 3274580,
+    "nexusDomain": "anno117paxromana",
+    "nexusGameId": 8155,
+    "exeNames": [
+      "Anno117.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_690ab14576ba4.png",
+    "typeNames": [
+      "mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "anno1800",
+    "name": "Anno 1800",
+    "sourceFile": "Anno1800.ts",
+    "glossGameId": 189,
+    "steamAppId": 916440,
+    "nexusDomain": "anno1800",
+    "nexusGameId": 2820,
+    "exeNames": [
+      "Anno1800.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/189.png",
+    "typeNames": [
+      "mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "armoredcore6",
+    "name": "Armored Core 6",
+    "sourceFile": "ArmoredCore6.ts",
+    "glossGameId": 323,
+    "steamAppId": 1888160,
+    "nexusDomain": "armoredcore6firesofrubicon",
+    "nexusGameId": 5679,
+    "exeNames": [
+      "armoredcore6.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64e5a555a4360.webp",
+    "typeNames": [
+      "通用类型",
+      "Engine 2"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "acodyssey",
+    "name": "Assassins Creed Odyssey",
+    "sourceFile": "ACOdyssey.ts",
+    "glossGameId": 417,
+    "steamAppId": 812140,
+    "nexusDomain": "assassinscreedodyssey",
+    "nexusGameId": 2610,
+    "exeNames": [
+      "ACOdyssey.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202502/MOD67a5c94a7b758.webp@webp",
+    "typeNames": [
+      "forger2",
+      "游戏根目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "atomicheart",
+    "name": "Atomic Heart",
+    "sourceFile": "AtomicHeart.ts",
+    "glossGameId": 304,
+    "steamAppId": 668580,
+    "nexusDomain": "atomicheart",
+    "nexusGameId": 5158,
+    "exeNames": [
+      "AtomicHeart.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/63f5846644d4e.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "baldursgate3",
+    "name": "Baldurs Gate 3",
+    "sourceFile": "BaldursGate3.ts",
+    "glossGameId": 240,
+    "steamAppId": 1086940,
+    "nexusDomain": "baldursgate3",
+    "nexusGameId": 3474,
+    "exeNames": [
+      "bg3.exe",
+      "bg3_dx11.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/5f9fc80ea912c.png",
+    "typeNames": [
+      "pak",
+      "Data",
+      "插件",
+      "NativeMods",
+      "bin",
+      "bg3se",
+      "未知"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "blackwukong",
+    "name": "Black Myth Wukong",
+    "sourceFile": "BlackWukong.ts",
+    "glossGameId": 376,
+    "steamAppId": 2358720,
+    "nexusDomain": "blackmythwukong",
+    "nexusGameId": 6713,
+    "exeNames": [
+      "b1.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202408/MOD66b5c72696594.webp@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "borderlands3",
+    "name": "Borderlands 3",
+    "sourceFile": "Borderlands3.ts",
+    "glossGameId": 200,
+    "steamAppId": 397540,
+    "nexusDomain": "borderlands3",
+    "nexusGameId": 2953,
+    "exeNames": [
+      "Borderlands3.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/188_1.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "borderlands4",
+    "name": "Borderlands 4",
+    "sourceFile": "Borderlands4.ts",
+    "glossGameId": 453,
+    "steamAppId": 1285190,
+    "nexusDomain": "borderlands4",
+    "nexusGameId": 8148,
+    "exeNames": [
+      "Borderlands4.exe",
+      "OakGame-Win64-Shipping.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68c3711a6f87b.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "citiesskylines2",
+    "name": "Cities Skylines II",
+    "sourceFile": "CitiesSkylines2.ts",
+    "glossGameId": 326,
+    "steamAppId": 949230,
+    "nexusDomain": "citiesskylines2",
+    "nexusGameId": 5833,
+    "exeNames": [
+      "Cities2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6535dbba96ba3.webp",
+    "typeNames": [
+      "Map"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "expedition33",
+    "name": "Clair Obscur Expedition 33",
+    "sourceFile": "Expedition33.ts",
+    "glossGameId": 432,
+    "steamAppId": 1903340,
+    "nexusDomain": "clairobscurexpedition33",
+    "nexusGameId": 7635,
+    "exeNames": [
+      "Expedition33_Steam.exe",
+      "SandFall-Win64-Shipping.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_6809e94cd72e9.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "codevein",
+    "name": "CODE VEIN",
+    "sourceFile": "CodeVein.ts",
+    "glossGameId": 207,
+    "steamAppId": 678960,
+    "nexusDomain": "codevein",
+    "nexusGameId": 2981,
+    "exeNames": [
+      "CodeVein.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/207.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "redalert2",
+    "name": "Command & Conquer Red Alert 2 and Yuri's Revenge",
+    "sourceFile": "RedAlert2.ts",
+    "glossGameId": 521,
+    "steamAppId": 2229850,
+    "nexusDomain": "commandandconquerredalert2",
+    "nexusGameId": 1455,
+    "exeNames": [
+      "game.exe",
+      "gamemd.exe",
+      "cnc-ddraw config.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_6a2242d3d562a.png",
+    "typeNames": [
+      "游戏根目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "contrabandpolice",
+    "name": "Contraband Police",
+    "sourceFile": "ContrabandPolice.ts",
+    "glossGameId": 339,
+    "steamAppId": 756800,
+    "nexusDomain": "contrabandpolice",
+    "nexusGameId": 5226,
+    "exeNames": [
+      "ContrabandPolice.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65f1169237040.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "crusaderkings3",
+    "name": "Crusader Kings 3",
+    "sourceFile": "CrusaderKings3.ts",
+    "glossGameId": 236,
+    "steamAppId": 1158310,
+    "nexusDomain": "crusaderkings3",
+    "nexusGameId": 3486,
+    "exeNames": [
+      "ck3.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/236.png",
+    "typeNames": [
+      "Mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "cultofthelamb",
+    "name": "Cult Of The Lamb",
+    "sourceFile": "CultOfTheLamb.ts",
+    "glossGameId": 342,
+    "steamAppId": 1313140,
+    "nexusDomain": "cultofthelamb",
+    "nexusGameId": 4736,
+    "exeNames": [
+      "Cult Of The Lamb.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65f2c99bb3e08.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "cyberpunk2077",
+    "name": "Cyberpunk 2077",
+    "sourceFile": "Cyberpunk2077.ts",
+    "glossGameId": 195,
+    "steamAppId": 1091500,
+    "nexusDomain": "cyberpunk2077",
+    "nexusGameId": 3333,
+    "exeNames": [
+      "Cyberpunk2077.exe",
+      "REDprelauncher.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/195.png",
+    "typeNames": [
+      "CET",
+      "archive",
+      "脚本",
+      "主目录",
+      "未知"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "daoyanjue",
+    "name": "DaoYanJue",
+    "sourceFile": "DaoYanJue.ts",
+    "glossGameId": 350,
+    "steamAppId": 1951220,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "FNGameX.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/66447d161b2ff.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "darkestdungeon",
+    "name": "Darkest Dungeon",
+    "sourceFile": "DarkestDungeon.ts",
+    "glossGameId": 88,
+    "steamAppId": 262060,
+    "nexusDomain": "darkestdungeon",
+    "nexusGameId": 804,
+    "exeNames": [
+      "Darkest.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/88.jpg",
+    "typeNames": [
+      "mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "darkestdungeon2",
+    "name": "Darkest Dungeon 2",
+    "sourceFile": "DarkestDungeon2.ts",
+    "glossGameId": 353,
+    "steamAppId": 1940340,
+    "nexusDomain": "darkestdungeon2",
+    "nexusGameId": 4113,
+    "exeNames": [
+      "Darkest Dungeon II.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/664ef0d003b8a.webp",
+    "typeNames": [
+      "StreamingAssets"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "deadoralive6",
+    "name": "Dead or Alive 6",
+    "sourceFile": "DeadOrAlive6.ts",
+    "glossGameId": 182,
+    "steamAppId": 838380,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "DOA6.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/182.jpg",
+    "typeNames": [
+      "mods",
+      "Redelbe",
+      "游戏根目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "deadrisingdeluxeremaster",
+    "name": "Dead Rising Deluxe Remaster",
+    "sourceFile": "DeadRisingDeluxeRemaster.ts",
+    "glossGameId": 391,
+    "steamAppId": 2527390,
+    "nexusDomain": "deadrisingdeluxeremaster",
+    "nexusGameId": 6837,
+    "exeNames": [
+      "DRDR.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202410/MOD67077f9f042f5.webp@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "devilmaycry5",
+    "name": "Devil May Cry 5",
+    "sourceFile": "DevilMayCry5.ts",
+    "glossGameId": 183,
+    "steamAppId": 601150,
+    "nexusDomain": "devilmaycry5",
+    "nexusGameId": 2751,
+    "exeNames": [
+      "DevilMayCry5.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/183.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "divinityos2",
+    "name": "Divinity Original Sin 2",
+    "sourceFile": "Divinityos2.ts",
+    "glossGameId": 34,
+    "steamAppId": 435150,
+    "nexusDomain": "divinityoriginalsin2",
+    "nexusGameId": 1661,
+    "exeNames": [
+      "EoCApp.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/34.jpg",
+    "typeNames": [
+      "pak",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "dontstarve",
+    "name": "Don't Starve Together",
+    "sourceFile": "DontStarve.ts",
+    "glossGameId": 14,
+    "steamAppId": 322330,
+    "nexusDomain": "dontstarvetogether",
+    "nexusGameId": 2709,
+    "exeNames": [
+      "dontstarve_steam.exe",
+      "dontstarve_steam_x64.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/14.jpg",
+    "typeNames": [
+      "通用类型",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "dqiiihd2dremake",
+    "name": "DQIIIHD2DRemake",
+    "sourceFile": "DQIIIHD2DRemake.ts",
+    "glossGameId": 410,
+    "steamAppId": 2701660,
+    "nexusDomain": "dragonquest3remake",
+    "nexusGameId": 7044,
+    "exeNames": [
+      "DQIIIHD2DRemake.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202412/MOD675a59d27912a.png@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "dbfighterz",
+    "name": "DRAGON BALL FighterZ",
+    "sourceFile": "DBFighterZ.ts",
+    "glossGameId": 157,
+    "steamAppId": 678950,
+    "nexusDomain": "dragonballfighterz",
+    "nexusGameId": 3948,
+    "exeNames": [
+      "DBFighterZ.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/157.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "dragoncliff",
+    "name": "Dragon Cliff",
+    "sourceFile": "DragonCliff.ts",
+    "glossGameId": 235,
+    "steamAppId": 758190,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "game.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/235.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "dragonsdogma2",
+    "name": "Dragons Dogma 2",
+    "sourceFile": "DragonsDogma2.ts",
+    "glossGameId": 343,
+    "steamAppId": 2054970,
+    "nexusDomain": "dragonsdogma2",
+    "nexusGameId": 6234,
+    "exeNames": [
+      "DD2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65f8f21471754.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "dyinglight2",
+    "name": "Dying Light 2",
+    "sourceFile": "DyingLight2.ts",
+    "glossGameId": 272,
+    "steamAppId": 534380,
+    "nexusDomain": "dyinglight2",
+    "nexusGameId": 4302,
+    "exeNames": [
+      "DyingLightGame_x64_rwdi.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61dbf5a660a03.png",
+    "typeNames": [
+      "dat",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "dysonsphereprogram",
+    "name": "Dyson Sphere Program",
+    "sourceFile": "DysonSphereProgram.ts",
+    "glossGameId": 245,
+    "steamAppId": 1366540,
+    "nexusDomain": "dysonsphereprogram",
+    "nexusGameId": 3641,
+    "exeNames": [
+      "DSPGAME.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/60112fb1bdafa.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "eldenring",
+    "name": "ELDEN RING",
+    "sourceFile": "EldenRing.ts",
+    "glossGameId": 275,
+    "steamAppId": 1245620,
+    "nexusDomain": "eldenring",
+    "nexusGameId": 4333,
+    "exeNames": [
+      "eldenring.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/620b6924d8c0d.png",
+    "typeNames": [
+      "通用类型",
+      "Engine 2",
+      "游戏根目录",
+      "未知"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "duckov",
+    "name": "Escape from Duckov",
+    "sourceFile": "Duckov.ts",
+    "glossGameId": 468,
+    "steamAppId": 3167020,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "Duckov.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68f704683991c.png",
+    "typeNames": [
+      "mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "eurotrucksimulator2",
+    "name": "Euro Truck Simulator 2",
+    "sourceFile": "EuroTruckSimulator2.ts",
+    "glossGameId": 15,
+    "steamAppId": 227300,
+    "nexusDomain": "eurotrucksimulator2",
+    "nexusGameId": 328,
+    "exeNames": [
+      "eurotrucks2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/15.jpg",
+    "typeNames": [
+      "scs",
+      "manifest",
+      "versions",
+      "游戏根目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "expeditions",
+    "name": "Expeditions A MudRunner Game",
+    "sourceFile": "Expeditions.ts",
+    "glossGameId": 356,
+    "steamAppId": 2477340,
+    "nexusDomain": "expeditionsamudrunnergame",
+    "nexusGameId": 6257,
+    "exeNames": [
+      "Expeditions.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6670007e442e8.webp",
+    "typeNames": [
+      "pak",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "fallout4",
+    "name": "Fallout 4",
+    "sourceFile": "Fallout4.ts",
+    "glossGameId": 6,
+    "steamAppId": 377160,
+    "nexusDomain": "fallout4",
+    "nexusGameId": 1151,
+    "exeNames": [
+      "Fallout4.exe",
+      "Fallout4Launcher.exe",
+      "f4se_loader.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6b.png",
+    "typeNames": [
+      "Plugins",
+      "Data",
+      "f4se",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "fs22",
+    "name": "Farming Simulator 22",
+    "sourceFile": "FS22.ts",
+    "glossGameId": 265,
+    "steamAppId": 1248130,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "FarmingSimulator2022.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61a9e018c601c.png",
+    "typeNames": [
+      "通用类型",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "ff7rebirth",
+    "name": "FINAL FANTASY VII REBIRTH",
+    "sourceFile": "FF7Rebirth.ts",
+    "glossGameId": 414,
+    "steamAppId": 2909400,
+    "nexusDomain": "finalfantasy7rebirth",
+    "nexusGameId": 7237,
+    "exeNames": [
+      "ff7rebirth.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_683582d5e4a77.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "ff7re",
+    "name": "FINAL FANTASY VII REMAKE",
+    "sourceFile": "FF7RE.ts",
+    "glossGameId": 266,
+    "steamAppId": 1462040,
+    "nexusDomain": "finalfantasy7remake",
+    "nexusGameId": 4202,
+    "exeNames": [
+      "ff7remake.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61c027ed1cbc1.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "flintlock",
+    "name": "Flintlock The Siege of Dawn",
+    "sourceFile": "Flintlock.ts",
+    "glossGameId": 368,
+    "steamAppId": 1832040,
+    "nexusDomain": "flintlockthesiegeofdawn",
+    "nexusGameId": 6505,
+    "exeNames": [
+      "Saltpeter.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202407/MOD669a223b01b15.webp@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "frostpunk2",
+    "name": "Frostpunk 2",
+    "sourceFile": "Frostpunk2.ts",
+    "glossGameId": 387,
+    "steamAppId": 1601580,
+    "nexusDomain": "frostpunk2",
+    "nexusGameId": 6349,
+    "exeNames": [
+      "Frostpunk2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202410/MOD6706347b70717.webp@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "genshin-impact",
+    "name": "Genshin Impact",
+    "sourceFile": "Genshin Impact.ts",
+    "glossGameId": 291,
+    "steamAppId": 0,
+    "nexusDomain": "genshinimpact",
+    "nexusGameId": 4613,
+    "exeNames": [
+      "GenshinImpact.exe",
+      "YuanShen.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/66da7e920f43e.webp",
+    "typeNames": [
+      "mods",
+      "GIMI",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "ghostoftsushima",
+    "name": "Ghost of Tsushima",
+    "sourceFile": "GhostOfTsushima.ts",
+    "glossGameId": 351,
+    "steamAppId": 2215430,
+    "nexusDomain": "ghostoftsushima",
+    "nexusGameId": 6434,
+    "exeNames": [
+      "GhostOfTsushima.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/664703cf381cf.webp",
+    "typeNames": [
+      "psarc",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "granbluefantasyrelink",
+    "name": "Granblue Fantasy Relink",
+    "sourceFile": "GranblueFantasyRelink.ts",
+    "glossGameId": 336,
+    "steamAppId": 881020,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "granblue_fantasy_relink.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65bb62a24e92f.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "gta5",
+    "name": "Grand Theft Auto V",
+    "sourceFile": "GTA5.ts",
+    "glossGameId": 261,
+    "steamAppId": 271590,
+    "nexusDomain": "gta5",
+    "nexusGameId": 893,
+    "exeNames": [
+      "GTA5.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/616cd448533b9.png",
+    "typeNames": [
+      "通用类型",
+      "脚本",
+      "插件",
+      "载具",
+      "未知"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "gta5enhanced",
+    "name": "Grand Theft Auto V Enhanced",
+    "sourceFile": "GTA5Enhanced.ts",
+    "glossGameId": 475,
+    "steamAppId": 3240220,
+    "nexusDomain": "gta5enhanced",
+    "nexusGameId": 7627,
+    "exeNames": [
+      "GTA5_Enhanced.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_692fc8cd5ea06.png",
+    "typeNames": [
+      "通用类型",
+      "脚本",
+      "插件",
+      "载具",
+      "未知"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "grimdawn",
+    "name": "Grim Dawn",
+    "sourceFile": "GrimDawn.ts",
+    "glossGameId": 80,
+    "steamAppId": 219990,
+    "nexusDomain": "grimdawn",
+    "nexusGameId": 1190,
+    "exeNames": [
+      "Grim Dawn.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/80.jpg",
+    "typeNames": [
+      "mods",
+      "游戏根目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "gtasade",
+    "name": "GTA San Andreas Definitive Edition",
+    "sourceFile": "GTASADE.ts",
+    "glossGameId": 258,
+    "steamAppId": 1547000,
+    "nexusDomain": "grandtheftautothetrilogy",
+    "nexusGameId": 4142,
+    "exeNames": [
+      "SanAndreas.exe"
+    ],
+    "coverUrl": "imgs/gtasade_logo.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "gulong",
+    "name": "GuLong",
+    "sourceFile": "GuLong.ts",
+    "glossGameId": 337,
+    "steamAppId": 2340650,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "GuLong.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65bef978b5da4.webp",
+    "typeNames": [
+      "Mods"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "gb4",
+    "name": "GUNDAM BREAKER 4",
+    "sourceFile": "GB4.ts",
+    "glossGameId": 388,
+    "steamAppId": 1672500,
+    "nexusDomain": "gundambreaker4",
+    "nexusGameId": 6772,
+    "exeNames": [
+      "GB4.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202410/MOD670635775ec6c.webp@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "hades2",
+    "name": "Hades2",
+    "sourceFile": "Hades2.ts",
+    "glossGameId": 349,
+    "steamAppId": 1145350,
+    "nexusDomain": "hades2",
+    "nexusGameId": 6354,
+    "exeNames": [
+      "Hades2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/663add9906fe2.webp",
+    "typeNames": [
+      "Mods",
+      "ModImporter",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "haishan",
+    "name": "HaiShan",
+    "sourceFile": "HaiShan.ts",
+    "glossGameId": 366,
+    "steamAppId": 2180340,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "海山.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202407/MOD669638c34fae8.webp@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "hogwartslegacy",
+    "name": "Hogwarts Legacy",
+    "sourceFile": "HogwartsLegacy.ts",
+    "glossGameId": 302,
+    "steamAppId": 990080,
+    "nexusDomain": "hogwartslegacy",
+    "nexusGameId": 5113,
+    "exeNames": [
+      "HogwartsLegacy.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/63e2f9656f092.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "hollowknight",
+    "name": "Hollow Knight",
+    "sourceFile": "HollowKnight.ts",
+    "glossGameId": 466,
+    "steamAppId": 367520,
+    "nexusDomain": "hollowknight",
+    "nexusGameId": 2698,
+    "exeNames": [
+      "hollow_knight.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68ef7e4cbc70c.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "silksong",
+    "name": "Hollow Knight Silksong",
+    "sourceFile": "Silksong.ts",
+    "glossGameId": 451,
+    "steamAppId": 1030300,
+    "nexusDomain": "hollowknightsilksong",
+    "nexusGameId": 8136,
+    "exeNames": [
+      "Hollow Knight Silksong.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68baa8da077d0.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "homeworld3",
+    "name": "Homeworld 3",
+    "sourceFile": "Homeworld3.ts",
+    "glossGameId": 312,
+    "steamAppId": 1840080,
+    "nexusDomain": "homeworld3",
+    "nexusGameId": 6432,
+    "exeNames": [
+      "Homeworld3.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6423ab827ad41.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "humankind",
+    "name": "Humankind",
+    "sourceFile": "Humankind.ts",
+    "glossGameId": 330,
+    "steamAppId": 1124300,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "Humankind.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65a7365985d61.webp",
+    "typeNames": [
+      "mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "inzoi",
+    "name": "inZOI",
+    "sourceFile": "InZOI.ts",
+    "glossGameId": 421,
+    "steamAppId": 2456740,
+    "nexusDomain": "inzoi",
+    "nexusGameId": 7480,
+    "exeNames": [
+      "inZOI.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202503/MOD67c7ff0ec9f40.webp@webp",
+    "typeNames": [
+      "MODkit"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "jaggedalliance3",
+    "name": "Jagged Alliance 3",
+    "sourceFile": "JaggedAlliance3.ts",
+    "glossGameId": 318,
+    "steamAppId": 1084160,
+    "nexusDomain": "jaggedalliance3",
+    "nexusGameId": 5559,
+    "exeNames": [
+      "JA3.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64be23bb84fe3.webp",
+    "typeNames": [
+      "通用类型",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "jumpforce",
+    "name": "JUMP FORCE",
+    "sourceFile": "JumpForce.ts",
+    "glossGameId": 181,
+    "steamAppId": 816020,
+    "nexusDomain": "jumpforce",
+    "nexusGameId": 2765,
+    "exeNames": [
+      "JUMP_FORCE.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/181.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "just-cause-3",
+    "name": "Just Cause 3",
+    "sourceFile": "Just Cause 3.ts",
+    "glossGameId": 50,
+    "steamAppId": 225540,
+    "nexusDomain": "justcause3",
+    "nexusGameId": 1946,
+    "exeNames": [
+      "JustCause3.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/50.jpg",
+    "typeNames": [
+      "dropzone",
+      "游戏根目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "kenshi",
+    "name": "Kenshi",
+    "sourceFile": "Kenshi.ts",
+    "glossGameId": 186,
+    "steamAppId": 233860,
+    "nexusDomain": "kenshi",
+    "nexusGameId": 736,
+    "exeNames": [
+      "kenshi_x64.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/186.png",
+    "typeNames": [
+      "Mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "kerbalspaceprogram",
+    "name": "Kerbal Space Program",
+    "sourceFile": "KerbalSpaceProgram.ts",
+    "glossGameId": 62,
+    "steamAppId": 220200,
+    "nexusDomain": "kerbalspaceprogram",
+    "nexusGameId": 272,
+    "exeNames": [
+      "KSP_x64.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/62.jpg",
+    "typeNames": [
+      "GameData",
+      "craft",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "kingdomcomedeliverance",
+    "name": "Kingdom Come Deliverance",
+    "sourceFile": "KingdomComeDeliverance.ts",
+    "glossGameId": 155,
+    "steamAppId": 379430,
+    "nexusDomain": "kingdomcomedeliverance",
+    "nexusGameId": 2298,
+    "exeNames": [
+      "KingdomCome.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/155.jpg",
+    "typeNames": [
+      "Mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "kingdomcomedeliverance2",
+    "name": "Kingdom Come Deliverance 2",
+    "sourceFile": "KingdomComeDeliverance2.ts",
+    "glossGameId": 416,
+    "steamAppId": 1771300,
+    "nexusDomain": "kingdomcomedeliverance2",
+    "nexusGameId": 7286,
+    "exeNames": [
+      "KingdomCome.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202502/MOD67a1ffc3c7198.jpg@webp",
+    "typeNames": [
+      "Mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "l4d2",
+    "name": "Left 4 Dead 2",
+    "sourceFile": "L4D2.ts",
+    "glossGameId": 12,
+    "steamAppId": 550,
+    "nexusDomain": "left4dead2",
+    "nexusGameId": 195,
+    "exeNames": [
+      "left4dead2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/12.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "legendofheros",
+    "name": "Legend of Heroes Three Kingdoms",
+    "sourceFile": "LegendOfHeros.ts",
+    "glossGameId": 427,
+    "steamAppId": 3020510,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "ThreeKingdom.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_67eca42846bf0.jpg",
+    "typeNames": [
+      "Data",
+      "Portraits"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "legendofmortal",
+    "name": "Legend Of Mortal",
+    "sourceFile": "LegendOfMortal.ts",
+    "glossGameId": 357,
+    "steamAppId": 1859910,
+    "nexusDomain": "legendofmortal",
+    "nexusGameId": 6702,
+    "exeNames": [
+      "Mortal.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/667126e01ba80.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "lethalcompany",
+    "name": "Lethal Company",
+    "sourceFile": "LethalCompany.ts",
+    "glossGameId": 329,
+    "steamAppId": 1966720,
+    "nexusDomain": "lethalcompany",
+    "nexusGameId": 5848,
+    "exeNames": [
+      "Lethal Company.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65a0f0fb13a40.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "liesofp",
+    "name": "Lies of P",
+    "sourceFile": "LiesofP.ts",
+    "glossGameId": 325,
+    "steamAppId": 1627720,
+    "nexusDomain": "liesofp",
+    "nexusGameId": 5441,
+    "exeNames": [
+      "LOP.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65127b4a5041a.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "likeadragon8",
+    "name": "LikeADragon8",
+    "sourceFile": "LikeADragon8.ts",
+    "glossGameId": 334,
+    "steamAppId": 2072450,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "likeadragon8.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65b9e51412790.webp",
+    "typeNames": [
+      "mods",
+      "RyuModManager",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "lordsofthefallen",
+    "name": "Lords of the Fallen",
+    "sourceFile": "LordsOfTheFallen.ts",
+    "glossGameId": 352,
+    "steamAppId": 1501750,
+    "nexusDomain": "lordsofthefallen2023",
+    "nexusGameId": 5803,
+    "exeNames": [
+      "LOTF2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/664db7b3148f8.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "manorlords",
+    "name": "Manor Lords",
+    "sourceFile": "ManorLords.ts",
+    "glossGameId": 348,
+    "steamAppId": 1363080,
+    "nexusDomain": "manorlords",
+    "nexusGameId": 6352,
+    "exeNames": [
+      "ManorLords.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/662db2a8b4521.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "michangsheng",
+    "name": "MiChangSheng",
+    "sourceFile": "MiChangSheng.ts",
+    "glossGameId": 255,
+    "steamAppId": 1189490,
+    "nexusDomain": "MiChangSheng",
+    "nexusGameId": 99999,
+    "exeNames": [
+      "觅长生.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/60d93f98c7462.png",
+    "typeNames": [
+      "bin",
+      "插件",
+      "Next类",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "monsterhunterwilds",
+    "name": "Monster Hunter Wilds",
+    "sourceFile": "MonsterHunterWilds.ts",
+    "glossGameId": 420,
+    "steamAppId": 2246340,
+    "nexusDomain": "monsterhunterwilds",
+    "nexusGameId": 6993,
+    "exeNames": [
+      "MonsterHunterWilds.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202502/MOD67beca9449633.webp@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "monsterhunterworld",
+    "name": "Monster Hunter World",
+    "sourceFile": "MonsterHunterWorld.ts",
+    "glossGameId": 161,
+    "steamAppId": 582010,
+    "nexusDomain": "monsterhunterworld",
+    "nexusGameId": 2531,
+    "exeNames": [
+      "MonsterHunterWorld.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/161b.png",
+    "typeNames": [
+      "Stracker",
+      "通用类型",
+      "插件",
+      "未知"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "monsterhunterrise",
+    "name": "MonsterHunterRise",
+    "sourceFile": "MonsterHunterRise.ts",
+    "glossGameId": 270,
+    "steamAppId": 1446780,
+    "nexusDomain": "monsterhunterrise",
+    "nexusGameId": 4095,
+    "exeNames": [
+      "MonsterHunterRise.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61dbdb30cdbce.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "mountblade2",
+    "name": "MountBlade2",
+    "sourceFile": "MountBlade2.ts",
+    "glossGameId": 225,
+    "steamAppId": 261550,
+    "nexusDomain": "mountandblade2bannerlord",
+    "nexusGameId": 3174,
+    "exeNames": [
+      "Bannerlord.exe",
+      "TaleWorlds.MountAndBlade.Launcher.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/225.png",
+    "typeNames": [
+      "Modules",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "nextjianghu2",
+    "name": "Next Jianghu 2",
+    "sourceFile": "NextJianghu2.ts",
+    "glossGameId": 346,
+    "steamAppId": 1606180,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "下一站江湖Ⅱ.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6629b6eff3688.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "nioh2",
+    "name": "Nioh 2",
+    "sourceFile": "Nioh2.ts",
+    "glossGameId": 249,
+    "steamAppId": 1325200,
+    "nexusDomain": "nioh2",
+    "nexusGameId": 3660,
+    "exeNames": [
+      "nioh2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6041c647d7a35.png",
+    "typeNames": [
+      "Mod Enabler",
+      "mods",
+      "游戏根目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "nioh3",
+    "name": "Nioh 3",
+    "sourceFile": "Nioh3.ts",
+    "glossGameId": 486,
+    "steamAppId": 3681010,
+    "nexusDomain": "nioh3",
+    "nexusGameId": 3660,
+    "exeNames": [
+      "Nioh3.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_699ec8ac99e3b.png",
+    "typeNames": [
+      "tools",
+      "fdata",
+      "游戏根目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "nomanssky",
+    "name": "No Man's Sky",
+    "sourceFile": "NoMansSky.ts",
+    "glossGameId": 24,
+    "steamAppId": 275850,
+    "nexusDomain": "nomanssky",
+    "nexusGameId": 1634,
+    "exeNames": [
+      "NMS.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/24.jpg",
+    "typeNames": [
+      "pak/lua",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "oblivionremastered",
+    "name": "Oblivion Remastered",
+    "sourceFile": "OblivionRemastered.ts",
+    "glossGameId": 430,
+    "steamAppId": 2623190,
+    "nexusDomain": "oblivionremastered",
+    "nexusGameId": 7587,
+    "exeNames": [
+      "OblivionRemastered.exe",
+      "OblivionRemastered-Win64-Shipping.exe",
+      "OblivionRemastered-WinGDK-Shipping.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68084078343d1.jpg",
+    "typeNames": [
+      "游戏根目录",
+      "Data",
+      "esp"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "pal7",
+    "name": "Pal7",
+    "sourceFile": "Pal7.ts",
+    "glossGameId": 277,
+    "steamAppId": 1543030,
+    "nexusDomain": "swordandfairy7",
+    "nexusGameId": 4194,
+    "exeNames": [
+      "Pal7.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6256729d72a41.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "palworld",
+    "name": "Palworld",
+    "sourceFile": "Palworld.ts",
+    "glossGameId": 333,
+    "steamAppId": 1623730,
+    "nexusDomain": "palworld",
+    "nexusGameId": 6030,
+    "exeNames": [
+      "Palworld.exe",
+      "PalServer.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65ae3cdbc7680.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "planetzoo",
+    "name": "Planet Zoo",
+    "sourceFile": "PlanetZoo.ts",
+    "glossGameId": 327,
+    "steamAppId": 703080,
+    "nexusDomain": "planetzoo",
+    "nexusGameId": 3100,
+    "exeNames": [
+      "PlanetZoo.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/653a085c9ddd7.webp",
+    "typeNames": [
+      "Mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "re4remake",
+    "name": "RE4Remake",
+    "sourceFile": "RE4Remake.ts",
+    "glossGameId": 303,
+    "steamAppId": 2050650,
+    "nexusDomain": "residentevil42023",
+    "nexusGameId": 5195,
+    "exeNames": [
+      "re4.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/63e310bf62591.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "reddeadredemption",
+    "name": "Red Dead Redemption",
+    "sourceFile": "RedDeadRedemption.ts",
+    "glossGameId": 398,
+    "steamAppId": 2668510,
+    "nexusDomain": "reddeadredemption",
+    "nexusGameId": 5175,
+    "exeNames": [
+      "RDR.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202410/MOD6721f29b85384.jpg@webp",
+    "typeNames": [
+      "ScriptHookRDR",
+      "RedHook",
+      "asi",
+      "red",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "reddead2",
+    "name": "Red Dead Redemption 2",
+    "sourceFile": "RedDead2.ts",
+    "glossGameId": 208,
+    "steamAppId": 1174180,
+    "nexusDomain": "reddeadredemption2",
+    "nexusGameId": 3024,
+    "exeNames": [
+      "RDR2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/208.png",
+    "typeNames": [
+      "asi",
+      "lml",
+      "游戏根目录",
+      "ScriptHookRDR2",
+      "script",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "re2remake",
+    "name": "Resident Evil 2",
+    "sourceFile": "RE2Remake.ts",
+    "glossGameId": 180,
+    "steamAppId": 883710,
+    "nexusDomain": "residentevil22019",
+    "nexusGameId": 2702,
+    "exeNames": [
+      "re2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/180.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "re3remake",
+    "name": "Resident Evil 3",
+    "sourceFile": "RE3Remake.ts",
+    "glossGameId": 224,
+    "steamAppId": 952060,
+    "nexusDomain": "residentevil32020",
+    "nexusGameId": 3191,
+    "exeNames": [
+      "re3.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/224.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "residentevilrequiem",
+    "name": "Resident Evil Requiem",
+    "sourceFile": "ResidentEvilRequiem.ts",
+    "glossGameId": 488,
+    "steamAppId": 3764200,
+    "nexusDomain": "residentevilrequiem",
+    "nexusGameId": 8863,
+    "exeNames": [
+      "re9.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_69a0f03164da1.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "residentevilvillage",
+    "name": "Resident Evil Village",
+    "sourceFile": "ResidentEvilVillage.ts",
+    "glossGameId": 253,
+    "steamAppId": 1196590,
+    "nexusDomain": "residentevilvillage",
+    "nexusGameId": 3669,
+    "exeNames": [
+      "re8.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6095126f96a6d.png",
+    "typeNames": [
+      "REFramework",
+      "autorun",
+      "plugins",
+      "模型替换",
+      "主目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "rimworld",
+    "name": "RimWorld",
+    "sourceFile": "RimWorld.ts",
+    "glossGameId": 19,
+    "steamAppId": 294100,
+    "nexusDomain": "rimworld",
+    "nexusGameId": 424,
+    "exeNames": [
+      "RimWorldWin64.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/19.jpg",
+    "typeNames": [
+      "通用类型",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "riskofrain2",
+    "name": "Risk of Rain 2",
+    "sourceFile": "RiskofRain2.ts",
+    "glossGameId": 250,
+    "steamAppId": 632360,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "Risk of Rain 2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/607926e04c16a.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "sekiro",
+    "name": "Sekiro",
+    "sourceFile": "Sekiro.ts",
+    "glossGameId": 185,
+    "steamAppId": 814380,
+    "nexusDomain": "sekiro",
+    "nexusGameId": 2763,
+    "exeNames": [
+      "sekiro.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/185.png",
+    "typeNames": [
+      "基础类型",
+      "ModEngine",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "hellblade2",
+    "name": "Senua's Saga Hellblade 2",
+    "sourceFile": "Hellblade2.ts",
+    "glossGameId": 355,
+    "steamAppId": 2461850,
+    "nexusDomain": "senuassagahellblade2",
+    "nexusGameId": 6438,
+    "exeNames": [
+      "Hellblade2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/181.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "sottr",
+    "name": "Shadow of the Tomb Raider",
+    "sourceFile": "SOTTR.ts",
+    "glossGameId": 165,
+    "steamAppId": 750920,
+    "nexusDomain": "shadowofthetombraider",
+    "nexusGameId": 2588,
+    "exeNames": [
+      "SOTTR.exe"
+    ],
+    "coverUrl": "",
+    "typeNames": [
+      "forger2",
+      "游戏根目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "shapez2",
+    "name": "Shapez 2",
+    "sourceFile": "Shapez2.ts",
+    "glossGameId": 378,
+    "steamAppId": 2162800,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "shapez 2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202408/MOD66bf055eb2ba5.webp@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "civilizationvi",
+    "name": "Sid Meier's Civilization VI",
+    "sourceFile": "CivilizationVI.ts",
+    "glossGameId": 5,
+    "steamAppId": 289070,
+    "nexusDomain": "civilisationvi",
+    "nexusGameId": 1694,
+    "exeNames": [
+      "CivilizationVI.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/5.jpg",
+    "typeNames": [
+      "mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "civilizationvii",
+    "name": "Sid Meier's Civilization VII",
+    "sourceFile": "CivilizationVII.ts",
+    "glossGameId": 434,
+    "steamAppId": 1295660,
+    "nexusDomain": "civilizationvii",
+    "nexusGameId": 7318,
+    "exeNames": [
+      "Civ7_Win64_DX12_FinalRelease.exe",
+      "Civ7_Win64_Vulkan_FinalRelease.exe",
+      "FiraxisCrashReporter.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_681b310c641ef.jpg",
+    "typeNames": [
+      "mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "sifu",
+    "name": "SiFu",
+    "sourceFile": "SiFu.ts",
+    "glossGameId": 64,
+    "steamAppId": 2138710,
+    "nexusDomain": "sifu",
+    "nexusGameId": 4309,
+    "exeNames": [
+      "Sifu.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/62207195e18a2.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "silenthillf",
+    "name": "Silent Hill f",
+    "sourceFile": "SILENTHILLf.ts",
+    "glossGameId": 461,
+    "steamAppId": 2947440,
+    "nexusDomain": "silenthillf",
+    "nexusGameId": 8203,
+    "exeNames": [
+      "SHf.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68d35aebce565.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "skyrimse",
+    "name": "Skyrim Special Edition",
+    "sourceFile": "SkyrimSE.ts",
+    "glossGameId": 2,
+    "steamAppId": 489830,
+    "nexusDomain": "skyrimspecialedition",
+    "nexusGameId": 1704,
+    "exeNames": [
+      "SkyrimSE.exe",
+      "skse64_loader.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/2.jpg",
+    "typeNames": [
+      "Data",
+      "skse64",
+      "Plugins",
+      "未知"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "sonsoftheforest",
+    "name": "Sons Of The Forest",
+    "sourceFile": "SonsOfTheForest.ts",
+    "glossGameId": 305,
+    "steamAppId": 1326470,
+    "nexusDomain": "sonsoftheforest",
+    "nexusGameId": 5165,
+    "exeNames": [
+      "SonsOfTheForest.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/63fc08e3ef48b.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "sparkingzero",
+    "name": "SparkingZERO",
+    "sourceFile": "SparkingZERO.ts",
+    "glossGameId": 409,
+    "steamAppId": 1790600,
+    "nexusDomain": "dragonballsparkingzero",
+    "nexusGameId": 6892,
+    "exeNames": [
+      "SparkingZERO.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202412/MOD675a58a521b54.png@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "stalker2",
+    "name": "Stalker2",
+    "sourceFile": "Stalker2.ts",
+    "glossGameId": 403,
+    "steamAppId": 1643320,
+    "nexusDomain": "stalker2heartofchornobyl",
+    "nexusGameId": 6944,
+    "exeNames": [
+      "Stalker2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202412/MOD675955ed444f0.png@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "stardewvalley",
+    "name": "Stardew Valley",
+    "sourceFile": "StardewValley.ts",
+    "glossGameId": 10,
+    "steamAppId": 413150,
+    "nexusDomain": "stardewvalley",
+    "nexusGameId": 1303,
+    "exeNames": [
+      "Stardew Valley.exe",
+      "StardewModdingAPI.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/10.jpg",
+    "typeNames": [
+      "SMAPI",
+      "通用",
+      "未知"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "starfield",
+    "name": "Starfield",
+    "sourceFile": "Starfield.ts",
+    "glossGameId": 321,
+    "steamAppId": 1716740,
+    "nexusDomain": "starfield",
+    "nexusGameId": 4187,
+    "exeNames": [
+      "Starfield.exe",
+      "sfse_loader.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64db454e9f5c4.webp",
+    "typeNames": [
+      "data",
+      "游戏根目录",
+      "sfse",
+      "Plugins",
+      "esp",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "stateofdecay2",
+    "name": "State of Decay 2",
+    "sourceFile": "StateOfDecay2.ts",
+    "glossGameId": 238,
+    "steamAppId": 495420,
+    "nexusDomain": "stateofdecay2",
+    "nexusGameId": 2433,
+    "exeNames": [
+      "StateOfDecay2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/238.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "stellarblade",
+    "name": "Stellar Blade",
+    "sourceFile": "StellarBlade.ts",
+    "glossGameId": 437,
+    "steamAppId": 3489700,
+    "nexusDomain": "stellarblade",
+    "nexusGameId": 7804,
+    "exeNames": [
+      "SB.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_683eb2f1cdd6b.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "stellaris",
+    "name": "Stellaris",
+    "sourceFile": "Stellaris.ts",
+    "glossGameId": 21,
+    "steamAppId": 281990,
+    "nexusDomain": "stellaris",
+    "nexusGameId": 1606,
+    "exeNames": [
+      "stellaris.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/21.jpg",
+    "typeNames": [
+      "Mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "streetfighter6",
+    "name": "Street Fighter 6",
+    "sourceFile": "StreetFighter6.ts",
+    "glossGameId": 317,
+    "steamAppId": 1364780,
+    "nexusDomain": "streetfighter6",
+    "nexusGameId": 5329,
+    "exeNames": [
+      "StreetFighter6.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64ad1276b1fca.png",
+    "typeNames": [
+      "REFramework",
+      "autorun",
+      "plugins",
+      "模型替换",
+      "主目录",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "subnautica",
+    "name": "Subnautica",
+    "sourceFile": "Subnautica.ts",
+    "glossGameId": 105,
+    "steamAppId": 264710,
+    "nexusDomain": "subnautica",
+    "nexusGameId": 1155,
+    "exeNames": [
+      "Subnautica.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/105a.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "taleofimmortal",
+    "name": "Tale of Immortal",
+    "sourceFile": "TaleofImmortal.ts",
+    "glossGameId": 248,
+    "steamAppId": 1468810,
+    "nexusDomain": "taleofimmortal",
+    "nexusGameId": 4447,
+    "exeNames": [
+      "guigubahuang.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/603e05b7aef61.png",
+    "typeNames": [
+      "通用",
+      "未知"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "tekken8",
+    "name": "Tekken 8",
+    "sourceFile": "Tekken8.ts",
+    "glossGameId": 335,
+    "steamAppId": 1778820,
+    "nexusDomain": "tekken8",
+    "nexusGameId": 5622,
+    "exeNames": [
+      "TEKKEN 8.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65b9e69f3b61b.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "terraria",
+    "name": "Terraria",
+    "sourceFile": "Terraria.ts",
+    "glossGameId": 320,
+    "steamAppId": 105600,
+    "nexusDomain": "terraria",
+    "nexusGameId": 549,
+    "exeNames": [
+      "Terraria.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64cc631c336ce.webp",
+    "typeNames": [
+      "pack",
+      "tmod",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "thecallistoprotocol",
+    "name": "The Callisto Protocol",
+    "sourceFile": "TheCallistoProtocol.ts",
+    "glossGameId": 345,
+    "steamAppId": 1544020,
+    "nexusDomain": "callistoprotocol",
+    "nexusGameId": 4978,
+    "exeNames": [
+      "TheCallistoProtocol.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6605404b51bc3.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "thehuntercotw",
+    "name": "The Hunter CotW",
+    "sourceFile": "TheHunterCotW.ts",
+    "glossGameId": 322,
+    "steamAppId": 518790,
+    "nexusDomain": "thehuntercallofthewild",
+    "nexusGameId": 3158,
+    "exeNames": [
+      "theHunterCotW_F.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64e2df9a8310c.webp",
+    "typeNames": [
+      "dropzone",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "lastus2",
+    "name": "The Last of Us Part 2",
+    "sourceFile": "LastUs2.ts",
+    "glossGameId": 429,
+    "steamAppId": 2531310,
+    "nexusDomain": "thelastofuspart2",
+    "nexusGameId": 7521,
+    "exeNames": [
+      "tlou-ii.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_67fdc9247cc4b.jpg",
+    "typeNames": [
+      "modloader",
+      "mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "thelongdark",
+    "name": "The Long Dark",
+    "sourceFile": "TheLongDark.ts",
+    "glossGameId": 65,
+    "steamAppId": 305620,
+    "nexusDomain": "thelongdark",
+    "nexusGameId": 1779,
+    "exeNames": [
+      "tld.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "thelostvillage",
+    "name": "The Lost Village",
+    "sourceFile": "TheLostVillage.ts",
+    "glossGameId": 347,
+    "steamAppId": 1963040,
+    "nexusDomain": "thelostvillage",
+    "nexusGameId": 6362,
+    "exeNames": [
+      "TheLostVillage.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6629bb7235d50.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "theroadofjianghu",
+    "name": "The road of Jianghu",
+    "sourceFile": "TheRoadOfJianghu.ts",
+    "glossGameId": 383,
+    "steamAppId": 2361680,
+    "nexusDomain": "pathofkungfu",
+    "nexusGameId": 6910,
+    "exeNames": [
+      "daojianjianghulu.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202409/MOD66ee9421978bf.jpg@webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "thescrolloftaiwu",
+    "name": "The Scroll Of Taiwu",
+    "sourceFile": "TheScrollOfTaiwu.ts",
+    "glossGameId": 167,
+    "steamAppId": 838350,
+    "nexusDomain": "thescrolloftaiwu",
+    "nexusGameId": 99999,
+    "exeNames": [
+      "The Scroll of Taiwu.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/167.png",
+    "typeNames": [
+      "通用",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "thesims4",
+    "name": "The Sims 4",
+    "sourceFile": "TheSims4.ts",
+    "glossGameId": 8,
+    "steamAppId": 1222670,
+    "nexusDomain": "thesims4",
+    "nexusGameId": 641,
+    "exeNames": [
+      "TS4_x64.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/8a.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "thewitcher3",
+    "name": "The Witcher 3",
+    "sourceFile": "TheWitcher3.ts",
+    "glossGameId": 4,
+    "steamAppId": 292030,
+    "nexusDomain": "witcher3",
+    "nexusGameId": 952,
+    "exeNames": [
+      "witcher3.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/4a.jpg",
+    "typeNames": [
+      "mods",
+      "dlc",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "titanfall2",
+    "name": "Titanfall 2",
+    "sourceFile": "Titanfall2.ts",
+    "glossGameId": 332,
+    "steamAppId": 1237970,
+    "nexusDomain": "titanfall2",
+    "nexusGameId": 2532,
+    "exeNames": [
+      "Titanfall2.exe",
+      "NorthstarLauncher.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65a9d3b2453ae.webp",
+    "typeNames": [
+      "mods",
+      "Northstar",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "totalwartk",
+    "name": "Total War THREE KINGDOMS",
+    "sourceFile": "TotalWarTK.ts",
+    "glossGameId": 193,
+    "steamAppId": 779340,
+    "nexusDomain": "totalwarthreekingdoms",
+    "nexusGameId": 2847,
+    "exeNames": [
+      "Three_Kingdoms.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/193.png",
+    "typeNames": [
+      "pack",
+      "UI",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "tww3",
+    "name": "Total War WARHAMMER III",
+    "sourceFile": "TWW3.ts",
+    "glossGameId": 273,
+    "steamAppId": 1142710,
+    "nexusDomain": "totalwarwarhammer3",
+    "nexusGameId": 4717,
+    "exeNames": [
+      "Warhammer3.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61dbfe86987ba.png",
+    "typeNames": [
+      "pack",
+      "UI",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "twopointcampus",
+    "name": "Two Point Campus",
+    "sourceFile": "TwoPointCampus.ts",
+    "glossGameId": 331,
+    "steamAppId": 1649080,
+    "nexusDomain": "twopointcampus",
+    "nexusGameId": 7479,
+    "exeNames": [
+      "TPC.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65a74761bb3fe.webp",
+    "typeNames": [
+      "mods",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "valheim",
+    "name": "Valheim",
+    "sourceFile": "Valheim.ts",
+    "glossGameId": 340,
+    "steamAppId": 892970,
+    "nexusDomain": "valheim",
+    "nexusGameId": 3667,
+    "exeNames": [
+      "valheim.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65f1415124b36.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "implemented"
+  },
+  {
+    "id": "vrising",
+    "name": "VRising",
+    "sourceFile": "VRising.ts",
+    "glossGameId": 285,
+    "steamAppId": 1604030,
+    "nexusDomain": "vrising",
+    "nexusGameId": 4527,
+    "exeNames": [
+      "VRising.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/632f15e51ee2c.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "wanderingsword",
+    "name": "Wandering Sword",
+    "sourceFile": "WanderingSword.ts",
+    "glossGameId": 328,
+    "steamAppId": 1876890,
+    "nexusDomain": "wanderingsword",
+    "nexusGameId": 5732,
+    "exeNames": [
+      "JH.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/656d920e5f559.webp",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "spacemarine2",
+    "name": "Warhammer 40000 Space Marine 2",
+    "sourceFile": "SpaceMarine2.ts",
+    "glossGameId": 390,
+    "steamAppId": 2183900,
+    "nexusDomain": "warhammer40000spacemarine2",
+    "nexusGameId": 6771,
+    "exeNames": [
+      "Warhammer 40000 Space Marine 2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202410/MOD6707728ca7d89.webp@webp",
+    "typeNames": [
+      "pak",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "warmsnow",
+    "name": "WarmSnow",
+    "sourceFile": "WarmSnow.ts",
+    "glossGameId": 274,
+    "steamAppId": 1296830,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "WarmSnow.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61eb6d1e3f646.png",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "warriorsorochi4",
+    "name": "Warriors Orochi 4",
+    "sourceFile": "WarriorsOrochi4.ts",
+    "glossGameId": 168,
+    "steamAppId": 831560,
+    "nexusDomain": "warriorsorochi4",
+    "nexusGameId": 2624,
+    "exeNames": [
+      "WO4.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/168.jpg",
+    "typeNames": [
+      "bin",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "watchdogs2",
+    "name": "Watch Dogs 2",
+    "sourceFile": "WatchDogs2.ts",
+    "glossGameId": 176,
+    "steamAppId": 447040,
+    "nexusDomain": "watchdogs2",
+    "nexusGameId": 2454,
+    "exeNames": [
+      "EAC.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/176.jpg",
+    "typeNames": [
+      "dat",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "wuchangfallenfeathers",
+    "name": "Wuchang Fallen Feathers",
+    "sourceFile": "WuchangFallenFeathers.ts",
+    "glossGameId": 440,
+    "steamAppId": 2277560,
+    "nexusDomain": "wuchangfallenfeathers",
+    "nexusGameId": 7976,
+    "exeNames": [
+      "Project_Plague.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68818e5553d86.jpg",
+    "typeNames": [
+      "通用类型"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "wulinsh",
+    "name": "WulinSH",
+    "sourceFile": "WulinSH.ts",
+    "glossGameId": 310,
+    "steamAppId": 1948980,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "Wulin.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/641d08aca63ce.webp",
+    "typeNames": [
+      "mods"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "x4foundations",
+    "name": "X4 Foundations",
+    "sourceFile": "X4Foundations.ts",
+    "glossGameId": 178,
+    "steamAppId": 392160,
+    "nexusDomain": "x4foundations",
+    "nexusGameId": 2659,
+    "exeNames": [
+      "X4.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/178.png",
+    "typeNames": [
+      "extensions",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  },
+  {
+    "id": "xcom2",
+    "name": "XCOM2",
+    "sourceFile": "Xcom2.ts",
+    "glossGameId": 38,
+    "steamAppId": 268500,
+    "nexusDomain": "",
+    "nexusGameId": 0,
+    "exeNames": [
+      "XCom2.exe"
+    ],
+    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/38.jpg",
+    "typeNames": [
+      "通用类型",
+      "未知"
+    ],
+    "adapterStatus": "catalogued"
+  }
+];
