@@ -123,12 +123,8 @@ button:disabled {
   color: #f5f7fb;
 }
 
-.gameItem.selected {
-  background: #414956;
-  color: #ffffff;
-}
-
-.gameItem.selected {
+.gameItem.selected,
+.gameItem.active {
   background: #253247;
   color: #ffffff;
 }
@@ -279,6 +275,7 @@ button:disabled {
   background: #181a21;
   padding: 24px;
   position: relative;
+  overflow-x: hidden;
 }
 
 .settingsPanel,
@@ -540,6 +537,469 @@ button:disabled {
   margin: 14px 0;
 }
 
+.toolsRow select {
+  width: auto;
+  min-width: 118px;
+  min-height: 30px;
+  border-color: transparent;
+  background: transparent;
+  color: #dcdedf;
+  font-size: 13px;
+  padding: 0 20px 0 0;
+}
+
+.toolsRow select:hover {
+  color: #ffffff;
+  background: transparent;
+}
+
+.steamSelect {
+  position: relative;
+  min-width: 118px;
+}
+
+.steamSelect > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 30px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #dcdedf;
+  padding: 0 9px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.steamSelect > button:hover,
+.steamSelect > button:focus {
+  border-color: #3d4450;
+  background: #202936;
+  color: #ffffff;
+}
+
+.steamSelectMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 100%;
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid #3d4450;
+  border-radius: 3px;
+  background: #1e2024;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.45);
+  padding: 4px;
+}
+
+.steamSelectMenu button {
+  display: block;
+  width: 100%;
+  border-radius: 2px;
+  background: transparent;
+  color: #c7d5e0;
+  padding: 7px 9px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.steamSelectMenu button:hover {
+  background: #66c0f4;
+  color: #101820;
+}
+
+.steamSelectCompact {
+  min-width: 96px;
+}
+
+.steamSelectCompact > button {
+  border-color: #3d4450;
+  background: #202936;
+}
+
+.steamModTable {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid #2c3542;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.12);
+  overflow: visible;
+}
+
+.viewSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #2c3542;
+  border-radius: 7px;
+  background: #0f141b;
+  padding: 3px;
+}
+
+.viewSwitch .iconButton {
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+}
+
+.viewSwitch .iconButton.active {
+  background: #66c0f4;
+  color: #101820;
+}
+
+.steamModGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.steamModCard {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #2c3542;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.steamModCard:hover,
+.steamModCard.selected {
+  border-color: #4f8cff;
+  background: rgba(102, 192, 244, 0.08);
+}
+
+.steamModCard.dragging {
+  opacity: 0.55;
+}
+
+.steamModCard.dragOver {
+  box-shadow: inset 0 0 0 1px #66c0f4;
+}
+
+.modCardCover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  background: #10151c;
+  color: #697789;
+}
+
+.modCardCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: zoom-in;
+}
+
+.modCardCheck,
+.modCardDrag {
+  position: absolute;
+  top: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(8, 12, 18, 0.72);
+}
+
+.modCardCheck {
+  left: 8px;
+}
+
+.modCardDrag {
+  right: 8px;
+  color: #b8c6d8;
+  cursor: grab;
+}
+
+.modCardBody {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.modCardBody h3 {
+  margin: 0;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modCardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: #8f98a5;
+  font-size: 12px;
+}
+
+.modCardMeta span {
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid #2c3542;
+  border-radius: 999px;
+  padding: 2px 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modCardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.modCardActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid #252c36;
+  padding: 10px 12px;
+}
+
+.modCardActions .steamToggleCell {
+  margin-right: auto;
+}
+
+.modCardDetails {
+  max-height: 180px;
+  overflow: auto;
+  margin: 0;
+  border-top: 1px solid #252c36;
+  border-radius: 0;
+  background: #10151c;
+}
+
+.steamModHeader,
+.steamModRow {
+  display: grid;
+  grid-template-columns: 30px 28px minmax(220px, 1fr) 82px 130px 116px 76px 112px;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 0 12px;
+}
+
+.steamModHeader {
+  min-height: 46px;
+  border-bottom: 1px solid #2c3542;
+  color: #8f98a5;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.steamModRow {
+  border-bottom: 1px solid #252c36;
+}
+
+.steamModRow:last-child {
+  border-bottom: 0;
+}
+
+.steamModRow:hover {
+  background: rgba(102, 192, 244, 0.07);
+}
+
+.steamModRow.dragging {
+  opacity: 0.55;
+}
+
+.steamModRow.dragOver {
+  background: rgba(102, 192, 244, 0.14);
+  box-shadow: inset 0 1px 0 #66c0f4;
+}
+
+.dragHandle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: #6d7886;
+  cursor: grab;
+}
+
+.dragHandle:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.steamModName {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+.steamModName strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.steamModName svg {
+  flex: 0 0 auto;
+  color: #8f98a5;
+}
+
+.steamModVersion {
+  color: #c7d5e0;
+  font-size: 13px;
+}
+
+.steamToggleCell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  width: fit-content;
+  border: 0;
+  background: transparent;
+  color: #c7d5e0;
+  font-size: 13px;
+  padding: 0;
+}
+
+.steamToggle {
+  display: inline-flex;
+  align-items: center;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: #3a3f48;
+  padding: 2px;
+}
+
+.steamToggle span {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #dcdedf;
+  transition: transform 0.12s ease;
+}
+
+.steamToggleCell.active {
+  color: #66c0f4;
+}
+
+.steamToggleCell.active .steamToggle {
+  background: #1a9fff;
+}
+
+.steamToggleCell.active .steamToggle span {
+  transform: translateX(16px);
+}
+
+.modPreviewCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.modThumbButton {
+  width: 54px;
+  height: 34px;
+  overflow: hidden;
+  border: 1px solid #34445a;
+  border-radius: 6px;
+  background: #151b24;
+  padding: 0;
+}
+
+.modThumbButton img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.steamRowActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.steamRowActions .secondary {
+  min-height: 32px;
+  padding: 0 12px;
+}
+
+.tagToolsRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 1px solid #253040;
+  border-radius: 8px;
+  background: rgba(8, 12, 18, 0.24);
+  margin: 0 0 12px;
+  padding: 10px 12px;
+}
+
+.tagToolsTitle {
+  color: #9fb7d7;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.tagChip {
+  border: 1px solid #34445a;
+  border-radius: 999px;
+  background: #121923;
+  font-size: 12px;
+  font-weight: 800;
+  min-height: 28px;
+  padding: 0 10px;
+}
+
+.tagChip.active {
+  background: rgba(102, 192, 244, 0.14);
+}
+
+.tagQuickInput {
+  width: 190px;
+  min-height: 30px;
+  margin-left: auto;
+}
+
+.steamModDetails {
+  margin: 0 12px 12px 52px;
+}
+
+.advancedGamePanel {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid #252c36;
+  border-bottom: 1px solid #252c36;
+  margin: 0 0 14px;
+  padding: 12px 0;
+}
+
+.advancedGamePanel .compactActions {
+  flex-wrap: wrap;
+}
+
 .searchBox {
   display: flex;
   flex: 1;
@@ -638,11 +1098,13 @@ select:focus {
 }
 
 .typeFilter {
-  width: 170px;
+  width: auto;
+  min-width: 118px;
 }
 
 .sortFilter {
-  width: 150px;
+  width: auto;
+  min-width: 118px;
 }
 
 .batchBar {
@@ -817,27 +1279,34 @@ select:focus {
 }
 
 .badge {
-  border-radius: 999px;
-  padding: 4px 8px;
-  font-size: 12px;
+  border: 1px solid #2c3542;
+  border-radius: 3px;
+  background: rgba(103, 112, 123, 0.16);
+  color: #9fb1c5;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .badge.ok {
-  background: #163629;
-  color: #65d6ad;
+  border-color: rgba(102, 192, 244, 0.28);
+  background: rgba(26, 159, 255, 0.16);
+  color: #66c0f4;
 }
 
 .badge.muted {
-  background: #202936;
-  color: #9facbd;
+  border-color: #2c3542;
+  background: rgba(103, 112, 123, 0.12);
+  color: #8f98a5;
 }
 
 .tagBadge {
-  border: 1px solid;
-  border-radius: 999px;
-  background: #10151c;
+  border: 1px solid rgba(102, 192, 244, 0.24);
+  border-radius: 3px;
+  background: rgba(26, 159, 255, 0.1);
   padding: 3px 7px;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .empty,
@@ -1105,6 +1574,128 @@ select:focus {
   font-size: 16px;
 }
 
+.nexusDetailView {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.nexusCategoryRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.nexusCategoryRow span {
+  border: 1px solid #34445a;
+  border-radius: 999px;
+  color: #9fb7d7;
+  font-size: 12px;
+  padding: 3px 8px;
+}
+
+.nexusImageGallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 10px;
+}
+
+.nexusImageThumb {
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border: 1px solid #2c3542;
+  border-radius: 7px;
+  background: #10151c;
+  padding: 0;
+}
+
+.nexusImageThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.nexusDetailColumns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.45fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.nexusDescriptionBlock,
+.nexusFilesBlock {
+  min-width: 0;
+}
+
+.nexusDescriptionBlock h3,
+.nexusFilesBlock h3 {
+  margin: 0 0 10px;
+  color: #dce8f5;
+  font-size: 16px;
+}
+
+.nexusDescription,
+.nexusDescriptionText {
+  overflow: hidden;
+  color: #c7d5e0;
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.nexusDescription img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.nexusDescription a {
+  color: #66c0f4;
+}
+
+.nexusDescription strong {
+  color: #ffffff;
+}
+
+.nexusDescription .bbUnderline {
+  text-decoration: underline;
+}
+
+.translatedText {
+  white-space: pre-wrap;
+}
+
+.translationError {
+  margin: -8px 0 0;
+  color: #ff8ea3;
+  font-size: 13px;
+  text-align: center;
+}
+
+.imagePreviewOverlay {
+  z-index: 80;
+}
+
+.imagePreviewModal {
+  width: min(960px, 92vw);
+  max-height: 88vh;
+  overflow: hidden;
+  border: 1px solid #34445a;
+  border-radius: 8px;
+  background: #111820;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+}
+
+.imagePreviewModal img {
+  display: block;
+  width: 100%;
+  max-height: calc(88vh - 54px);
+  object-fit: contain;
+  background: #05070a;
+}
+
 .dangerBadge {
   background: #3a1820;
   color: #ffb4b4;
@@ -1276,11 +1867,158 @@ code {
   gap: 8px;
 }
 
+.steam-modal-header .close-btn {
+  margin-left: auto;
+  color: #8f9bab;
+}
+
 .steam-modal-content {
   padding: 32px 24px;
   color: #8b929a;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.gameModalContent {
+  display: grid;
+  gap: 16px;
+}
+
+.gameModalHero {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.gameModalHero img,
+.gameModalHero > svg {
+  width: 72px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #111820;
+}
+
+.gameInfoGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.gameInfoGrid label,
+.modalField {
+  display: grid;
+  gap: 6px;
+  color: #c8d2df;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.gameInfoGrid span {
+  overflow-wrap: anywhere;
+  color: #8f9bab;
+  font-weight: 500;
+}
+
+.gameActionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.modalTwoCols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.modEditModal {
+  width: 620px;
+}
+
+.customAdapterPanel {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  background: #1b1f27;
+  border: 1px solid #343b46;
+  border-radius: 4px;
+}
+
+.customAdapterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #dcdedf;
+}
+
+.customAdapterHeader strong {
+  font-size: 13px;
+}
+
+.customAdapterHeader span,
+.customAdapterEmpty {
+  color: #8f9bab;
+  font-size: 12px;
+}
+
+.customAdapterRuleList,
+.customAdapterForm {
+  display: grid;
+  gap: 10px;
+}
+
+.customAdapterRuleItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #111820;
+  border: 1px solid #2d3541;
+  border-radius: 4px;
+}
+
+.customAdapterRuleItem div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.customAdapterRuleItem strong {
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.customAdapterRuleItem span {
+  color: #8f9bab;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.customAdapterFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inlineCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #c8d2df;
+  font-size: 13px;
+}
+
+.iconOnly {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .steam-modal-footer {
@@ -1305,7 +2043,7 @@ code {
 .steamFilterRight {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 18px;
 }
 
 .searchWrapper {
@@ -1342,7 +2080,7 @@ code {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 13px;
   color: #8b929a;
 }
 
@@ -1351,7 +2089,8 @@ code {
   background: transparent;
   border: none;
   color: #dcdedf;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   padding: 0 16px 0 0;
   cursor: pointer;
   outline: none;
@@ -1551,13 +2290,29 @@ code {
   gap: 4px;
 }
 
+.backupFileList li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .backupFileList .fileType {
   color: #4f8cff;
   margin-right: 4px;
+  flex: 0 0 auto;
+}
+
+.backupTreeName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .backupFileList .fileSize {
   color: #67707b;
+  flex: 0 0 auto;
 }
 
 /* Steam Settings Page */
@@ -1828,6 +2583,11 @@ code {
   color: #ff5e5e;
 }
 
+.taskStatusBadge.paused {
+  background: rgba(250, 166, 26, 0.18);
+  color: #faa61a;
+}
+
 .taskFileName {
   margin: 0 0 8px 0;
   font-size: 13px;
@@ -1915,7 +2675,7 @@ code {
   box-shadow: 0 4px 12px rgba(0,0,0,0.5);
   padding: 4px 0;
   z-index: 1000;
-  min-width: 140px;
+  min-width: 168px;
 }
 
 .steamContextMenu button {
@@ -1935,4 +2695,4 @@ code {
 .steamContextMenu button:hover {
   background: #3d4450;
   color: #fff;
-}
+}

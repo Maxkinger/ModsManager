@@ -20,7 +20,7 @@ export const gamePresets: GamePreset[] = [
       "Avatars",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "ace7game",
@@ -37,7 +37,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "americantrucksimulator",
@@ -58,7 +58,7 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "anno117",
@@ -76,7 +76,7 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "anno1800",
@@ -94,7 +94,7 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "armoredcore6",
@@ -112,7 +112,7 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "Engine 2"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "acodyssey",
@@ -131,7 +131,7 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "atomicheart",
@@ -148,7 +148,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "baldursgate3",
@@ -206,7 +206,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "borderlands4",
@@ -224,7 +224,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "citiesskylines2",
@@ -241,7 +241,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "Map"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "expedition33",
@@ -259,7 +259,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "codevein",
@@ -276,7 +276,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "redalert2",
@@ -296,7 +296,7 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "contrabandpolice",
@@ -313,7 +313,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "crusaderkings3",
@@ -331,7 +331,7 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "cultofthelamb",
@@ -348,7 +348,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "cyberpunk2077",
@@ -387,7 +387,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "darkestdungeon",
@@ -405,7 +405,7 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "darkestdungeon2",
@@ -422,7 +422,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "StreamingAssets"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "deadoralive6",
@@ -442,7 +442,7 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "deadrisingdeluxeremaster",
@@ -459,7 +459,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "devilmaycry5",
@@ -476,7 +476,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "divinityos2",
@@ -494,7 +494,7 @@ export const gamePresets: GamePreset[] = [
       "pak",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "dontstarve",
@@ -513,7 +513,7 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "dqiiihd2dremake",
@@ -530,7 +530,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "dbfighterz",
@@ -547,7 +547,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "dragoncliff",
@@ -564,7 +564,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "dragonsdogma2",
@@ -581,7 +581,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "dyinglight2",
@@ -599,7 +599,7 @@ export const gamePresets: GamePreset[] = [
       "dat",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "dysonsphereprogram",
@@ -616,7 +616,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "eldenring",
@@ -654,7 +654,7 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "eurotrucksimulator2",
@@ -675,7 +675,7 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "expeditions",
@@ -693,7 +693,7 @@ export const gamePresets: GamePreset[] = [
       "pak",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "fallout4",
@@ -715,7 +715,7 @@ export const gamePresets: GamePreset[] = [
       "f4se",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "fs22",
@@ -733,7 +733,7 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "ff7rebirth",
@@ -750,7 +750,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "ff7re",
@@ -767,7 +767,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "flintlock",
@@ -784,7 +784,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "frostpunk2",
@@ -801,7 +801,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "genshin-impact",
@@ -821,7 +821,7 @@ export const gamePresets: GamePreset[] = [
       "GIMI",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "ghostoftsushima",
@@ -839,7 +839,7 @@ export const gamePresets: GamePreset[] = [
       "psarc",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "granbluefantasyrelink",
@@ -856,7 +856,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "gta5",
@@ -917,7 +917,7 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "gtasade",
@@ -934,7 +934,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "gulong",
@@ -951,7 +951,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "Mods"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "gb4",
@@ -968,7 +968,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "hades2",
@@ -987,7 +987,7 @@ export const gamePresets: GamePreset[] = [
       "ModImporter",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "haishan",
@@ -1004,7 +1004,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "hogwartslegacy",
@@ -1038,7 +1038,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "silksong",
@@ -1055,7 +1055,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "homeworld3",
@@ -1072,7 +1072,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "humankind",
@@ -1090,7 +1090,7 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "inzoi",
@@ -1107,7 +1107,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "MODkit"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "jaggedalliance3",
@@ -1125,7 +1125,7 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "jumpforce",
@@ -1142,7 +1142,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "just-cause-3",
@@ -1161,7 +1161,7 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "kenshi",
@@ -1179,7 +1179,7 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "kerbalspaceprogram",
@@ -1198,7 +1198,7 @@ export const gamePresets: GamePreset[] = [
       "craft",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "kingdomcomedeliverance",
@@ -1216,7 +1216,7 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "kingdomcomedeliverance2",
@@ -1234,7 +1234,7 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "l4d2",
@@ -1251,7 +1251,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "legendofheros",
@@ -1269,7 +1269,7 @@ export const gamePresets: GamePreset[] = [
       "Data",
       "Portraits"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "legendofmortal",
@@ -1286,7 +1286,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "lethalcompany",
@@ -1320,7 +1320,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "likeadragon8",
@@ -1339,7 +1339,7 @@ export const gamePresets: GamePreset[] = [
       "RyuModManager",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "lordsofthefallen",
@@ -1356,7 +1356,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "manorlords",
@@ -1373,7 +1373,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "michangsheng",
@@ -1393,7 +1393,7 @@ export const gamePresets: GamePreset[] = [
       "Next类",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "monsterhunterwilds",
@@ -1466,7 +1466,7 @@ export const gamePresets: GamePreset[] = [
       "Modules",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "nextjianghu2",
@@ -1483,7 +1483,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "nioh2",
@@ -1503,7 +1503,7 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "nioh3",
@@ -1523,7 +1523,7 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "nomanssky",
@@ -1541,7 +1541,7 @@ export const gamePresets: GamePreset[] = [
       "pak/lua",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "oblivionremastered",
@@ -1562,7 +1562,7 @@ export const gamePresets: GamePreset[] = [
       "Data",
       "esp"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "pal7",
@@ -1579,7 +1579,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "palworld",
@@ -1597,7 +1597,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "planetzoo",
@@ -1615,7 +1615,7 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "re4remake",
@@ -1632,7 +1632,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "reddeadredemption",
@@ -1653,7 +1653,7 @@ export const gamePresets: GamePreset[] = [
       "red",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "reddead2",
@@ -1675,7 +1675,7 @@ export const gamePresets: GamePreset[] = [
       "script",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "re2remake",
@@ -1692,7 +1692,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "re3remake",
@@ -1709,7 +1709,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "residentevilrequiem",
@@ -1726,7 +1726,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "residentevilvillage",
@@ -1748,7 +1748,7 @@ export const gamePresets: GamePreset[] = [
       "主目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "rimworld",
@@ -1766,7 +1766,7 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "riskofrain2",
@@ -1802,7 +1802,7 @@ export const gamePresets: GamePreset[] = [
       "ModEngine",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "hellblade2",
@@ -1819,7 +1819,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "sottr",
@@ -1838,7 +1838,7 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "shapez2",
@@ -1855,7 +1855,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "civilizationvi",
@@ -1873,7 +1873,7 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "civilizationvii",
@@ -1893,7 +1893,7 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "sifu",
@@ -1910,7 +1910,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "silenthillf",
@@ -1927,7 +1927,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "skyrimse",
@@ -1965,7 +1965,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "sparkingzero",
@@ -1982,7 +1982,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "stalker2",
@@ -1999,7 +1999,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "stardewvalley",
@@ -2042,7 +2042,7 @@ export const gamePresets: GamePreset[] = [
       "esp",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "stateofdecay2",
@@ -2059,7 +2059,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "stellarblade",
@@ -2094,7 +2094,7 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "streetfighter6",
@@ -2116,7 +2116,7 @@ export const gamePresets: GamePreset[] = [
       "主目录",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "subnautica",
@@ -2133,7 +2133,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "taleofimmortal",
@@ -2187,7 +2187,7 @@ export const gamePresets: GamePreset[] = [
       "tmod",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "thecallistoprotocol",
@@ -2204,7 +2204,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "thehuntercotw",
@@ -2222,7 +2222,7 @@ export const gamePresets: GamePreset[] = [
       "dropzone",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "lastus2",
@@ -2241,7 +2241,7 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "thelongdark",
@@ -2258,7 +2258,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "thelostvillage",
@@ -2275,7 +2275,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "theroadofjianghu",
@@ -2292,7 +2292,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "thescrolloftaiwu",
@@ -2310,7 +2310,7 @@ export const gamePresets: GamePreset[] = [
       "通用",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "thesims4",
@@ -2327,7 +2327,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "thewitcher3",
@@ -2346,7 +2346,7 @@ export const gamePresets: GamePreset[] = [
       "dlc",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "titanfall2",
@@ -2366,7 +2366,7 @@ export const gamePresets: GamePreset[] = [
       "Northstar",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "totalwartk",
@@ -2385,7 +2385,7 @@ export const gamePresets: GamePreset[] = [
       "UI",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "tww3",
@@ -2404,7 +2404,7 @@ export const gamePresets: GamePreset[] = [
       "UI",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "twopointcampus",
@@ -2422,7 +2422,7 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "valheim",
@@ -2456,7 +2456,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "wanderingsword",
@@ -2473,7 +2473,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "spacemarine2",
@@ -2491,7 +2491,7 @@ export const gamePresets: GamePreset[] = [
       "pak",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "warmsnow",
@@ -2508,7 +2508,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "warriorsorochi4",
@@ -2526,7 +2526,7 @@ export const gamePresets: GamePreset[] = [
       "bin",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "watchdogs2",
@@ -2544,7 +2544,7 @@ export const gamePresets: GamePreset[] = [
       "dat",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "wuchangfallenfeathers",
@@ -2561,7 +2561,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "wulinsh",
@@ -2578,7 +2578,7 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "mods"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "x4foundations",
@@ -2596,7 +2596,7 @@ export const gamePresets: GamePreset[] = [
       "extensions",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   },
   {
     "id": "xcom2",
@@ -2614,6 +2614,6 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "未知"
     ],
-    "adapterStatus": "catalogued"
+    "adapterStatus": "implemented"
   }
 ];

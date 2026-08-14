@@ -66,7 +66,7 @@
 - [x] 增加 Toast/消息提示
 - [x] 增加确认弹窗
 - [x] 增加空状态、错误状态、加载状态统一组件
-- [ ] 增加列表/网格视图切换
+- [x] 增加列表/网格视图切换
 - [ ] 增加响应式细节优化
 
 ## 3. 本地数据与持久化
@@ -82,7 +82,8 @@
 - [x] 启动时读取本地数据
 - [x] 保存 Mod 安装状态
 - [x] 兼容旧 Mod 数据缺少 `modTypeId` 的情况
-- [ ] 将数据按游戏拆分成独立 `mod.json`
+- [x] 将数据按游戏拆分成独立 `mod.json`
+- [x] 兼容 Gloss 数字 `modType` 到当前 adapter 类型
 - [x] 增加数据版本号
 - [x] 增加数据迁移机制
 - [x] 增加数据导入/导出
@@ -173,9 +174,9 @@
 - [x] 支持批量编辑
 - [x] 支持排序/权重
 - [x] 支持前置依赖展示
-- [x] 支持安装前检查本地前置依赖
+- [ ] 支持安装前检查本地前置依赖（暂缓）
 - [x] 支持冲突检测
-- [ ] 支持 Mod 更新检查
+- [ ] 支持 Mod 更新检查（暂缓）
 - [x] 支持 NXM 深链
 
 ## 7. 安装策略与文件操作
@@ -225,15 +226,19 @@
 - [x] 已给 `ELDEN RING` 接入 Unreal 规则占位
 - [x] 已给 `Hogwarts Legacy` 接入 Unreal 规则
 - [x] 已给 `Stellar Blade` 接入 Unreal 规则
+- [x] 已给 Unreal/`Stellar Blade` 补齐 Gloss 风格 `LogicMods` 类型
 - [x] 已给 `Tekken 8` 接入 Unreal 规则
 - [x] 已给 `Risk of Rain 2` 接入 Unity 规则
 - [x] 已给 `Valheim` 接入 Unity 规则
 - [x] 已给 `Lethal Company` 接入 Unity 规则
 - [x] 逐个核对 144 个游戏预设 ID 是否和 adapter 匹配
-- [ ] 批量迁移 Gloss 中数据化安装规则
+- [x] 批量迁移 Gloss 中数据化安装规则
+- [x] 迁移剩余 63 个 catalogued 游戏的 Gloss 数据化安装规则
+- [x] adapter 校验达到 144 / 144
 - [x] 迁移 `Elden Ring` 专属规则
 - [x] 迁移 `Black Myth Wukong` 专属规则
 - [x] 迁移 `Monster Hunter World` 专属规则
+- [x] 修正 `Monster Hunter World` 插件安装到 `nativePC/plugins`
 - [x] 迁移 `Monster Hunter Rise` 专属规则
 - [x] 迁移 `Monster Hunter Wilds` 专属规则
 - [x] 迁移 `Skyrim Special Edition` 专属规则
@@ -244,9 +249,33 @@
 - [x] 迁移 `GTA5 Enhanced` 专属规则
 - [x] 迁移 RE Engine 通用适配
 - [x] 迁移 GTA5 `dlc.rpf` DLC 包落位规则
-- [ ] 迁移 GTA5 `update.rpf` 内部 XML 写入规则
-- [ ] 迁移游戏专属排序
-- [ ] 支持用户自定义 adapter
+- [ ] 迁移 GTA5 `update.rpf` 内部 XML 写入规则（暂缓）
+- [x] 迁移游戏专属排序
+- [x] 支持用户自定义 adapter
+
+### 8.1 已有落位规则但未完整还原特殊逻辑的游戏
+
+说明：`144 / 144` 表示所有预设游戏都有基础 adapter 和文件落位规则，不表示 Gloss 源码里的每个游戏专属脚本都已经完整还原。下面这些游戏当前可识别/落位，但还有特殊逻辑需要后续补齐。
+
+- [ ] `GTA5` / `GTA5 Enhanced`：`gameconfig.xml` 写入 `update.rpf/common/data/gameconfig.xml`、车辆/人物文件写入 RPF 容器、`oiv` 脚本执行、RPF 工具链接入。（暂缓）
+- [x] `Baldur's Gate 3`：已按 Gloss 方案还原 `.pak` 安装到用户 AppData，并通过已导入的 `BaldursGate3.dll` 读取 `.pak` 元数据、维护 `modsettings.lsx`。
+- [x] `Dying Light 2`：已还原 `.pak -> dataN.pak` 编号安装，并维护本地 `pakList.txt` 映射。
+- [x] `Watch Dogs 2`：已还原 `.dat/.fat -> patchN.dat/fat` 成对编号安装，并维护本地 `pakList.txt` 映射。
+- [x] `Starfield`：已写 `Starfield.ini`、维护 AppData `plugins.txt`、处理 `sTestFile`；`SFSE` 安装前检查跟随全局前置检测项暂缓。
+- [x] `Skyrim Special Edition`：已写 `Skyrim.ini` 并维护 AppData `plugins.txt`。
+- [x] `Fallout 4`：已写 `Fallout4.ini` 并维护 AppData `plugins.txt`。
+- [x] `No Man's Sky`：安装前已把 `DISABLEMODS.TXT` 改名备份以启用 Mod。
+- [x] `Oblivion Remastered`：已维护 `Plugins.txt`。
+- [x] `Red Dead Redemption 2`：已还原 `install.xml` 读取和 `lml/mods.xml` 写入，支持 `lml` 与带 `install.xml` 的 `asi` 启用/关闭同步。
+- [x] `InZOI`：已修改 `mod_manifest.json` 启用 Mod。
+- [x] `MiChangSheng`：已生成/补齐 `Mod.bin`，并按类型创建目录链接或复制 dll。
+- [ ] `Armored Core 6`：Gloss 安装普通 Mod 前会检查 `ModEngine2`；当前缺安装前本地前置检查。
+- [ ] `Elden Ring`：adapter 已记录 `ModEngine2` 前置名，但全局安装前检查还没启用。
+- [ ] `Monster Hunter World`：Gloss 对部分类型会检查 `Stracker's Loader`；当前缺安装前本地前置检查。
+- [ ] `Resident Evil Village` / `Street Fighter 6`：Gloss 对 `REFramework`、`FirstNatives` 有前置检查；当前缺安装前本地前置检查。
+- [ ] `Sekiro`：Gloss 对 `ModEngine` 有前置检查；当前缺安装前本地前置检查。
+- [ ] `Nioh 2`：Gloss 对 `Nioh 2 Mod Enabler` 有前置检查；当前缺安装前本地前置检查。
+- [ ] `Like A Dragon 8`：Gloss 对 `Shin Ryu Mod Manager` 有前置检查；当前缺安装前本地前置检查。
 
 ## 9. 设置
 
@@ -268,9 +297,9 @@
 
 - [x] 定义备份数据结构
 - [x] 支持游戏目录备份
-- [ ] 支持存档目录备份
-- [ ] 支持读取文件树
-- [ ] 支持选择备份文件
+- [x] 支持存档目录备份
+- [x] 支持读取文件树
+- [x] 支持选择备份文件
 - [x] 支持创建备份压缩包
 - [x] 支持恢复备份
 - [x] 支持删除备份
@@ -282,26 +311,26 @@
 - [x] 定义下载任务数据结构
 - [x] 支持自定义 URL 下载
 - [x] 支持下载进度
-- [ ] 支持暂停下载
-- [ ] 支持继续下载
+- [x] 支持暂停下载
+- [x] 支持继续下载
 - [x] 支持删除下载任务
 - [x] 支持下载完成自动导入
 - [x] 支持重复任务检测
-- [ ] 支持代理设置
-- [ ] 接入 aria2
-- [ ] 保存 aria2 任务快照
-- [ ] 恢复 aria2 历史任务
+- [x] 支持代理设置
+- [ ] 接入 aria2（暂缓）
+- [ ] 保存 aria2 任务快照（暂缓）
+- [ ] 恢复 aria2 历史任务（暂缓）
 
 ## 12. Mod 探索与第三方平台
 
 - [x] 建立探索页
 - [x] 建立 Mod 详情页
-- [x] 接入 NexusMods 授权
+- [ ] 接入 NexusMods SSO 授权（已改为 API Key，暂缓）
 - [x] 接入 NexusMods 列表
 - [x] 接入 NexusMods 详情
 - [x] 接入 NexusMods 文件列表
 - [x] 接入 NexusMods 下载链接解析
-- [ ] 接入 NXM 深链
+- [x] 接入 NXM 深链
 - [x] 游戏预设已保存 NexusMods domain
 - [x] 游戏预设已保存 NexusMods game_id
 - [x] UI 已显示当前游戏 Nexus 配置
@@ -310,6 +339,7 @@
 - [x] 支持分页
 - [x] 支持选择资源下载
 - [x] 支持打开源网页
+- [x] 支持 Nexus 页面实验性翻译：列表名称/摘要、详情名称/摘要/说明、分类/标签、文件名/文件分类、Google 免费接口、百度翻译、有道智云、腾讯云机器翻译、火山引擎机器翻译、串行请求、本地缓存、原文/译文切换
 
 排除项：
 
@@ -325,11 +355,11 @@
 
 - [x] 定义 `.gmm` 包结构
 - [x] 支持读取 `.gmm` 包信息
-- [ ] 支持选择 `.gmm` 子包
+- [ ] 支持选择 `.gmm` 子包（暂缓）
 - [x] 支持导入 `.gmm` 包
-- [x] 支持导出单个 Mod 为 `.gmm`
-- [x] 支持导出多个 Mod 为 `.gmm`
-- [x] 支持填写包名、作者、版本、描述
+- [ ] 支持导出单个 Mod 为 `.gmm`（暂缓）
+- [ ] 支持导出多个 Mod 为 `.gmm`（暂缓）
+- [ ] 支持填写 `.gmm` 包名、作者、版本、描述（暂缓）
 - [x] 支持 `.gmm` 包重复检测
 
 ## 14. AI 与 MCP
@@ -350,7 +380,7 @@
 
 ## 15. 用户与平台账号
 
-- [x] NexusMods SSO 授权
+- [ ] NexusMods SSO 授权（已改为 API Key，暂缓）
 - [x] NexusMods 用户信息展示
 - [x] 清除 NexusMods 授权
 - [x] 保存 NexusMods API Key
@@ -363,16 +393,16 @@
 
 - [x] 当前 TypeScript 类型检查通过
 - [x] 当前生产构建通过
-- [ ] 为主进程文件操作添加单元测试
-- [ ] 为 adapter 识别规则添加单元测试
-- [ ] 为导入流程添加测试
-- [ ] 为安装/卸载流程添加测试
+- [x] 为主进程文件操作添加单元测试
+- [x] 为 adapter 识别规则添加单元测试
+- [x] 为导入流程添加测试
+- [x] 为安装/卸载流程添加测试
 - [ ] 添加 Playwright 界面冒烟测试
-- [ ] 用真实 Mod 文件夹测试 Cyberpunk 2077
-- [ ] 用真实 Mod 文件夹测试 Unreal 游戏
-- [ ] 用真实 Mod 文件夹测试 Unity 游戏
-- [ ] 用真实压缩包测试解压导入
-- [ ] 测试卸载不会误删非本 Mod 文件
+- [x] 用真实 Mod 文件夹测试 Cyberpunk 2077
+- [x] 用真实 Mod 文件夹测试 Unreal 游戏
+- [x] 用真实 Mod 文件夹测试 Unity 游戏
+- [x] 用真实压缩包测试解压导入
+- [x] 测试卸载不会误删非本 Mod 文件
 
 ## 17. 当前完成摘要
 

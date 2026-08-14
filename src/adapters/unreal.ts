@@ -40,6 +40,14 @@ export function createUnrealAdapter(presetId: string, name: string, basePath = "
       }
     },
     {
+      id: "logicMods",
+      name: "LogicMods",
+      install: {
+        kind: "general",
+        installPath: withBase("Content/Paks/LogicMods")
+      }
+    },
+    {
       id: "scripts",
       name: "Scripts",
       install: {
@@ -56,6 +64,14 @@ export function createUnrealAdapter(presetId: string, name: string, basePath = "
         installPath: "",
         keepPath: true
       }
+    },
+    {
+      id: "unknown",
+      name: "未知",
+      install: {
+        kind: "manual",
+        reason: `该 ${name} Mod 类型未知，请手动安装。`
+      }
     }
   ];
 
@@ -66,6 +82,7 @@ export function createUnrealAdapter(presetId: string, name: string, basePath = "
     checkModType(files) {
       if (hasFile(files, "dwmapi.dll")) return "ue4ss";
       if (hasFile(files, "xinput1_3.dll")) return "ue4ss-xinput";
+      if (hasExtension(files, "pak") && hasPathPart(files, "LogicMods")) return "logicMods";
       if (hasExtension(files, "pak")) return "pak";
       if (hasFile(files, "Enabled.txt")) return "mods";
       if (hasPathPart(files, "Scripts")) return "scripts";

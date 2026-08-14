@@ -55,11 +55,11 @@ export const cyberpunk2077Adapter: GameAdapter = {
   ],
   checkModType(files) {
     if (files.some((file) => baseName(file) === "cyber_engine_tweaks.asi")) return "cet";
+    if (files.some((file) => extension(file) === "archive")) return "archive";
+    if (files.some((file) => extension(file) === "lua")) return "script";
     if (files.some((file) => pathParts(file).some((part) => rootFolders.includes(part)))) {
       return "root";
     }
-    if (files.some((file) => extension(file) === "archive")) return "archive";
-    if (files.some((file) => extension(file) === "lua")) return "script";
     if (rootFolders.some((folder) => hasPathPart(files, folder))) return "root";
     return "unknown";
   }

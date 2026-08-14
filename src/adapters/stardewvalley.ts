@@ -16,12 +16,20 @@ export const stardewValleyAdapter: GameAdapter = {
     },
     {
       id: "mods",
-      name: "通用",
+      name: "普通 Mod",
+      install: {
+        kind: "folderRoot",
+        installPath: "Mods"
+      }
+    },
+    {
+      id: "mods-folder",
+      name: "Mods 目录",
       install: {
         kind: "folder",
         installPath: "Mods",
         folderName: "Mods",
-        spare: true
+        spare: false
       }
     },
     {
@@ -34,8 +42,9 @@ export const stardewValleyAdapter: GameAdapter = {
     }
   ],
   checkModType(files) {
-    if (hasFile(files, "StardewModdingAPI.exe")) return "smapi";
-    if (hasFile(files, "manifest.json") || hasPathPart(files, "Mods")) return "mods";
+    if (hasFile(files, "StardewModdingAPI.exe") || hasFile(files, "SMAPI.Installer.dll")) return "smapi";
+    if (hasPathPart(files, "Mods")) return "mods-folder";
+    if (hasFile(files, "manifest.json")) return "mods";
     return "unknown";
   }
 };

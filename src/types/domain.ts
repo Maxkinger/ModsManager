@@ -12,15 +12,19 @@ export interface ManagedGame {
   exeNames: string[];
   coverUrl: string;
   typeNames: string[];
+  customAdapterRules: CustomAdapterRule[];
   adapterStatus: "catalogued" | "implemented" | "custom";
   createdAt: number;
 }
+
+export type InstallTargetScope = "game" | "documents" | "appData";
 
 export type InstallStrategy =
   | {
       kind: "general";
       installPath: string;
       keepPath?: boolean;
+      targetScope?: InstallTargetScope;
     }
   | {
       kind: "folder";
@@ -28,6 +32,12 @@ export type InstallStrategy =
       folderName: string | string[];
       include?: boolean;
       spare?: boolean;
+      targetScope?: InstallTargetScope;
+    }
+  | {
+      kind: "folderRoot";
+      installPath: string;
+      targetScope?: InstallTargetScope;
     }
   | {
       kind: "file";
@@ -35,6 +45,7 @@ export type InstallStrategy =
       fileName: string;
       isExtname?: boolean;
       commonParent?: boolean;
+      targetScope?: InstallTargetScope;
     }
   | {
       kind: "fileSibling";
@@ -42,16 +53,26 @@ export type InstallStrategy =
       fileName: string;
       isExtname?: boolean;
       pass?: string[];
+      targetScope?: InstallTargetScope;
+    }
+  | {
+      kind: "fileOnly";
+      installPath: string;
+      fileName: string;
+      isExtname?: boolean;
+      targetScope?: InstallTargetScope;
     }
   | {
       kind: "folderParent";
       installPath: string;
       folderName: string;
+      targetScope?: InstallTargetScope;
     }
   | {
       kind: "fileMap";
       installPath: string;
       dictionaryFile: string;
+      targetScope?: InstallTargetScope;
     }
   | {
       kind: "fileIntoParentFolder";
@@ -59,6 +80,78 @@ export type InstallStrategy =
       fileName: string;
       isExtname?: boolean;
       requireParent?: boolean;
+      targetScope?: InstallTargetScope;
+    }
+  | {
+      kind: "bethesdaData";
+      installPath: string;
+      folderName: string | string[];
+      documentsGameFolder: string;
+      iniFileName: string;
+      localAppDataGameFolder: string;
+      pluginsHeader?: string;
+      updateGeneralTestFiles?: boolean;
+    }
+  | {
+      kind: "bethesdaPluginFiles";
+      installPath: string;
+      documentsGameFolder: string;
+      iniFileName: string;
+      localAppDataGameFolder: string;
+      pluginsHeader?: string;
+      updateGeneralTestFiles?: boolean;
+    }
+  | {
+      kind: "oblivionPlugins";
+      installPath: string;
+    }
+  | {
+      kind: "noMansSkyMods";
+      installPath: string;
+      keepPath?: boolean;
+    }
+  | {
+      kind: "numberedPak";
+      installPath: string;
+      extension: string;
+      prefix: string;
+      startIndex: number;
+      listFileName: string;
+    }
+  | {
+      kind: "watchDogsPatch";
+      installPath: string;
+      listFileName: string;
+    }
+  | {
+      kind: "michangshengLinkedFolder";
+      installPath: string;
+      rootFile: string;
+    }
+  | {
+      kind: "michangshengDllPlugins";
+      installPath: string;
+    }
+  | {
+      kind: "inzoiModKit";
+      installPath: string;
+      targetScope?: InstallTargetScope;
+    }
+  | {
+      kind: "bg3Pak";
+      installPath: string;
+      targetScope: "appData";
+      managedToolFileName: string;
+    }
+  | {
+      kind: "redDeadAsi";
+      installPath: string;
+      fileName: string;
+      isExtname?: boolean;
+    }
+  | {
+      kind: "redDeadLml";
+      installPath: string;
     }
   | {
       kind: "manual";
@@ -71,6 +164,16 @@ export interface ModTypeRule {
   install: InstallStrategy;
   uninstall?: InstallStrategy;
   requiredModNames?: string[];
+}
+
+export interface CustomAdapterRule {
+  id: string;
+  name: string;
+  detect: {
+    kind: "always" | "fileName" | "extension" | "pathPart";
+    value: string;
+  };
+  install: InstallStrategy;
 }
 
 export interface GameAdapter {
@@ -97,6 +200,7 @@ export interface GamePreset {
 export interface LocalMod {
   id: string;
   gameId: string;
+  sortIndex: number;
   name: string;
   sourcePath: string;
   rootPath: string;
@@ -126,6 +230,7 @@ export interface NexusUser {
   name: string;
   email: string;
   profileUrl: string;
+  avatar?: string;
   isPremium: boolean;
   isSupporter: boolean;
 }
@@ -159,9 +264,17 @@ export interface NexusModItem {
   primaryFile: NexusModFile | null;
 }
 
+export interface NexusModImage {
+  id: string;
+  title: string;
+  thumbnailUrl: string;
+  imageUrl: string;
+}
+
 export interface NexusModDetail extends NexusModItem {
   description: string;
   descriptionFormat: "html" | "text";
+  images: NexusModImage[];
   files: NexusModFile[];
 }
 
@@ -189,7 +302,7 @@ export interface DownloadTask {
   fileName: string;
   url: string;
   outputPath: string;
-  status: "queued" | "downloading" | "completed" | "failed" | "external";
+  status: "queued" | "downloading" | "paused" | "completed" | "failed" | "external";
   receivedBytes: number;
   totalBytes: number;
   error: string;
@@ -218,16 +331,38 @@ export interface BackupEntry {
   createdAt: number;
 }
 
+export interface DataBackupEntry {
+  id: string;
+  name: string;
+  outputPath: string;
+  size: number;
+  createdAt: number;
+}
+
 export interface AppSettings {
   storagePath: string;
   tagColors: Record<string, string>;
   useSymlinkInstall: boolean;
   nexusApiKey: string;
   nexusUser: NexusUser | null;
+  translationProvider: "off" | "google-gtx" | "baidu" | "youdao" | "tencent" | "volcengine";
+  translationTargetLang: "zh-CN";
+  baiduTranslateAppId: string;
+  baiduTranslateSecret: string;
+  youdaoTranslateAppKey: string;
+  youdaoTranslateSecret: string;
+  tencentTranslateSecretId: string;
+  tencentTranslateSecretKey: string;
+  tencentTranslateRegion: string;
+  volcengineTranslateAccessKeyId: string;
+  volcengineTranslateSecretAccessKey: string;
+  volcengineTranslateRegion: string;
   theme: "dark" | "light";
   language: "zh-CN" | "en-US";
   defaultTab: "games" | "manager" | "nexus" | "download" | "logs" | "backup" | "settings" | "about";
   autoImportAfterDownload: boolean;
+  proxyEnabled: boolean;
+  proxyUrl: string;
   preferDirectoryGamePicker: boolean;
   launchAtStartup: boolean;
   allowGameRunningChanges: boolean;
@@ -245,4 +380,9 @@ export interface AppData {
   downloads: DownloadTask[];
   logs: AppLogEntry[];
   backups: BackupEntry[];
+  dataBackups: DataBackupEntry[];
+  translationCache: Record<string, {
+    text: string;
+    createdAt: number;
+  }>;
 }

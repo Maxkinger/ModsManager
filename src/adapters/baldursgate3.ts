@@ -9,8 +9,10 @@ export const baldursGate3Adapter: GameAdapter = {
       id: "pak",
       name: "pak",
       install: {
-        kind: "general",
-        installPath: "Data/Mods"
+        kind: "bg3Pak",
+        installPath: "Local/Larian Studios/Baldur's Gate 3/Mods",
+        targetScope: "appData",
+        managedToolFileName: "BaldursGate3.dll"
       }
     },
     {
@@ -64,6 +66,9 @@ export const baldursGate3Adapter: GameAdapter = {
   ],
   checkModType(files) {
     if (hasExtension(files, "pak")) return "pak";
+    if (hasExtension(files, "dll") && files.some((file) => file.toLowerCase().endsWith("baldursgate3.dll"))) {
+      return "plugins";
+    }
     if (hasPathPart(files, "NativeMods")) return "nativeMods";
     if (hasPathPart(files, "bin")) return "bin";
     if (hasPathPart(files, "Data")) return "data";

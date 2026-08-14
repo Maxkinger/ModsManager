@@ -15,8 +15,15 @@ function loadPresets() {
 
 function getExplicitAdapterIds() {
   const text = readFileSync("src/adapters/index.ts", "utf-8");
+  const engineText = readFileSync("src/adapters/gloss-engine-definitions.ts", "utf-8");
+  const ruleText = readFileSync("src/adapters/gloss-rule-definitions.ts", "utf-8");
   const factoryIds = [...text.matchAll(/create(?:Gta5|ReEngine|Unreal|Unity|MelonLoader)Adapter\("([^"]+)"/gu)]
     .map((match) => match[1]);
+  const engineIds = [...engineText.matchAll(/^\s*([a-z0-9]+):\s*\{\s*kind:/gmu)]
+    .map((match) => match[1]);
+  const ruleIds = [...ruleText.matchAll(/^\s*(?:"([^"]+)"|([a-z0-9]+)):\s*\{\s*$/gmu)]
+    .map((match) => match[1] || match[2])
+    .filter((id) => id && !["name", "modTypes", "detect", "install"].includes(id));
   const namedAdapters = {
     baldursGate3Adapter: "baldursgate3",
     blackWukongAdapter: "blackwukong",
@@ -31,7 +38,7 @@ function getExplicitAdapterIds() {
     .filter(([adapterName]) => text.includes(adapterName))
     .map(([, presetId]) => presetId);
 
-  return [...new Set([...factoryIds, ...namedIds])].sort();
+  return [...new Set([...factoryIds, ...engineIds, ...ruleIds, ...namedIds])].sort();
 }
 
 const presets = loadPresets();

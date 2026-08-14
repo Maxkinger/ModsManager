@@ -1,6 +1,8 @@
 import * as electron from "electron";
 import AdmZip from "adm-zip";
+import { ProxyAgent } from "undici";
 import { spawn } from "node:child_process";
+import { createHash, createHmac, randomUUID } from "node:crypto";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { existsSync, readFileSync } from "node:fs";
@@ -11,6 +13,7 @@ import {
   open,
   readdir,
   readFile,
+  rename,
   rm,
   symlink,
   stat,
@@ -45,6 +48,42 @@ const NEXUS_API_URL = "https://api.nexusmods.com";
 const NXM_PROTOCOL = "nxm";
 let mainWindow: electron.BrowserWindow | null = null;
 const pendingNxmUrls: string[] = [];
+const downloadControllers = new Map<string, AbortController>();
+const proxyAgents = new Map<string, ProxyAgent>();
+let translationQueue = Promise.resolve();
+
+function normalizeProxyUrl(proxyUrl = "") {
+  const value = proxyUrl.trim();
+  if (!value) return "";
+
+  if (/^(http|https|socks|socks4|socks5):\/\//iu.test(value)) {
+    return value;
+  }
+
+  return `http://${value}`;
+}
+
+function proxyAgent(proxyUrl = "") {
+  const normalized = normalizeProxyUrl(proxyUrl);
+  if (!normalized) return undefined;
+
+  const existing = proxyAgents.get(normalized);
+  if (existing) return existing;
+
+  const agent = new ProxyAgent(normalized);
+  proxyAgents.set(normalized, agent);
+  return agent;
+}
+
+function fetchWithProxy(input: Parameters<typeof fetch>[0], init: RequestInit & { proxyUrl?: string } = {}) {
+  const { proxyUrl, ...requestInit } = init;
+  const dispatcher = proxyAgent(proxyUrl);
+
+  return fetch(input, {
+    ...requestInit,
+    ...(dispatcher ? { dispatcher } : {})
+  } as RequestInit & { dispatcher?: ProxyAgent });
+}
 
 function getResourcePath(fileName: string) {
   return isDev
@@ -142,6 +181,21 @@ function dispatchNxmUrl(url: string) {
   pendingNxmUrls.push(url);
 }
 
+function registerNxmProtocol() {
+  if (isDev || process.defaultApp) {
+    const appPath = electron.app.getAppPath() || process.argv[1];
+
+    if (appPath) {
+      electron.app.setAsDefaultProtocolClient(NXM_PROTOCOL, process.execPath, [
+        resolve(appPath)
+      ]);
+      return;
+    }
+  }
+
+  electron.app.setAsDefaultProtocolClient(NXM_PROTOCOL);
+}
+
 async function ensureJsonFile<T>(fileName: string, fallback: T) {
   const appData = join(electron.app.getPath("userData"), "data");
   const filePath = join(appData, fileName);
@@ -191,6 +245,35 @@ function safeJoin(rootPath: string, ...paths: string[]) {
   return target;
 }
 
+type InstallTargetScope = "game" | "documents" | "appData";
+
+function normalizeTargetScope(scope: unknown): InstallTargetScope {
+  return scope === "documents" || scope === "appData" ? scope : "game";
+}
+
+function getTargetScopeRoot(gamePath: string, scope: InstallTargetScope) {
+  switch (scope) {
+    case "documents":
+      return electron.app.getPath("documents");
+    case "appData":
+      return dirname(electron.app.getPath("appData"));
+    case "game":
+    default:
+      return gamePath;
+  }
+}
+
+function formatScopedFile(scope: InstallTargetScope, file: string) {
+  return scope === "game" ? file : `${scope}:${file}`;
+}
+
+function parseScopedFile(file: string): { scope: InstallTargetScope; path: string } {
+  const match = file.match(/^(documents|appData):(.+)$/u);
+  return match
+    ? { scope: match[1] as InstallTargetScope, path: match[2] }
+    : { scope: "game", path: file };
+}
+
 function runProcess(command: string, args: string[]) {
   return new Promise<string>((resolveOutput, reject) => {
     const child = spawn(command, args, {
@@ -210,6 +293,97 @@ function runProcess(command: string, args: string[]) {
       }
     });
   });
+}
+
+function toPowerShellLiteral(value: string) {
+  return `'${value.replace(/'/gu, "''")}'`;
+}
+
+async function invokeManagedTool<T = unknown>(options: {
+  assemblyPath: string;
+  typeName: string;
+  methodName: string;
+  payload?: unknown;
+}) {
+  if (process.platform !== "win32") {
+    throw new Error("当前仅支持在 Windows 环境下调用 .NET 工具。");
+  }
+
+  if (!existsSync(options.assemblyPath)) {
+    throw new Error(`未找到托管工具：${options.assemblyPath}`);
+  }
+
+  const hasPayload = "payload" in options;
+  const payloadText = JSON.stringify(hasPayload ? options.payload : null);
+  const jsonBridgeTypeDefinition = [
+    "using System;",
+    "using System.Collections;",
+    "using System.Collections.Generic;",
+    "using System.Dynamic;",
+    "using System.Web.Script.Serialization;",
+    "public static class MayflyDynamicJsonBridge {",
+    "    public static object Parse(string json) {",
+    "        if (String.IsNullOrWhiteSpace(json)) return null;",
+    "        var serializer = new JavaScriptSerializer();",
+    "        return ToDynamic(serializer.DeserializeObject(json));",
+    "    }",
+    "    private static object ToDynamic(object value) {",
+    "        var dictionary = value as IDictionary<string, object>;",
+    "        if (dictionary != null) {",
+    "            IDictionary<string, object> expando = new ExpandoObject();",
+    "            foreach (var pair in dictionary) expando[pair.Key] = ToDynamic(pair.Value);",
+    "            return (ExpandoObject)expando;",
+    "        }",
+    "        var list = value as ArrayList;",
+    "        if (list != null) {",
+    "            var result = new List<object>();",
+    "            foreach (var item in list) result.Add(ToDynamic(item));",
+    "            return result;",
+    "        }",
+    "        return value;",
+    "    }",
+    "}"
+  ].join("\n");
+  const script = [
+    "$ErrorActionPreference = 'Stop'",
+    "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+    `$assemblyPath = ${toPowerShellLiteral(options.assemblyPath)}`,
+    `$typeName = ${toPowerShellLiteral(options.typeName)}`,
+    `$methodName = ${toPowerShellLiteral(options.methodName)}`,
+    `$payloadText = ${toPowerShellLiteral(payloadText)}`,
+    `$hasPayload = ${toPowerShellLiteral(hasPayload ? "1" : "0")}`,
+    `$jsonBridgeTypeDefinition = ${toPowerShellLiteral(jsonBridgeTypeDefinition)}`,
+    "if (-not ('MayflyDynamicJsonBridge' -as [type])) { Add-Type -ReferencedAssemblies 'System.Web.Extensions' -TypeDefinition $jsonBridgeTypeDefinition }",
+    "$assembly = [Reflection.Assembly]::LoadFrom($assemblyPath)",
+    "$type = $assembly.GetType($typeName, $true)",
+    "$bindingFlags = [Reflection.BindingFlags]'Public, NonPublic, Instance, Static, DeclaredOnly'",
+    "$expectedParameterCount = if ($hasPayload -eq '1') { 1 } else { 0 }",
+    "$methodCandidates = $type.GetMethods($bindingFlags) | Where-Object { $_.Name -eq $methodName }",
+    "$method = $methodCandidates | Where-Object { $_.GetParameters().Length -eq $expectedParameterCount } | Select-Object -First 1",
+    "if ($null -eq $method -and $expectedParameterCount -eq 0) { $method = $methodCandidates | Where-Object { $_.GetParameters().Length -eq 1 } | Select-Object -First 1 }",
+    "if ($null -eq $method) { throw \"未找到方法: $typeName::$methodName\" }",
+    "$payload = $null",
+    "if ($hasPayload -eq '1') { $payload = [MayflyDynamicJsonBridge]::Parse($payloadText) }",
+    "$instance = if ($method.IsStatic) { $null } else { [Activator]::CreateInstance($type, $true) }",
+    "$parameterCount = $method.GetParameters().Length",
+    "if ($parameterCount -gt 1) { throw \"暂不支持调用多参数方法: $typeName::$methodName\" }",
+    "$parameters = New-Object object[] $parameterCount",
+    "if ($parameterCount -eq 1) { $parameters[0] = $payload }",
+    "$result = $method.Invoke($instance, $parameters)",
+    "if ($result -is [System.Threading.Tasks.Task]) { $result.GetAwaiter().GetResult() | Out-Null; $resultType = $result.GetType(); if ($resultType.IsGenericType) { $result = $resultType.GetProperty('Result').GetValue($result) } else { $result = $null } }",
+    "[Console]::Write((ConvertTo-Json -Depth 100 -Compress -InputObject $result))"
+  ].join("\n");
+  const raw = await runProcess("powershell", [
+    "-NoLogo",
+    "-NoProfile",
+    "-NonInteractive",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-Command",
+    script
+  ]);
+
+  return (raw.trim() ? JSON.parse(raw) : null) as T;
 }
 
 async function extractWith7za(sourcePath: string, targetPath: string) {
@@ -342,6 +516,566 @@ async function readJsonResponse<T>(response: Response, fallbackMessage: string) 
   return payload as T;
 }
 
+function sleep(ms: number) {
+  return new Promise((resolveSleep) => {
+    setTimeout(resolveSleep, ms);
+  });
+}
+
+function splitTextForTranslation(text: string, maxLength = 1800) {
+  const normalized = text.replace(/\r\n/g, "\n").trim();
+  if (!normalized) return [];
+
+  const chunks: string[] = [];
+  let buffer = "";
+  const parts = normalized.split(/(\n{2,}|[。！？.!?]\s+|\n)/u);
+
+  for (const part of parts) {
+    if (!part) continue;
+
+    if ((buffer + part).length <= maxLength) {
+      buffer += part;
+      continue;
+    }
+
+    if (buffer.trim()) {
+      chunks.push(buffer.trim());
+      buffer = "";
+    }
+
+    if (part.length <= maxLength) {
+      buffer = part;
+      continue;
+    }
+
+    for (let index = 0; index < part.length; index += maxLength) {
+      chunks.push(part.slice(index, index + maxLength).trim());
+    }
+  }
+
+  if (buffer.trim()) {
+    chunks.push(buffer.trim());
+  }
+
+  return chunks;
+}
+
+function parseGoogleGtxPayload(payload: unknown) {
+  if (!Array.isArray(payload)) return "";
+  const sentences = Array.isArray(payload[0]) ? payload[0] : [];
+
+  return sentences
+    .map((item) => Array.isArray(item) && typeof item[0] === "string" ? item[0] : "")
+    .join("")
+    .trim();
+}
+
+function requireTranslationSecret(value: string | undefined, label: string) {
+  const normalized = String(value || "").trim();
+  if (!normalized) {
+    throw new Error(`请先在设置里填写${label}。`);
+  }
+
+  return normalized;
+}
+
+async function translateGoogleGtxText(options: {
+  text: string;
+  targetLang: "zh-CN";
+  sourceLang?: string;
+  proxyUrl?: string;
+}) {
+  const chunks = splitTextForTranslation(options.text);
+  if (chunks.length === 0) return "";
+
+  const translated: string[] = [];
+
+  for (const chunk of chunks) {
+    const url = new URL("https://translate.googleapis.com/translate_a/single");
+    url.searchParams.set("client", "gtx");
+    url.searchParams.set("sl", options.sourceLang?.trim() || "auto");
+    url.searchParams.set("tl", options.targetLang);
+    url.searchParams.set("dt", "t");
+    url.searchParams.set("q", chunk);
+
+    const response = await fetchWithProxy(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json"
+      },
+      proxyUrl: options.proxyUrl
+    });
+
+    if (response.status === 429) {
+      throw new Error("翻译请求过快，Google 免费接口返回 429，请稍后再试。");
+    }
+
+    if (!response.ok) {
+      throw new Error(`Google 免费翻译接口请求失败：HTTP ${response.status}`);
+    }
+
+    const payload = await response.json().catch(() => null);
+    const text = parseGoogleGtxPayload(payload);
+
+    if (!text) {
+      throw new Error("Google 免费翻译接口没有返回有效译文。");
+    }
+
+    translated.push(text);
+    await sleep(350);
+  }
+
+  return translated.join("\n\n");
+}
+
+async function translateBaiduText(options: {
+  text: string;
+  appId?: string;
+  secret?: string;
+  proxyUrl?: string;
+}) {
+  const appId = requireTranslationSecret(options.appId, "百度翻译 AppID");
+  const secret = requireTranslationSecret(options.secret, "百度翻译密钥");
+  const chunks = splitTextForTranslation(options.text, 1500);
+  const translated: string[] = [];
+
+  for (const chunk of chunks) {
+    const salt = randomUUID().replace(/-/g, "");
+    const sign = createHash("md5").update(`${appId}${chunk}${salt}${secret}`).digest("hex");
+    const body = new URLSearchParams({
+      q: chunk,
+      from: "auto",
+      to: "zh",
+      appid: appId,
+      salt,
+      sign
+    });
+    const response = await fetchWithProxy("https://api.fanyi.baidu.com/api/trans/vip/translate", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body,
+      proxyUrl: options.proxyUrl
+    });
+    const payload = await response.json().catch(() => ({})) as {
+      error_code?: string;
+      error_msg?: string;
+      trans_result?: Array<{ dst?: string }>;
+    };
+
+    if (!response.ok || payload.error_code) {
+      throw new Error(payload.error_msg || `百度翻译请求失败：${payload.error_code || response.status}`);
+    }
+
+    const text = payload.trans_result?.map((item) => item.dst || "").join("\n").trim();
+    if (!text) {
+      throw new Error("百度翻译没有返回有效译文。");
+    }
+
+    translated.push(text);
+    await sleep(350);
+  }
+
+  return translated.join("\n\n");
+}
+
+function truncateYoudaoText(text: string) {
+  return text.length <= 20
+    ? text
+    : `${text.slice(0, 10)}${text.length}${text.slice(-10)}`;
+}
+
+async function translateYoudaoText(options: {
+  text: string;
+  appKey?: string;
+  secret?: string;
+  proxyUrl?: string;
+}) {
+  const appKey = requireTranslationSecret(options.appKey, "有道智云应用 ID");
+  const secret = requireTranslationSecret(options.secret, "有道智云应用密钥");
+  const chunks = splitTextForTranslation(options.text, 1500);
+  const translated: string[] = [];
+
+  for (const chunk of chunks) {
+    const salt = randomUUID();
+    const curtime = String(Math.floor(Date.now() / 1000));
+    const signText = `${appKey}${truncateYoudaoText(chunk)}${salt}${curtime}${secret}`;
+    const sign = createHash("sha256").update(signText).digest("hex");
+    const body = new URLSearchParams({
+      q: chunk,
+      from: "auto",
+      to: "zh-CHS",
+      appKey,
+      salt,
+      sign,
+      signType: "v3",
+      curtime
+    });
+    const response = await fetchWithProxy("https://openapi.youdao.com/api", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body,
+      proxyUrl: options.proxyUrl
+    });
+    const payload = await response.json().catch(() => ({})) as {
+      errorCode?: string;
+      translation?: string[];
+      l?: string;
+    };
+
+    if (!response.ok || payload.errorCode !== "0") {
+      throw new Error(`有道翻译请求失败：${payload.errorCode || response.status}`);
+    }
+
+    const text = payload.translation?.join("\n").trim();
+    if (!text) {
+      throw new Error("有道翻译没有返回有效译文。");
+    }
+
+    translated.push(text);
+    await sleep(350);
+  }
+
+  return translated.join("\n\n");
+}
+
+function sha256Hex(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function hmacSha256(key: Buffer | string, value: string) {
+  return createHmac("sha256", key).update(value).digest();
+}
+
+function tencentDate(timestamp: number) {
+  return new Date(timestamp * 1000).toISOString().slice(0, 10);
+}
+
+function volcengineXDate(date = new Date()) {
+  return date.toISOString().replace(/[:-]|\.\d{3}/gu, "");
+}
+
+function volcengineShortDate(xDate: string) {
+  return xDate.slice(0, 8);
+}
+
+function volcengineCanonicalQuery(params: Record<string, string>) {
+  return Object.entries(params)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join("&");
+}
+
+function volcengineSigningKey(secretAccessKey: string, date: string, region: string, service: string) {
+  const dateKey = hmacSha256(secretAccessKey, date);
+  const regionKey = hmacSha256(dateKey, region);
+  const serviceKey = hmacSha256(regionKey, service);
+  return hmacSha256(serviceKey, "request");
+}
+
+function createVolcengineAuthorization(options: {
+  accessKeyId: string;
+  secretAccessKey: string;
+  region: string;
+  service: string;
+  host: string;
+  method: string;
+  path: string;
+  query: string;
+  payload: string;
+  xDate: string;
+}) {
+  const payloadHash = sha256Hex(options.payload);
+  const shortDate = volcengineShortDate(options.xDate);
+  const canonicalHeaders = [
+    "content-type:application/json",
+    `host:${options.host}`,
+    `x-content-sha256:${payloadHash}`,
+    `x-date:${options.xDate}`
+  ].join("\n") + "\n";
+  const signedHeaders = "content-type;host;x-content-sha256;x-date";
+  const canonicalRequest = [
+    options.method,
+    options.path,
+    options.query,
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash
+  ].join("\n");
+  const credentialScope = `${shortDate}/${options.region}/${options.service}/request`;
+  const stringToSign = [
+    "HMAC-SHA256",
+    options.xDate,
+    credentialScope,
+    sha256Hex(canonicalRequest)
+  ].join("\n");
+  const signature = createHmac("sha256", volcengineSigningKey(
+    options.secretAccessKey,
+    shortDate,
+    options.region,
+    options.service
+  )).update(stringToSign).digest("hex");
+
+  return {
+    authorization: `HMAC-SHA256 Credential=${options.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
+    payloadHash
+  };
+}
+
+function groupVolcengineTextList(chunks: string[]) {
+  const groups: string[][] = [];
+  let group: string[] = [];
+  let totalLength = 0;
+
+  for (const chunk of chunks) {
+    if (group.length >= 16 || totalLength + chunk.length > 4800) {
+      groups.push(group);
+      group = [];
+      totalLength = 0;
+    }
+
+    group.push(chunk);
+    totalLength += chunk.length;
+  }
+
+  if (group.length > 0) {
+    groups.push(group);
+  }
+
+  return groups;
+}
+
+async function translateTencentText(options: {
+  text: string;
+  secretId?: string;
+  secretKey?: string;
+  region?: string;
+  proxyUrl?: string;
+}) {
+  const secretId = requireTranslationSecret(options.secretId, "腾讯云 SecretId");
+  const secretKey = requireTranslationSecret(options.secretKey, "腾讯云 SecretKey");
+  const region = options.region?.trim() || "ap-guangzhou";
+  const chunks = splitTextForTranslation(options.text, 1800);
+  const translated: string[] = [];
+
+  for (const chunk of chunks) {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const payload = JSON.stringify({
+      SourceText: chunk,
+      Source: "auto",
+      Target: "zh",
+      ProjectId: 0
+    });
+    const canonicalHeaders = "content-type:application/json; charset=utf-8\nhost:tmt.tencentcloudapi.com\n";
+    const signedHeaders = "content-type;host";
+    const canonicalRequest = [
+      "POST",
+      "/",
+      "",
+      canonicalHeaders,
+      signedHeaders,
+      sha256Hex(payload)
+    ].join("\n");
+    const date = tencentDate(timestamp);
+    const credentialScope = `${date}/tmt/tc3_request`;
+    const stringToSign = [
+      "TC3-HMAC-SHA256",
+      String(timestamp),
+      credentialScope,
+      sha256Hex(canonicalRequest)
+    ].join("\n");
+    const secretDate = hmacSha256(`TC3${secretKey}`, date);
+    const secretService = hmacSha256(secretDate, "tmt");
+    const secretSigning = hmacSha256(secretService, "tc3_request");
+    const signature = createHmac("sha256", secretSigning).update(stringToSign).digest("hex");
+    const authorization = `TC3-HMAC-SHA256 Credential=${secretId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+    const response = await fetchWithProxy("https://tmt.tencentcloudapi.com", {
+      method: "POST",
+      headers: {
+        Authorization: authorization,
+        "Content-Type": "application/json; charset=utf-8",
+        Host: "tmt.tencentcloudapi.com",
+        "X-TC-Action": "TextTranslate",
+        "X-TC-Timestamp": String(timestamp),
+        "X-TC-Version": "2018-03-21",
+        "X-TC-Region": region
+      },
+      body: payload,
+      proxyUrl: options.proxyUrl
+    });
+    const result = await response.json().catch(() => ({})) as {
+      Response?: {
+        TargetText?: string;
+        Error?: {
+          Code?: string;
+          Message?: string;
+        };
+      };
+    };
+    const error = result.Response?.Error;
+
+    if (!response.ok || error) {
+      throw new Error(error?.Message || `腾讯云翻译请求失败：${error?.Code || response.status}`);
+    }
+
+    const text = result.Response?.TargetText?.trim();
+    if (!text) {
+      throw new Error("腾讯云翻译没有返回有效译文。");
+    }
+
+    translated.push(text);
+    await sleep(350);
+  }
+
+  return translated.join("\n\n");
+}
+
+async function translateVolcengineText(options: {
+  text: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  region?: string;
+  proxyUrl?: string;
+}) {
+  const accessKeyId = requireTranslationSecret(options.accessKeyId, "火山引擎 AccessKey ID");
+  const secretAccessKey = requireTranslationSecret(options.secretAccessKey, "火山引擎 Secret AccessKey");
+  const region = options.region?.trim() || "cn-north-1";
+  const host = "translate.volcengineapi.com";
+  const service = "translate";
+  const query = volcengineCanonicalQuery({
+    Action: "TranslateText",
+    Version: "2020-06-01"
+  });
+  const chunks = splitTextForTranslation(options.text, 4500);
+  const translated: string[] = [];
+
+  for (const textList of groupVolcengineTextList(chunks)) {
+    const payload = JSON.stringify({
+      TargetLanguage: "zh",
+      TextList: textList
+    });
+    const xDate = volcengineXDate();
+    const signed = createVolcengineAuthorization({
+      accessKeyId,
+      secretAccessKey,
+      region,
+      service,
+      host,
+      method: "POST",
+      path: "/",
+      query,
+      payload,
+      xDate
+    });
+    const response = await fetchWithProxy(`https://${host}/?${query}`, {
+      method: "POST",
+      headers: {
+        Authorization: signed.authorization,
+        "Content-Type": "application/json",
+        Host: host,
+        "X-Content-Sha256": signed.payloadHash,
+        "X-Date": xDate
+      },
+      body: payload,
+      proxyUrl: options.proxyUrl
+    });
+    const result = await response.json().catch(() => ({})) as {
+      TranslationList?: Array<{ Translation?: string; DetectedSourceLanguage?: string }>;
+      ResponseMetadata?: { Error?: { Code?: string; Message?: string } };
+      ResponseMetaData?: { Error?: { Code?: string; Message?: string } };
+    };
+    const error = result.ResponseMetadata?.Error ?? result.ResponseMetaData?.Error;
+
+    if (!response.ok || error) {
+      throw new Error(error?.Message || `火山引擎翻译请求失败：${error?.Code || response.status}`);
+    }
+
+    const texts = result.TranslationList?.map((item) => item.Translation?.trim() || "").filter(Boolean) ?? [];
+    if (texts.length === 0) {
+      throw new Error("火山引擎翻译没有返回有效译文。");
+    }
+
+    translated.push(...texts);
+    await sleep(250);
+  }
+
+  return translated.join("\n\n");
+}
+
+async function translateTextByProvider(options: {
+  text: string;
+  provider?: string;
+  targetLang: "zh-CN";
+  sourceLang?: string;
+  proxyUrl?: string;
+  baiduAppId?: string;
+  baiduSecret?: string;
+  youdaoAppKey?: string;
+  youdaoSecret?: string;
+  tencentSecretId?: string;
+  tencentSecretKey?: string;
+  tencentRegion?: string;
+  volcengineAccessKeyId?: string;
+  volcengineSecretAccessKey?: string;
+  volcengineRegion?: string;
+}) {
+  switch (options.provider) {
+    case "baidu":
+      return translateBaiduText({
+        text: options.text,
+        appId: options.baiduAppId,
+        secret: options.baiduSecret,
+        proxyUrl: options.proxyUrl
+      });
+    case "youdao":
+      return translateYoudaoText({
+        text: options.text,
+        appKey: options.youdaoAppKey,
+        secret: options.youdaoSecret,
+        proxyUrl: options.proxyUrl
+      });
+    case "tencent":
+      return translateTencentText({
+        text: options.text,
+        secretId: options.tencentSecretId,
+        secretKey: options.tencentSecretKey,
+        region: options.tencentRegion,
+        proxyUrl: options.proxyUrl
+      });
+    case "volcengine":
+      return translateVolcengineText({
+        text: options.text,
+        accessKeyId: options.volcengineAccessKeyId,
+        secretAccessKey: options.volcengineSecretAccessKey,
+        region: options.volcengineRegion,
+        proxyUrl: options.proxyUrl
+      });
+    case "google-gtx":
+    default:
+      return translateGoogleGtxText({
+        text: options.text,
+        targetLang: options.targetLang,
+        sourceLang: options.sourceLang,
+        proxyUrl: options.proxyUrl
+      });
+  }
+}
+
+function enqueueTranslation<T>(task: () => Promise<T>) {
+  const queued = translationQueue.then(task, task);
+  translationQueue = queued.then(
+    () => undefined,
+    () => undefined
+  );
+
+  return queued;
+}
+
 function normalizeNexusFile(file: Record<string, unknown>, gameDomain: string, modId: string) {
   const fileId = String(file.file_id ?? "");
   const sizeKb = Number(file.size_kb ?? 0);
@@ -378,10 +1112,59 @@ function normalizeNexusFiles(files: Array<Record<string, unknown>>, gameDomain: 
     .map((file) => normalizeNexusFile(file, gameDomain, modId));
 }
 
-function normalizeNexusDetail(mod: Record<string, unknown>, files: Array<Record<string, unknown>>, gameDomain: string) {
+function normalizeNexusImage(image: Record<string, unknown>, index: number) {
+  const imageId = String(image.id ?? image.image_id ?? index);
+  const thumbnailUrl = firstString(
+    image.thumbnail_url,
+    image.thumbnail_uri,
+    image.thumbnail,
+    image.thumb,
+    image.small_url,
+    image.small_uri,
+    image.url,
+    image.uri
+  );
+  const imageUrl = firstString(
+    image.original_url,
+    image.original_uri,
+    image.image_url,
+    image.image_uri,
+    image.large_url,
+    image.large_uri,
+    image.url,
+    image.uri,
+    thumbnailUrl
+  );
+
+  return {
+    id: imageId,
+    title: firstString(image.name, image.title, image.description) || `image-${imageId}`,
+    thumbnailUrl,
+    imageUrl
+  };
+}
+
+function normalizeNexusImages(images: Array<Record<string, unknown>>) {
+  return images
+    .map((image, index) => normalizeNexusImage(image, index))
+    .filter((image) => image.thumbnailUrl || image.imageUrl);
+}
+
+function normalizeNexusDetail(
+  mod: Record<string, unknown>,
+  files: Array<Record<string, unknown>>,
+  images: Array<Record<string, unknown>>,
+  gameDomain: string
+) {
   const modId = String(mod.mod_id ?? "");
   const normalizedFiles = normalizeNexusFiles(files, gameDomain, modId);
+  const normalizedImages = normalizeNexusImages(images);
   const user = mod.user && typeof mod.user === "object" ? mod.user as Record<string, unknown> : {};
+  const cover = normalizeNexusText(mod.picture_url) || normalizedImages[0]?.imageUrl || normalizedImages[0]?.thumbnailUrl || "";
+  const category = mod.category && typeof mod.category === "object" ? mod.category as Record<string, unknown> : {};
+  const categories = [
+    firstString(mod.category_name, mod.categoryName, category.name, category.category_name)
+  ].filter(Boolean);
 
   return {
     id: modId,
@@ -390,10 +1173,10 @@ function normalizeNexusDetail(mod: Record<string, unknown>, files: Array<Record<
     author: normalizeNexusText(mod.author) || normalizeNexusText(mod.uploaded_by) || normalizeNexusText(user.name),
     version: normalizeNexusText(mod.version),
     website: buildNexusWebsite(gameDomain, modId),
-    cover: normalizeNexusText(mod.picture_url),
+    cover,
     downloads: Math.max(0, Number(mod.mod_downloads ?? 0)),
     likes: Math.max(0, Number(mod.endorsement_count ?? 0)),
-    categories: [],
+    categories,
     createdAt: normalizeNexusText(mod.created_time),
     updatedAt: normalizeNexusText(mod.updated_time),
     nsfw: Boolean(mod.contains_adult_content),
@@ -401,6 +1184,7 @@ function normalizeNexusDetail(mod: Record<string, unknown>, files: Array<Record<
     primaryFile: normalizedFiles[0] ?? null,
     description: normalizeNexusText(mod.description) || normalizeNexusText(mod.summary),
     descriptionFormat: normalizeNexusText(mod.description) ? "html" : "text",
+    images: normalizedImages,
     files: normalizedFiles
   };
 }
@@ -447,6 +1231,25 @@ function stringArray(value: unknown): string[] {
   return [];
 }
 
+function smapiDependencyIds(value: unknown) {
+  if (!Array.isArray(value)) {
+    return stringArray(value);
+  }
+
+  return value
+    .map((item) => {
+      if (typeof item === "string") return item.trim();
+
+      if (item && typeof item === "object") {
+        const dependency = item as Record<string, unknown>;
+        return firstString(dependency.UniqueID, dependency.uniqueId, dependency.id, dependency.name);
+      }
+
+      return "";
+    })
+    .filter(Boolean);
+}
+
 async function readManifest(rootPath: string, files: string[]) {
   const manifestPath = files.find((file) => basename(file).toLowerCase() === "manifest.json");
   if (!manifestPath) {
@@ -456,19 +1259,27 @@ async function readManifest(rootPath: string, files: string[]) {
   try {
     const raw = await readFile(join(rootPath, manifestPath), "utf-8");
     const manifest = JSON.parse(raw) as Record<string, unknown>;
+    const contentPackFor = manifest.ContentPackFor && typeof manifest.ContentPackFor === "object"
+      ? manifest.ContentPackFor as Record<string, unknown>
+      : manifest.contentPackFor && typeof manifest.contentPackFor === "object"
+        ? manifest.contentPackFor as Record<string, unknown>
+        : {};
+    const contentPackForId = firstString(contentPackFor.UniqueID, contentPackFor.uniqueId, contentPackFor.id);
+    const dependencies = smapiDependencyIds(manifest.Dependencies ?? manifest.dependencies);
 
     return {
-      name: firstString(manifest.name, manifest.title, manifest.modName, manifest.displayName),
-      version: firstString(manifest.version, manifest.modVersion),
-      author: firstString(manifest.author, manifest.authorName, manifest.creator, manifest.owner),
-      website: firstString(manifest.website, manifest.homepage, manifest.url, manifest.nexusUrl),
-      description: firstString(manifest.description, manifest.summary),
-      tags: stringArray(manifest.tags),
-      requirements: [
+      name: firstString(manifest.Name, manifest.name, manifest.title, manifest.modName, manifest.displayName),
+      version: firstString(manifest.Version, manifest.version, manifest.modVersion),
+      author: firstString(manifest.Author, manifest.author, manifest.authorName, manifest.creator, manifest.owner),
+      website: firstString(manifest.Website, manifest.website, manifest.homepage, manifest.url, manifest.nexusUrl),
+      description: firstString(manifest.Description, manifest.description, manifest.summary),
+      tags: stringArray(manifest.Tags ?? manifest.tags),
+      requirements: [...new Set([
+        contentPackForId,
         ...stringArray(manifest.requirements),
-        ...stringArray(manifest.dependencies),
+        ...dependencies,
         ...stringArray(manifest.deps)
-      ]
+      ].filter(Boolean))]
     };
   } catch {
     return {};
@@ -525,18 +1336,21 @@ async function deleteEmptyParents(gamePath: string, startFolder: string) {
       return;
     }
 
-    await rm(current, { force: true });
+    await rm(current, { force: true, recursive: true });
     current = dirname(current);
   }
 }
 
 async function deleteRelativeFiles(gamePath: string, files: string[]) {
-  const uniqueFiles = [...new Set(files.map((file) => file.trim()).filter(Boolean))];
+  const uniqueFiles = [...new Set(files.map((file) => file.trim()).filter(Boolean))]
+    .sort((left, right) => normalizePathParts(parseScopedFile(right).path).length - normalizePathParts(parseScopedFile(left).path).length);
 
   for (const file of uniqueFiles) {
-    const target = safeJoin(gamePath, file);
-    await rm(target, { force: true });
-    await deleteEmptyParents(gamePath, dirname(target));
+    const scoped = parseScopedFile(file);
+    const targetRoot = getTargetScopeRoot(gamePath, scoped.scope);
+    const target = safeJoin(targetRoot, scoped.path);
+    await rm(target, { force: true, recursive: true });
+    await deleteEmptyParents(targetRoot, dirname(target));
   }
 }
 
@@ -675,6 +1489,21 @@ async function planFolderStrategy(options: {
   return uniqueRelativeTargets(options.gamePath, targets);
 }
 
+async function planFolderRootStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  targetFolderName?: string;
+}) {
+  const targetRoot = safeJoin(
+    options.gamePath,
+    options.installPath || ".",
+    sanitizeFileName(options.targetFolderName || basename(options.modRoot))
+  );
+
+  return uniqueRelativeTargets(options.gamePath, [targetRoot]);
+}
+
 async function planFileStrategy(options: {
   modRoot: string;
   gamePath: string;
@@ -731,6 +1560,29 @@ async function planFileSiblingStrategy(options: {
     siblingFiles
       .filter((file) => !pass.has(basename(file).toLowerCase()) && !isPassFile(file))
       .map((file) => join(targetRoot, file))
+  );
+}
+
+async function planFileOnlyStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  fileName: string;
+  isExtname?: boolean;
+}) {
+  const files = await listFiles(options.modRoot);
+  const matched = files.filter((file) =>
+    options.isExtname
+      ? getExtension(file) === options.fileName.replace(/^\./, "").toLowerCase()
+      : compareFileName(file, options.fileName)
+  );
+  const targetRoot = safeJoin(options.gamePath, options.installPath || ".");
+
+  return uniqueRelativeTargets(
+    options.gamePath,
+    matched
+      .filter((file) => !isPassFile(file))
+      .map((file) => join(targetRoot, basename(file)))
   );
 }
 
@@ -914,6 +1766,50 @@ async function applyFolderStrategy(options: {
   return deployedFiles;
 }
 
+async function applyFolderRootStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  targetFolderName?: string;
+  isInstall: boolean;
+  useSymlink?: boolean;
+}): Promise<string[]> {
+  const target = safeJoin(
+    options.gamePath,
+    options.installPath || ".",
+    sanitizeFileName(options.targetFolderName || basename(options.modRoot))
+  );
+  const deployedFolder = relative(options.gamePath, target).replace(/\\/g, "/");
+
+  if (options.isInstall) {
+    if (existsSync(target)) {
+      if (!options.useSymlink) {
+        throw new Error(`目标目录已存在，已阻止覆盖：${deployedFolder}`);
+      }
+
+      await rm(target, { recursive: true, force: true });
+    }
+
+    await mkdir(dirname(target), { recursive: true });
+
+    if (options.useSymlink) {
+      await symlink(options.modRoot, target, process.platform === "win32" ? "junction" : "dir");
+    } else {
+      await cp(options.modRoot, target, {
+        recursive: true,
+        force: true,
+        errorOnExist: false
+      });
+    }
+
+    return [deployedFolder];
+  }
+
+  await rm(target, { recursive: true, force: true });
+  await deleteEmptyParents(options.gamePath, dirname(target));
+  return [];
+}
+
 async function applyFileStrategy(options: {
   modRoot: string;
   gamePath: string;
@@ -990,6 +1886,39 @@ async function applyFileSiblingStrategy(options: {
     deployedFiles.push(...(await copyOrRemoveFile(
       join(sourceFolder, file),
       join(targetRoot, file),
+      options.isInstall,
+      options.gamePath,
+      options.useSymlink
+    )));
+  }
+
+  return deployedFiles;
+}
+
+async function applyFileOnlyStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  fileName: string;
+  isExtname?: boolean;
+  isInstall: boolean;
+  useSymlink?: boolean;
+}): Promise<string[]> {
+  const files = await listFiles(options.modRoot);
+  const matched = files.filter((file) =>
+    options.isExtname
+      ? getExtension(file) === options.fileName.replace(/^\./, "").toLowerCase()
+      : compareFileName(file, options.fileName)
+  );
+  const targetRoot = safeJoin(options.gamePath, options.installPath || ".");
+  const deployedFiles: string[] = [];
+
+  for (const file of matched) {
+    if (isPassFile(file)) continue;
+
+    deployedFiles.push(...(await copyOrRemoveFile(
+      join(options.modRoot, file),
+      join(targetRoot, basename(file)),
       options.isInstall,
       options.gamePath,
       options.useSymlink
@@ -1106,6 +2035,1117 @@ async function applyFileIntoParentFolderStrategy(options: {
   }
 
   return deployedFiles;
+}
+
+function localAppDataPath(...parts: string[]) {
+  return join(dirname(electron.app.getPath("appData")), "Local", ...parts);
+}
+
+function documentsPath(...parts: string[]) {
+  return join(electron.app.getPath("documents"), ...parts);
+}
+
+async function readTextFile(filePath: string, fallback = "") {
+  try {
+    return await readFile(filePath, "utf-8");
+  } catch {
+    return fallback;
+  }
+}
+
+async function writeTextFile(filePath: string, value: string) {
+  await mkdir(dirname(filePath), { recursive: true });
+  await writeFile(filePath, value, "utf-8");
+}
+
+async function ensureArchiveIni(options: {
+  documentsGameFolder: string;
+  iniFileName: string;
+}) {
+  const iniPath = documentsPath("My Games", options.documentsGameFolder, options.iniFileName);
+  const raw = await readTextFile(iniPath);
+  const lines = raw.split(/\r?\n/u);
+  const nextLines: string[] = [];
+  let inArchive = false;
+  let sawArchive = false;
+  let sawInvalidate = false;
+  let sawResourceDirs = false;
+
+  for (const line of lines) {
+    const section = line.match(/^\s*\[([^\]]+)\]\s*$/u)?.[1]?.trim().toLowerCase();
+
+    if (section) {
+      if (inArchive) {
+        if (!sawInvalidate) nextLines.push("bInvalidateOlderFiles=1");
+        if (!sawResourceDirs) nextLines.push("sResourceDataDirsFinal=");
+      }
+
+      inArchive = section === "archive";
+      sawArchive ||= inArchive;
+      sawInvalidate = false;
+      sawResourceDirs = false;
+      nextLines.push(line);
+      continue;
+    }
+
+    if (inArchive && /^\s*bInvalidateOlderFiles\s*=/iu.test(line)) {
+      nextLines.push("bInvalidateOlderFiles=1");
+      sawInvalidate = true;
+      continue;
+    }
+
+    if (inArchive && /^\s*sResourceDataDirsFinal\s*=/iu.test(line)) {
+      nextLines.push("sResourceDataDirsFinal=");
+      sawResourceDirs = true;
+      continue;
+    }
+
+    nextLines.push(line);
+  }
+
+  if (inArchive) {
+    if (!sawInvalidate) nextLines.push("bInvalidateOlderFiles=1");
+    if (!sawResourceDirs) nextLines.push("sResourceDataDirsFinal=");
+  }
+
+  if (!sawArchive) {
+    if (nextLines.some((line) => line.trim())) nextLines.push("");
+    nextLines.push("[Archive]", "bInvalidateOlderFiles=1", "sResourceDataDirsFinal=");
+  }
+
+  await writeTextFile(iniPath, nextLines.join("\n").trimEnd() + "\n");
+}
+
+function pluginFileNames(files: string[]) {
+  return files
+    .filter((file) => ["esp", "esm", "esl"].includes(getExtension(file)))
+    .map((file) => basename(file));
+}
+
+async function updatePluginsTxt(options: {
+  localAppDataGameFolder: string;
+  files: string[];
+  isInstall: boolean;
+  header?: string;
+  starPrefix?: boolean;
+}) {
+  const names = pluginFileNames(options.files);
+  if (names.length === 0) return;
+
+  const pluginsPath = localAppDataPath(options.localAppDataGameFolder, "plugins.txt");
+  let entries = (await readTextFile(pluginsPath))
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (options.header && entries[0] !== options.header) {
+    entries = [options.header, ...entries.filter((line) => line !== options.header)];
+  }
+
+  for (const name of names) {
+    const entry = `${options.starPrefix === false ? "" : "*"}${name}`;
+    if (options.isInstall) {
+      if (!entries.includes(entry)) entries.push(entry);
+    } else {
+      entries = entries.filter((line) => line !== entry && line !== name);
+    }
+  }
+
+  await writeTextFile(pluginsPath, [...new Set(entries)].join("\n") + "\n");
+}
+
+async function updateStarfieldGeneralTestFiles(options: {
+  documentsGameFolder: string;
+  iniFileName: string;
+  files: string[];
+  isInstall: boolean;
+}) {
+  const espNames = options.files
+    .filter((file) => getExtension(file) === "esp")
+    .map((file) => basename(file));
+
+  if (espNames.length === 0) return;
+
+  const iniPath = documentsPath("My Games", options.documentsGameFolder, options.iniFileName);
+  const raw = await readTextFile(iniPath);
+  const lines = raw.split(/\r?\n/u);
+  const nextLines: string[] = [];
+  let inGeneral = false;
+  let sawGeneral = false;
+  let maxIndex = 0;
+  const remainingNames = new Set(espNames);
+
+  for (const line of lines) {
+    const section = line.match(/^\s*\[([^\]]+)\]\s*$/u)?.[1]?.trim().toLowerCase();
+
+    if (section) {
+      inGeneral = section === "general";
+      sawGeneral ||= inGeneral;
+      nextLines.push(line);
+      continue;
+    }
+
+    const testMatch = inGeneral ? line.match(/^\s*sTestFile(\d*)\s*=\s*(.+?)\s*$/iu) : null;
+    if (testMatch) {
+      const index = Number(testMatch[1] || 0);
+      maxIndex = Math.max(maxIndex, index);
+      const value = testMatch[2]?.trim() ?? "";
+
+      if (!options.isInstall && remainingNames.has(value)) {
+        remainingNames.delete(value);
+        continue;
+      }
+
+      if (options.isInstall) {
+        remainingNames.delete(value);
+      }
+    }
+
+    nextLines.push(line);
+  }
+
+  if (options.isInstall && remainingNames.size > 0) {
+    if (!sawGeneral) {
+      if (nextLines.some((line) => line.trim())) nextLines.push("");
+      nextLines.push("[General]");
+    }
+
+    for (const name of remainingNames) {
+      maxIndex += 1;
+      nextLines.push(`sTestFile${maxIndex}=${name}`);
+    }
+  }
+
+  await writeTextFile(iniPath, nextLines.join("\n").trimEnd() + "\n");
+}
+
+async function planBethesdaDataStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  folderName: string | string[];
+}) {
+  return planFolderStrategy({
+    modRoot: options.modRoot,
+    gamePath: options.gamePath,
+    installPath: options.installPath,
+    folderName: options.folderName,
+    spare: true
+  });
+}
+
+async function applyBethesdaDataStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  folderName: string | string[];
+  documentsGameFolder: string;
+  iniFileName: string;
+  localAppDataGameFolder: string;
+  pluginsHeader?: string;
+  updateGeneralTestFiles?: boolean;
+  isInstall: boolean;
+  useSymlink?: boolean;
+}) {
+  const files = await listFiles(options.modRoot);
+
+  if (options.isInstall) {
+    await ensureArchiveIni({
+      documentsGameFolder: options.documentsGameFolder,
+      iniFileName: options.iniFileName
+    });
+  }
+
+  await updatePluginsTxt({
+    localAppDataGameFolder: options.localAppDataGameFolder,
+    files,
+    isInstall: options.isInstall,
+    header: options.pluginsHeader
+  });
+
+  if (options.updateGeneralTestFiles) {
+    await updateStarfieldGeneralTestFiles({
+      documentsGameFolder: options.documentsGameFolder,
+      iniFileName: options.iniFileName,
+      files,
+      isInstall: options.isInstall
+    });
+  }
+
+  return applyFolderStrategy({
+    modRoot: options.modRoot,
+    gamePath: options.gamePath,
+    installPath: options.installPath,
+    folderName: options.folderName,
+    spare: true,
+    isInstall: options.isInstall,
+    useSymlink: options.useSymlink
+  });
+}
+
+async function planBethesdaPluginFilesStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+}) {
+  const files = await listFiles(options.modRoot);
+  const targets = files
+    .filter((file) => ["esp", "esm", "esl"].includes(getExtension(file)))
+    .map((file) => safeJoin(options.gamePath, options.installPath, basename(file)));
+
+  return uniqueRelativeTargets(options.gamePath, targets);
+}
+
+async function applyBethesdaPluginFilesStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  documentsGameFolder: string;
+  iniFileName: string;
+  localAppDataGameFolder: string;
+  pluginsHeader?: string;
+  updateGeneralTestFiles?: boolean;
+  isInstall: boolean;
+  useSymlink?: boolean;
+}) {
+  const files = await listFiles(options.modRoot);
+
+  if (options.isInstall) {
+    await ensureArchiveIni({
+      documentsGameFolder: options.documentsGameFolder,
+      iniFileName: options.iniFileName
+    });
+  }
+
+  await updatePluginsTxt({
+    localAppDataGameFolder: options.localAppDataGameFolder,
+    files,
+    isInstall: options.isInstall,
+    header: options.pluginsHeader
+  });
+
+  if (options.updateGeneralTestFiles) {
+    await updateStarfieldGeneralTestFiles({
+      documentsGameFolder: options.documentsGameFolder,
+      iniFileName: options.iniFileName,
+      files,
+      isInstall: options.isInstall
+    });
+  }
+
+  return applyFileOnlyStrategy({
+    modRoot: options.modRoot,
+    gamePath: options.gamePath,
+    installPath: options.installPath,
+    fileName: "esp",
+    isExtname: true,
+    isInstall: options.isInstall,
+    useSymlink: options.useSymlink
+  }).then(async (deployed) => [
+    ...deployed,
+    ...await applyFileOnlyStrategy({
+      modRoot: options.modRoot,
+      gamePath: options.gamePath,
+      installPath: options.installPath,
+      fileName: "esm",
+      isExtname: true,
+      isInstall: options.isInstall,
+      useSymlink: options.useSymlink
+    }),
+    ...await applyFileOnlyStrategy({
+      modRoot: options.modRoot,
+      gamePath: options.gamePath,
+      installPath: options.installPath,
+      fileName: "esl",
+      isExtname: true,
+      isInstall: options.isInstall,
+      useSymlink: options.useSymlink
+    })
+  ]);
+}
+
+async function planOblivionPluginsStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+}) {
+  return planFileSiblingStrategy({
+    modRoot: options.modRoot,
+    gamePath: options.gamePath,
+    installPath: options.installPath,
+    fileName: "esp",
+    isExtname: true
+  });
+}
+
+async function updateOblivionPluginsTxt(options: {
+  gamePath: string;
+  installPath: string;
+  files: string[];
+  isInstall: boolean;
+}) {
+  const names = pluginFileNames(options.files).filter((name) => name.toLowerCase().endsWith(".esp"));
+  if (names.length === 0) return;
+
+  const pluginsPath = safeJoin(options.gamePath, options.installPath, "Plugins.txt");
+  let entries = (await readTextFile(pluginsPath))
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  for (const name of names) {
+    if (options.isInstall) {
+      if (!entries.includes(name)) entries.push(name);
+    } else {
+      entries = entries.filter((line) => line !== name);
+    }
+  }
+
+  await writeTextFile(pluginsPath, entries.join("\n") + "\n");
+}
+
+async function applyOblivionPluginsStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  isInstall: boolean;
+  useSymlink?: boolean;
+}) {
+  const files = await listFiles(options.modRoot);
+  await updateOblivionPluginsTxt({
+    gamePath: options.gamePath,
+    installPath: options.installPath,
+    files,
+    isInstall: options.isInstall
+  });
+
+  return applyFileSiblingStrategy({
+    modRoot: options.modRoot,
+    gamePath: options.gamePath,
+    installPath: options.installPath,
+    fileName: "esp",
+    isExtname: true,
+    isInstall: options.isInstall,
+    useSymlink: options.useSymlink
+  });
+}
+
+async function ensureNoMansSkyModsEnabled(gamePath: string) {
+  const disabledFile = safeJoin(gamePath, "GAMEDATA", "PCBANKS", "DISABLEMODS.TXT");
+  const backupFile = safeJoin(gamePath, "GAMEDATA", "PCBANKS", "DISABLEMODS.TXT.bak");
+
+  if (existsSync(disabledFile)) {
+    if (existsSync(backupFile)) {
+      await rm(disabledFile, { force: true });
+    } else {
+      await rename(disabledFile, backupFile);
+    }
+  }
+}
+
+async function numberedRecordsPath(modRoot: string, listFileName: string) {
+  return join(modRoot, listFileName);
+}
+
+async function readNumberedRecords(modRoot: string, listFileName: string): Promise<Array<[string, string]>> {
+  return (await readTextFile(await numberedRecordsPath(modRoot, listFileName)))
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.split("|").slice(0, 2) as [string, string])
+    .filter((record) => record[0] && record[1]);
+}
+
+async function writeNumberedRecords(modRoot: string, listFileName: string, records: Array<[string, string]>) {
+  await writeTextFile(await numberedRecordsPath(modRoot, listFileName), records.map((record) => record.join("|")).join("\n"));
+}
+
+async function nextNumberedName(options: {
+  gamePath: string;
+  installPath: string;
+  prefix: string;
+  extension: string;
+  startIndex: number;
+  records: Array<[string, string]>;
+}) {
+  const targetRoot = safeJoin(options.gamePath, options.installPath);
+  const existing = existsSync(targetRoot)
+    ? (await readdir(targetRoot))
+      .map((file) => {
+        const match = file.match(new RegExp(`^${options.prefix}(\\d+)\\.${options.extension}$`, "iu"));
+        return match ? Number(match[1]) : 0;
+      })
+    : [];
+  const recordNumbers = options.records.map((record) => {
+    const match = record[1].match(new RegExp(`^${options.prefix}(\\d+)\\.${options.extension}$`, "iu"));
+    return match ? Number(match[1]) : 0;
+  });
+  const maxNumber = Math.max(options.startIndex - 1, ...existing, ...recordNumbers);
+
+  return `${options.prefix}${maxNumber + 1}.${options.extension}`;
+}
+
+async function planNumberedPakStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  extension: string;
+  prefix: string;
+  startIndex: number;
+  listFileName: string;
+}) {
+  const files = (await listFiles(options.modRoot)).filter((file) => getExtension(file) === options.extension);
+  const records = await readNumberedRecords(options.modRoot, options.listFileName);
+  const targets: string[] = [];
+
+  for (const file of files) {
+    const targetName = records.find((record) => record[0] === file)?.[1] ?? await nextNumberedName({
+      gamePath: options.gamePath,
+      installPath: options.installPath,
+      prefix: options.prefix,
+      extension: options.extension,
+      startIndex: options.startIndex,
+      records: [
+        ...records,
+        ...targets.map((target) => [file, basename(target)] as [string, string])
+      ]
+    });
+    targets.push(safeJoin(options.gamePath, options.installPath, targetName));
+  }
+
+  return uniqueRelativeTargets(options.gamePath, targets);
+}
+
+async function applyNumberedPakStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  extension: string;
+  prefix: string;
+  startIndex: number;
+  listFileName: string;
+  isInstall: boolean;
+  useSymlink?: boolean;
+}) {
+  const files = (await listFiles(options.modRoot)).filter((file) => getExtension(file) === options.extension);
+  let records = await readNumberedRecords(options.modRoot, options.listFileName);
+  const deployed: string[] = [];
+
+  for (const file of files) {
+    let record = records.find((item) => item[0] === file);
+
+    if (options.isInstall) {
+      if (!record) {
+        record = [file, await nextNumberedName({ ...options, records })];
+        records.push(record);
+      }
+
+      deployed.push(...await copyOrRemoveFile(
+        join(options.modRoot, file),
+        safeJoin(options.gamePath, options.installPath, record[1]),
+        true,
+        options.gamePath,
+        options.useSymlink
+      ));
+    } else if (record) {
+      await rm(safeJoin(options.gamePath, options.installPath, record[1]), { force: true });
+      records = records.filter((item) => item !== record);
+    }
+  }
+
+  await writeNumberedRecords(options.modRoot, options.listFileName, records);
+  return deployed;
+}
+
+async function readWatchDogsRecords(modRoot: string, listFileName: string): Promise<Array<[string, string, string]>> {
+  return (await readTextFile(join(modRoot, listFileName)))
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.split("|").slice(0, 3) as [string, string, string])
+    .filter((record) => record[0] && record[1] && record[2]);
+}
+
+async function writeWatchDogsRecords(modRoot: string, listFileName: string, records: Array<[string, string, string]>) {
+  await writeTextFile(join(modRoot, listFileName), records.map((record) => record.join("|")).join("\n"));
+}
+
+async function nextWatchDogsPatchName(gamePath: string, installPath: string, records: Array<[string, string, string]>) {
+  const targetRoot = safeJoin(gamePath, installPath);
+  const existing = existsSync(targetRoot)
+    ? (await readdir(targetRoot))
+      .map((file) => Number(file.match(/^patch(\d+)\.dat$/iu)?.[1] ?? 0))
+    : [];
+  const recordNumbers = records.map((record) => Number(record[2].match(/^patch(\d+)\.(dat|fat)$/iu)?.[1] ?? 0));
+  return `patch${Math.max(0, ...existing, ...recordNumbers) + 1}`;
+}
+
+async function planWatchDogsPatchStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  listFileName: string;
+}) {
+  const records = await readWatchDogsRecords(options.modRoot, options.listFileName);
+  const files = (await listFiles(options.modRoot))
+    .filter((file) => ["dat", "fat"].includes(getExtension(file)))
+    .sort((left, right) => left.localeCompare(right));
+  const targets: string[] = [];
+
+  for (const file of files) {
+    const existing = records.find((record) => record[0] === file)?.[2];
+    const patchName = existing ?? `${await nextWatchDogsPatchName(options.gamePath, options.installPath, [
+      ...records,
+      ...targets.map((target) => ["", "", basename(target)] as [string, string, string])
+    ])}.${getExtension(file)}`;
+    targets.push(safeJoin(options.gamePath, options.installPath, patchName));
+  }
+
+  return uniqueRelativeTargets(options.gamePath, targets);
+}
+
+async function applyWatchDogsPatchStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  listFileName: string;
+  isInstall: boolean;
+  useSymlink?: boolean;
+}) {
+  let records = await readWatchDogsRecords(options.modRoot, options.listFileName);
+  const files = (await listFiles(options.modRoot))
+    .filter((file) => ["dat", "fat"].includes(getExtension(file)))
+    .sort((left, right) => {
+      const leftStem = basename(left).replace(/\.(dat|fat)$/iu, "");
+      const rightStem = basename(right).replace(/\.(dat|fat)$/iu, "");
+      return leftStem.localeCompare(rightStem) || getExtension(left).localeCompare(getExtension(right));
+    });
+  const patchByStem = new Map<string, string>();
+  const deployed: string[] = [];
+
+  for (const file of files) {
+    const stem = basename(file).replace(/\.(dat|fat)$/iu, "");
+    let record = records.find((item) => item[0] === file);
+
+    if (options.isInstall) {
+      if (!record) {
+        const patchStem = patchByStem.get(stem) ?? await nextWatchDogsPatchName(options.gamePath, options.installPath, records);
+        patchByStem.set(stem, patchStem);
+        record = [file, basename(file), `${patchStem}.${getExtension(file)}`];
+        records.push(record);
+      }
+
+      deployed.push(...await copyOrRemoveFile(
+        join(options.modRoot, file),
+        safeJoin(options.gamePath, options.installPath, record[2]),
+        true,
+        options.gamePath,
+        options.useSymlink
+      ));
+    } else if (record) {
+      await rm(safeJoin(options.gamePath, options.installPath, record[2]), { force: true });
+      records = records.filter((item) => item !== record);
+    }
+  }
+
+  await writeWatchDogsRecords(options.modRoot, options.listFileName, records);
+  return deployed;
+}
+
+async function ensureMiChangShengModBin(gamePath: string) {
+  const target = safeJoin(gamePath, "本地Mod测试", "Gmm", "Mod.bin");
+  if (existsSync(target)) return;
+
+  await mkdir(dirname(target), { recursive: true });
+  await writeFile(target, Buffer.from("0001000000ffffffff", "hex"));
+}
+
+async function planMiChangShengLinkedFolderStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  rootFile: string;
+}) {
+  const files = await listFiles(options.modRoot);
+  const folders = [...new Set(files
+    .filter((file) => basename(file).toLowerCase() === options.rootFile.toLowerCase())
+    .map((file) => dirname(file))
+  )];
+
+  return uniqueRelativeTargets(
+    options.gamePath,
+    folders.map((folder) => safeJoin(options.gamePath, options.installPath, basename(folder)))
+  );
+}
+
+async function applyMiChangShengLinkedFolderStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  rootFile: string;
+  isInstall: boolean;
+}) {
+  await ensureMiChangShengModBin(options.gamePath);
+  const files = await listFiles(options.modRoot);
+  const folders = [...new Set(files
+    .filter((file) => basename(file).toLowerCase() === options.rootFile.toLowerCase())
+    .map((file) => dirname(file))
+  )];
+  const deployed: string[] = [];
+
+  for (const folder of folders) {
+    const source = join(options.modRoot, folder);
+    const target = safeJoin(options.gamePath, options.installPath, basename(folder));
+    const deployedFolder = relative(options.gamePath, target).replace(/\\/g, "/");
+
+    if (options.isInstall) {
+      if (existsSync(target)) {
+        throw new Error(`目标目录已存在，已阻止覆盖：${deployedFolder}`);
+      }
+
+      await mkdir(dirname(target), { recursive: true });
+      await symlink(source, target, process.platform === "win32" ? "junction" : "dir");
+      deployed.push(deployedFolder);
+    } else {
+      await rm(target, { recursive: true, force: true });
+      await deleteEmptyParents(options.gamePath, dirname(target));
+    }
+  }
+
+  return deployed;
+}
+
+async function applyInzoiModKitStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  isInstall: boolean;
+}) {
+  if (options.isInstall) {
+    const files = await listFiles(options.modRoot);
+    for (const file of files) {
+      if (basename(file) !== "mod_manifest.json") continue;
+      const manifestPath = join(options.modRoot, file);
+      const data = JSON.parse(await readTextFile(manifestPath, "{}")) as Record<string, unknown>;
+      data.bEnable = true;
+      await writeTextFile(manifestPath, JSON.stringify(data, null, 4));
+    }
+  }
+
+  return applyFileStrategy({
+    modRoot: options.modRoot,
+    gamePath: options.gamePath,
+    installPath: options.installPath,
+    fileName: "mod_manifest.json",
+    commonParent: false,
+    isInstall: options.isInstall
+  });
+}
+
+function escapeXmlValue(value: string) {
+  return value
+    .replace(/&/gu, "&amp;")
+    .replace(/</gu, "&lt;")
+    .replace(/>/gu, "&gt;")
+    .replace(/"/gu, "&quot;")
+    .replace(/'/gu, "&apos;");
+}
+
+function unescapeXmlValue(value: string) {
+  return value
+    .replace(/&apos;/gu, "'")
+    .replace(/&quot;/gu, "\"")
+    .replace(/&gt;/gu, ">")
+    .replace(/&lt;/gu, "<")
+    .replace(/&amp;/gu, "&");
+}
+
+function readXmlChildText(xml: string, tagName: string) {
+  const escapedTag = tagName.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const match = xml.match(new RegExp(`<${escapedTag}\\b[^>]*>([\\s\\S]*?)</${escapedTag}>`, "iu"));
+  return match ? unescapeXmlValue(match[1].trim()) : "";
+}
+
+function readXmlAttribute(xml: string, attributeName: string) {
+  const escapedAttribute = attributeName.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const match = xml.match(new RegExp(`\\b${escapedAttribute}\\s*=\\s*["']([^"']*)["']`, "iu"));
+  return match ? unescapeXmlValue(match[1].trim()) : "";
+}
+
+interface Bg3ModuleAttribute {
+  id: string;
+  type: string;
+  value: string;
+}
+
+const BG3_DEFAULT_MODSETTINGS_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<save>
+    <version major="4" minor="0" revision="9" build="331" />
+    <region id="ModuleSettings">
+        <node id="root">
+            <children>
+                <node id="ModOrder">
+                    <children />
+                </node>
+                <node id="Mods">
+                    <children>
+                    </children>
+                </node>
+            </children>
+        </node>
+    </region>
+</save>`;
+
+function bg3ModsNodePattern() {
+  return /(<node\b(?=[^>]*\bid=["']Mods["'])[^>]*>\s*<children>)([\s\S]*?)(<\/children>\s*<\/node>)/iu;
+}
+
+function normalizeBg3SelfClosingChildren(xml: string) {
+  return xml.replace(
+    /(<node\b(?=[^>]*\bid=["']Mods["'])[^>]*>\s*)<children\s*\/>(\s*<\/node>)/iu,
+    "$1<children>\n                    </children>$2"
+  );
+}
+
+function bg3ModuleShortDescNodePattern() {
+  return /<node\b(?=[^>]*\bid=["']ModuleShortDesc["'])[^>]*>[\s\S]*?<\/node>/giu;
+}
+
+function bg3AttributeXml(attribute: Bg3ModuleAttribute) {
+  return `                    <attribute id="${escapeXmlValue(attribute.id)}" type="${escapeXmlValue(attribute.type)}" value="${escapeXmlValue(attribute.value)}" />`;
+}
+
+function bg3ModuleShortDescXml(attributes: Bg3ModuleAttribute[]) {
+  return [
+    "                <node id=\"ModuleShortDesc\">",
+    ...attributes.map(bg3AttributeXml),
+    "                </node>"
+  ].join("\n");
+}
+
+function parseBg3ModuleAttributes(xml: string) {
+  const moduleInfo = xml.match(/<node\b(?=[^>]*\bid=["']ModuleInfo["'])[^>]*>([\s\S]*?)<\/node>/iu)?.[1] ?? xml;
+
+  return Array.from(moduleInfo.matchAll(/<attribute\b([^>]*)\/?>/giu))
+    .map((match) => ({
+      id: readXmlAttribute(match[1] ?? "", "id"),
+      type: readXmlAttribute(match[1] ?? "", "type"),
+      value: readXmlAttribute(match[1] ?? "", "value")
+    }))
+    .filter((attribute) => attribute.id && attribute.type);
+}
+
+function removeBg3ModuleShortDescByUuid(childrenXml: string, uuid: string) {
+  return childrenXml.replace(bg3ModuleShortDescNodePattern(), (nodeXml) =>
+    parseBg3ModuleAttributes(nodeXml).find((attribute) => attribute.id === "UUID")?.value === uuid ? "" : nodeXml
+  );
+}
+
+function upsertBg3Modsettings(options: {
+  xml: string;
+  attributes: Bg3ModuleAttribute[];
+  isInstall: boolean;
+}) {
+  const uuid = options.attributes.find((attribute) => attribute.id === "UUID")?.value;
+  if (!uuid) return options.xml;
+
+  const normalizedXml = normalizeBg3SelfClosingChildren(options.xml);
+  const sourceXml = bg3ModsNodePattern().test(normalizedXml)
+    ? normalizedXml
+    : BG3_DEFAULT_MODSETTINGS_XML;
+
+  return sourceXml.replace(bg3ModsNodePattern(), (_match, open: string, children: string, close: string) => {
+    const filteredChildren = removeBg3ModuleShortDescByUuid(children, uuid).trimEnd();
+    const nextChildren = options.isInstall
+      ? `${filteredChildren}${filteredChildren ? "\n" : "\n"}${bg3ModuleShortDescXml(options.attributes)}\n            `
+      : `${filteredChildren}${filteredChildren ? "\n            " : ""}`;
+
+    return `${open}${nextChildren}${close}`;
+  });
+}
+
+function resolveManagedToolCandidate(candidates: string[] | undefined, fileName: string) {
+  const normalizedFileName = fileName.toLowerCase();
+
+  for (const candidate of candidates ?? []) {
+    if (basename(candidate).toLowerCase() === normalizedFileName && existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return "";
+}
+
+async function loadBg3ModDataFromPak(assemblyPath: string, pakPath: string) {
+  const xml = await invokeManagedTool<string>({
+    assemblyPath,
+    typeName: "BaldursGate3.Program",
+    methodName: "LoadModDataFromPakAsync",
+    payload: pakPath
+  });
+
+  return parseBg3ModuleAttributes(String(xml || ""))
+    .filter((attribute) => [
+      "Folder",
+      "MD5",
+      "Name",
+      "UUID",
+      "Version64",
+      "PublishHandle"
+    ].includes(attribute.id));
+}
+
+async function applyBg3PakStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  managedToolFileName: string;
+  managedToolCandidates?: string[];
+  isInstall: boolean;
+  useSymlink?: boolean;
+}) {
+  const files = (await listFiles(options.modRoot)).filter((file) => getExtension(file) === "pak");
+  if (files.length === 0) return [];
+
+  const toolPath = resolveManagedToolCandidate(options.managedToolCandidates, options.managedToolFileName);
+  if (!toolPath) {
+    throw new Error(`未找到博德之门3前置工具 ${options.managedToolFileName}，请先把该工具 Mod 导入当前游戏。`);
+  }
+
+  const modsettingsPath = safeJoin(
+    options.gamePath,
+    "Local",
+    "Larian Studios",
+    "Baldur's Gate 3",
+    "PlayerProfiles",
+    "Public",
+    "modsettings.lsx"
+  );
+  let modsettingsXml = await readTextFile(modsettingsPath, BG3_DEFAULT_MODSETTINGS_XML);
+  const deployed: string[] = [];
+
+  for (const file of files) {
+    const source = join(options.modRoot, file);
+    const metadata = await loadBg3ModDataFromPak(toolPath, source);
+    const uuid = metadata.find((attribute) => attribute.id === "UUID")?.value;
+
+    if (!uuid) {
+      throw new Error(`无法从 ${basename(file)} 读取 BG3 Mod UUID。`);
+    }
+
+    deployed.push(...await copyOrRemoveFile(
+      source,
+      safeJoin(options.gamePath, options.installPath, basename(file)),
+      options.isInstall,
+      options.gamePath,
+      options.useSymlink
+    ));
+    modsettingsXml = upsertBg3Modsettings({
+      xml: modsettingsXml,
+      attributes: metadata,
+      isInstall: options.isInstall
+    });
+  }
+
+  await writeTextFile(modsettingsPath, modsettingsXml.trimEnd() + "\n");
+  return deployed;
+}
+
+function redDeadDefaultModsXml() {
+  return "<ModsManager><Mods /><LoadOrder /></ModsManager>";
+}
+
+function parseRedDeadModsXml(raw: string) {
+  const source = raw.trim() || redDeadDefaultModsXml();
+  const modsBlock = source.match(/<Mods\b[^>]*>([\s\S]*?)<\/Mods>/iu)?.[1] ?? "";
+  const loadOrderBlock = source.match(/<LoadOrder\b[^>]*>([\s\S]*?)<\/LoadOrder>/iu)?.[1] ?? "";
+  const mods = new Map<string, {
+    folder: string;
+    name: string;
+    enabled: string;
+    overwrite: string;
+    disabledGroups: string;
+  }>();
+  const modMatches = modsBlock.matchAll(/<Mod\b([^>]*)>([\s\S]*?)<\/Mod>/giu);
+
+  for (const match of modMatches) {
+    const folder = readXmlAttribute(match[1] ?? "", "folder");
+    if (!folder) continue;
+
+    const body = match[2] ?? "";
+    mods.set(folder, {
+      folder,
+      name: readXmlChildText(body, "Name") || folder,
+      enabled: readXmlChildText(body, "Enabled") || "false",
+      overwrite: readXmlChildText(body, "Overwrite") || "false",
+      disabledGroups: readXmlChildText(body, "DisabledGroups")
+    });
+  }
+
+  const loadOrder = Array.from(loadOrderBlock.matchAll(/<Mod\b[^>]*>([\s\S]*?)<\/Mod>/giu))
+    .map((match) => unescapeXmlValue((match[1] ?? "").trim()))
+    .filter(Boolean);
+
+  return { mods, loadOrder };
+}
+
+function serializeRedDeadModsXml(data: ReturnType<typeof parseRedDeadModsXml>) {
+  const mods = Array.from(data.mods.values())
+    .map((mod) => [
+      `        <Mod folder="${escapeXmlValue(mod.folder)}">`,
+      `            <Name>${escapeXmlValue(mod.name)}</Name>`,
+      `            <Enabled>${escapeXmlValue(mod.enabled)}</Enabled>`,
+      `            <Overwrite>${escapeXmlValue(mod.overwrite)}</Overwrite>`,
+      `            <DisabledGroups>${escapeXmlValue(mod.disabledGroups)}</DisabledGroups>`,
+      "        </Mod>"
+    ].join("\n"))
+    .join("\n");
+  const loadOrder = [...new Set(data.loadOrder)]
+    .map((folder) => `        <Mod>${escapeXmlValue(folder)}</Mod>`)
+    .join("\n");
+
+  return [
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+    "<ModsManager>",
+    "    <Mods>",
+    mods,
+    "    </Mods>",
+    "    <LoadOrder>",
+    loadOrder,
+    "    </LoadOrder>",
+    "</ModsManager>"
+  ].filter((line) => line !== "").join("\n") + "\n";
+}
+
+async function updateRedDeadInstallXml(options: {
+  gamePath: string;
+  installXmlPath: string;
+  isInstall: boolean;
+}) {
+  const installXml = await readTextFile(options.installXmlPath);
+  const folder = basename(dirname(options.installXmlPath));
+  const name = readXmlChildText(installXml, "Name") || folder;
+  const modsXmlPath = safeJoin(options.gamePath, "lml", "mods.xml");
+  const modsXml = parseRedDeadModsXml(await readTextFile(modsXmlPath, redDeadDefaultModsXml()));
+  const current = modsXml.mods.get(folder);
+
+  modsXml.mods.set(folder, {
+    folder,
+    name: current?.name || name,
+    enabled: String(options.isInstall),
+    overwrite: current?.overwrite || "false",
+    disabledGroups: current?.disabledGroups || ""
+  });
+
+  if (!modsXml.loadOrder.includes(folder)) {
+    modsXml.loadOrder.push(folder);
+  }
+
+  await writeTextFile(modsXmlPath, serializeRedDeadModsXml(modsXml));
+}
+
+async function updateAllRedDeadInstallXml(options: {
+  modRoot: string;
+  gamePath: string;
+  isInstall: boolean;
+}) {
+  const files = await listFiles(options.modRoot);
+  const installXmlFiles = files.filter((file) => basename(file).toLowerCase() === "install.xml");
+
+  for (const file of installXmlFiles) {
+    await updateRedDeadInstallXml({
+      gamePath: options.gamePath,
+      installXmlPath: join(options.modRoot, file),
+      isInstall: options.isInstall
+    });
+  }
+
+  return installXmlFiles;
+}
+
+function redDeadInstallXmlFolders(modRoot: string, installXmlFiles: string[]) {
+  return [...new Set(installXmlFiles.map((file) => dirname(file) || "."))].map((folder) => ({
+    relativeFolder: folder,
+    sourceFolder: folder === "." ? modRoot : join(modRoot, folder),
+    targetFolderName: folder === "." ? sanitizeFileName(basename(modRoot)) : basename(folder)
+  }));
+}
+
+async function planRedDeadLmlStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+}) {
+  const files = await listFiles(options.modRoot);
+  const folders = redDeadInstallXmlFolders(
+    options.modRoot,
+    files.filter((file) => basename(file).toLowerCase() === "install.xml")
+  );
+  const targets: string[] = [];
+
+  for (const folder of folders) {
+    const folderFiles = await listFiles(folder.sourceFolder);
+    for (const file of folderFiles) {
+      if (isPassFile(file)) continue;
+      targets.push(safeJoin(options.gamePath, options.installPath, folder.targetFolderName, file));
+    }
+  }
+
+  return uniqueRelativeTargets(options.gamePath, targets);
+}
+
+async function applyRedDeadLmlStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  isInstall: boolean;
+  useSymlink?: boolean;
+}) {
+  const installXmlFiles = await updateAllRedDeadInstallXml({
+    modRoot: options.modRoot,
+    gamePath: options.gamePath,
+    isInstall: options.isInstall
+  });
+  const folders = redDeadInstallXmlFolders(options.modRoot, installXmlFiles);
+  const deployed: string[] = [];
+
+  if (folders.length === 0) {
+    throw new Error("未找到 RDR2 LML 需要的 install.xml。");
+  }
+
+  for (const folder of folders) {
+    const folderFiles = await listFiles(folder.sourceFolder);
+    for (const file of folderFiles) {
+      if (isPassFile(file)) continue;
+      deployed.push(...await copyOrRemoveFile(
+        join(folder.sourceFolder, file),
+        safeJoin(options.gamePath, options.installPath, folder.targetFolderName, file),
+        options.isInstall,
+        options.gamePath,
+        options.useSymlink
+      ));
+    }
+  }
+
+  return deployed;
+}
+
+async function applyRedDeadAsiStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  fileName: string;
+  isExtname?: boolean;
+  isInstall: boolean;
+  useSymlink?: boolean;
+}) {
+  await updateAllRedDeadInstallXml({
+    modRoot: options.modRoot,
+    gamePath: options.gamePath,
+    isInstall: options.isInstall
+  });
+
+  return applyFileSiblingStrategy(options);
 }
 
 electron.ipcMain.handle("dialog:openDirectory", async () => {
@@ -1297,10 +3337,41 @@ electron.ipcMain.handle("steam:findGamePath", async (_event, steamAppId: number)
   findSteamGamePath(steamAppId)
 );
 
-electron.ipcMain.handle("nexus:validateApiKey", async (_event, apiKey: string) => {
-  const response = await fetch(`${NEXUS_API_URL}/v1/users/validate.json`, {
+electron.ipcMain.handle("translate:text", async (_event, options: {
+  text: string;
+  provider?: string;
+  targetLang: "zh-CN";
+  sourceLang?: string;
+  proxyUrl?: string;
+  baiduAppId?: string;
+  baiduSecret?: string;
+  youdaoAppKey?: string;
+  youdaoSecret?: string;
+  tencentSecretId?: string;
+  tencentSecretKey?: string;
+  tencentRegion?: string;
+  volcengineAccessKeyId?: string;
+  volcengineSecretAccessKey?: string;
+  volcengineRegion?: string;
+}) => enqueueTranslation(() =>
+  translateTextByProvider({
+    ...options,
+    text: String(options.text || ""),
+    targetLang: "zh-CN",
+    sourceLang: options.sourceLang || "auto"
+  })
+));
+
+electron.ipcMain.handle("nexus:validateApiKey", async (_event, options: string | {
+  apiKey: string;
+  proxyUrl?: string;
+}) => {
+  const apiKey = typeof options === "string" ? options : options.apiKey;
+  const proxyUrl = typeof options === "string" ? "" : options.proxyUrl;
+  const response = await fetchWithProxy(`${NEXUS_API_URL}/v1/users/validate.json`, {
     method: "GET",
-    headers: nexusHeaders(apiKey, true)
+    headers: nexusHeaders(apiKey, true),
+    proxyUrl
   });
   const payload = await readJsonResponse<Record<string, unknown>>(response, "校验 NexusMods API Key 失败。");
 
@@ -1319,6 +3390,7 @@ electron.ipcMain.handle("nexus:listMods", async (_event, options: {
   gameDomain: string;
   page: number;
   pageSize: number;
+  proxyUrl?: string;
   searchText?: string;
   sort?: "default" | "updatedAt" | "createdAt" | "downloads";
   facets?: {
@@ -1337,8 +3409,8 @@ electron.ipcMain.handle("nexus:listMods", async (_event, options: {
       ? "createdAt"
       : "downloads";
   const gql = `
-    query ModsListing($count: Int = 0, $filter: ModsFilter, $offset: Int, $sort: [ModsSort!]) {
-      mods(count: $count, filter: $filter, offset: $offset, sort: $sort, viewUserBlockedContent: false) {
+    query ModsListing($count: Int = 0, $facets: ModsFacet, $filter: ModsFilter, $offset: Int, $sort: [ModsSort!]) {
+      mods(count: $count, facets: $facets, filter: $filter, offset: $offset, sort: $sort, viewUserBlockedContent: false) {
         facetsData
         nodes {
           adultContent
@@ -1360,6 +3432,11 @@ electron.ipcMain.handle("nexus:listMods", async (_event, options: {
   `;
   const variables: Record<string, unknown> = {
     count: pageSize,
+    facets: {
+      categoryName: options.facets?.categoryName ? [options.facets.categoryName] : [],
+      languageName: options.facets?.languageName ? [options.facets.languageName] : [],
+      tag: options.facets?.tag ? [options.facets.tag] : []
+    },
     offset: (page - 1) * pageSize,
     sort: [{ [sortKey]: { direction: "DESC" } }],
     filter: {
@@ -1374,31 +3451,17 @@ electron.ipcMain.handle("nexus:listMods", async (_event, options: {
               value: searchText.includes("*") ? searchText : `*${searchText}*`
             }
           }
-        : {}),
-      ...(options.facets?.categoryName
-        ? {
-            categoryName: [options.facets.categoryName]
-          }
-        : {}),
-      ...(options.facets?.languageName
-        ? {
-            languageName: [options.facets.languageName]
-          }
-        : {}),
-      ...(options.facets?.tag
-        ? {
-            tag: [options.facets.tag]
-          }
         : {})
     }
   };
-  const response = await fetch(NEXUS_GRAPHQL_URL, {
+  const response = await fetchWithProxy(NEXUS_GRAPHQL_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...nexusHeaders(options.apiKey)
     },
-    body: JSON.stringify({ query: gql, variables })
+    body: JSON.stringify({ query: gql, variables }),
+    proxyUrl: options.proxyUrl
   });
   const payload = await readJsonResponse<{
     data?: {
@@ -1459,23 +3522,38 @@ electron.ipcMain.handle("nexus:getModDetail", async (_event, options: {
   apiKey: string;
   gameDomain: string;
   modId: string;
+  proxyUrl?: string;
 }) => {
   const gameDomain = options.gameDomain.trim();
   const modId = options.modId.trim();
-  const detailResponse = await fetch(`${NEXUS_API_URL}/v1/games/${gameDomain}/mods/${modId}.json`, {
+  const headers = nexusHeaders(options.apiKey);
+  const detailResponse = await fetchWithProxy(`${NEXUS_API_URL}/v1/games/${gameDomain}/mods/${modId}.json`, {
     method: "GET",
-    headers: nexusHeaders(options.apiKey)
+    headers,
+    proxyUrl: options.proxyUrl
   });
   const detail = await readJsonResponse<Record<string, unknown>>(detailResponse, "获取 NexusMods Mod 详情失败。");
-  const filesResponse = await fetch(`${NEXUS_API_URL}/v1/games/${gameDomain}/mods/${modId}/files.json`, {
+  const filesResponse = await fetchWithProxy(`${NEXUS_API_URL}/v1/games/${gameDomain}/mods/${modId}/files.json`, {
     method: "GET",
-    headers: nexusHeaders(options.apiKey)
+    headers,
+    proxyUrl: options.proxyUrl
   });
   const filesPayload = await readJsonResponse<{
     files?: Array<Record<string, unknown>>;
   }>(filesResponse, "获取 NexusMods 文件列表失败。");
+  const imagesResponse = await fetchWithProxy(`${NEXUS_API_URL}/v1/games/${gameDomain}/mods/${modId}/images.json`, {
+    method: "GET",
+    headers,
+    proxyUrl: options.proxyUrl
+  });
+  const imagesPayload = await imagesResponse.json().catch(() => []) as Array<Record<string, unknown>> | { images?: Array<Record<string, unknown>> };
+  const images = Array.isArray(imagesPayload)
+    ? imagesPayload
+    : Array.isArray(imagesPayload.images)
+      ? imagesPayload.images
+      : [];
 
-  return normalizeNexusDetail(detail, filesPayload.files ?? [], gameDomain);
+  return normalizeNexusDetail(detail, filesPayload.files ?? [], imagesResponse.ok ? images : [], gameDomain);
 });
 
 electron.ipcMain.handle("nexus:getDownloadUrl", async (_event, options: {
@@ -1483,17 +3561,32 @@ electron.ipcMain.handle("nexus:getDownloadUrl", async (_event, options: {
   gameDomain: string;
   modId: string;
   fileId: string;
+  proxyUrl?: string;
+  key?: string;
+  expires?: string;
 }) => {
   const gameDomain = options.gameDomain.trim();
   const modId = options.modId.trim();
   const fileId = options.fileId.trim();
-  const response = await fetch(
-    `${NEXUS_API_URL}/v1/games/${gameDomain}/mods/${modId}/files/${fileId}/download_link.json`,
-    {
-      method: "GET",
-      headers: nexusHeaders(options.apiKey, true)
-    }
+  const downloadLinkUrl = new URL(
+    `${NEXUS_API_URL}/v1/games/${gameDomain}/mods/${modId}/files/${fileId}/download_link.json`
   );
+  const nexusDownloadKey = options.key?.trim();
+  const nexusDownloadExpires = options.expires?.trim();
+
+  if (nexusDownloadKey) {
+    downloadLinkUrl.searchParams.set("key", nexusDownloadKey);
+
+    if (nexusDownloadExpires) {
+      downloadLinkUrl.searchParams.set("expires", nexusDownloadExpires);
+    }
+  }
+
+  const response = await fetchWithProxy(downloadLinkUrl, {
+    method: "GET",
+    headers: nexusHeaders(options.apiKey, true),
+    proxyUrl: options.proxyUrl
+  });
   const payload = await response.json().catch(() => ({})) as Array<{ URI?: string }> | { message?: string };
 
   if (!response.ok) {
@@ -1509,23 +3602,70 @@ electron.ipcMain.handle("nexus:getDownloadUrl", async (_event, options: {
     : buildNexusWebsite(gameDomain, modId, fileId);
 });
 
+function totalBytesFromHeaders(headers: Headers, startingBytes: number, receivedBytes: number) {
+  const contentRange = headers.get("content-range") ?? "";
+  const rangeTotal = contentRange.match(/\/(\d+)$/u)?.[1];
+  if (rangeTotal) return Number(rangeTotal);
+
+  const contentLength = Number(headers.get("content-length") ?? 0);
+  if (contentLength > 0) return startingBytes + contentLength;
+
+  return receivedBytes;
+}
+
 electron.ipcMain.handle("downloads:downloadFile", async (_event, options: {
+  taskId?: string;
   url: string;
   outputPath: string;
+  resume?: boolean;
+  proxyUrl?: string;
 }) => {
-  const response = await fetch(options.url, {
-    headers: {
-      "user-agent": "Mayfly Mod Manager"
+  const taskId = options.taskId?.trim();
+  const controller = new AbortController();
+  let startingBytes = 0;
+
+  if (taskId) {
+    downloadControllers.get(taskId)?.abort();
+    downloadControllers.set(taskId, controller);
+  }
+
+  if (options.resume && existsSync(options.outputPath)) {
+    const outputStat = await stat(options.outputPath);
+    startingBytes = outputStat.size;
+  }
+
+  let response: Response;
+  try {
+    response = await fetchWithProxy(options.url, {
+      signal: controller.signal,
+      headers: {
+        "user-agent": "Mayfly Mod Manager",
+        ...(startingBytes > 0 ? { range: `bytes=${startingBytes}-` } : {})
+      },
+      proxyUrl: options.proxyUrl
+    });
+  } catch (caught) {
+    if (taskId && downloadControllers.get(taskId) === controller) {
+      downloadControllers.delete(taskId);
     }
-  });
+    throw caught;
+  }
 
   if (!response.ok || !response.body) {
+    if (taskId && downloadControllers.get(taskId) === controller) {
+      downloadControllers.delete(taskId);
+    }
     throw new Error(`下载失败：HTTP ${response.status}`);
   }
 
+  const shouldAppend = startingBytes > 0 && response.status === 206;
+  if (startingBytes > 0 && !shouldAppend) {
+    startingBytes = 0;
+  }
+
   await mkdir(dirname(options.outputPath), { recursive: true });
-  const file = await open(options.outputPath, "w");
-  let receivedBytes = 0;
+  const file = await open(options.outputPath, shouldAppend ? "a" : "w");
+  let receivedBytes = startingBytes;
 
   try {
     const reader = response.body.getReader();
@@ -1539,13 +3679,25 @@ electron.ipcMain.handle("downloads:downloadFile", async (_event, options: {
     }
   } finally {
     await file.close();
+    if (taskId && downloadControllers.get(taskId) === controller) {
+      downloadControllers.delete(taskId);
+    }
   }
 
   return {
     outputPath: options.outputPath,
     receivedBytes,
-    totalBytes: Number(response.headers.get("content-length") ?? receivedBytes) || receivedBytes
+    totalBytes: totalBytesFromHeaders(response.headers, startingBytes, receivedBytes) || receivedBytes
   };
+});
+
+electron.ipcMain.handle("downloads:cancel", async (_event, taskId: string) => {
+  const controller = downloadControllers.get(taskId);
+  if (!controller) return false;
+
+  controller.abort();
+  downloadControllers.delete(taskId);
+  return true;
 });
 
 electron.ipcMain.handle("backups:createZip", async (_event, options: {
@@ -1653,14 +3805,99 @@ electron.ipcMain.handle("gmm:exportMods", async (_event, options: {
   };
 });
 
+electron.ipcMain.handle("gmm:readManifest", async (_event, packagePath: string) => {
+  const zip = new AdmZip(resolve(packagePath));
+  const manifestEntry = zip.getEntry("manifest.json");
+
+  if (!manifestEntry) {
+    throw new Error("整合包缺少 manifest.json。");
+  }
+
+  return JSON.parse(manifestEntry.getData().toString("utf-8")) as Record<string, unknown>;
+});
+
+electron.ipcMain.handle("gmm:importGamePack", async (_event, options: {
+  packagePath: string;
+  storagePath: string;
+  gameName: string;
+  overwrite?: boolean;
+}) => {
+  const packagePath = resolve(options.packagePath);
+  const gameRoot = join(resolve(options.storagePath), "mods", sanitizeFileName(options.gameName));
+  const zip = new AdmZip(packagePath);
+  const manifestEntry = zip.getEntry("manifest.json");
+
+  if (!manifestEntry) {
+    throw new Error("整合包缺少 manifest.json。");
+  }
+
+  const manifest = JSON.parse(manifestEntry.getData().toString("utf-8")) as {
+    format?: string;
+    mods?: Array<Record<string, unknown>>;
+  };
+
+  if (manifest.format !== "mayfly-game-pack" || !Array.isArray(manifest.mods)) {
+    throw new Error("这不是 Mayfly 游戏整合包。");
+  }
+
+  await mkdir(gameRoot, { recursive: true });
+  const importedMods: Array<{ folder: string; rootPath: string; files: string[]; coverImage?: string }> = [];
+
+  for (const mod of manifest.mods) {
+    const folder = sanitizeFileName(String(mod.folder || mod.id || mod.name || ""));
+    if (!folder) continue;
+
+    const prefix = `${folder}/`;
+    const rootPath = safeJoin(gameRoot, folder);
+    const entries = zip.getEntries().filter((entry) =>
+      !entry.isDirectory &&
+      entry.entryName.startsWith(prefix) &&
+      !entry.entryName.includes("..")
+    );
+
+    if (entries.length === 0) continue;
+
+    if (existsSync(rootPath)) {
+      if (!options.overwrite) {
+        throw new Error(`整合包恢复失败：目标 Mod 目录已存在：${folder}`);
+      }
+
+      await rm(rootPath, { recursive: true, force: true });
+    }
+
+    for (const entry of entries) {
+      const relativeEntry = entry.entryName.slice(prefix.length);
+      if (!relativeEntry) continue;
+      const target = safeJoin(rootPath, relativeEntry);
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, entry.getData());
+    }
+
+    const files = await listFiles(rootPath);
+    importedMods.push({
+      folder,
+      rootPath,
+      files,
+      coverImage: findCoverImage(files)
+    });
+  }
+
+  return {
+    manifest,
+    mods: importedMods
+  };
+});
+
 electron.ipcMain.handle("mods:importFolder", async (_event, options: {
   sourcePath: string;
   storagePath: string;
   gameId: string;
+  gameName?: string;
   modId: string;
 }) => {
   const sourceStat = await stat(options.sourcePath);
-  const modRoot = join(options.storagePath, "mods", options.gameId, options.modId);
+  const gameFolderName = sanitizeFileName(options.gameName || options.gameId);
+  const modRoot = join(options.storagePath, "mods", gameFolderName, options.modId);
   await mkdir(modRoot, { recursive: true });
 
   if (sourceStat.isDirectory()) {
@@ -1700,6 +3937,48 @@ electron.ipcMain.handle("mods:importFolder", async (_event, options: {
   };
 });
 
+electron.ipcMain.handle("mods:migrateCacheFolder", async (_event, options: {
+  sourcePath: string;
+  storagePath: string;
+  gameName: string;
+  folderName: string;
+}) => {
+  const sourceRoot = resolve(options.sourcePath);
+  const targetRoot = join(
+    resolve(options.storagePath),
+    "mods",
+    sanitizeFileName(options.gameName),
+    sanitizeFileName(options.folderName)
+  );
+
+  if (!existsSync(sourceRoot)) {
+    throw new Error("旧 Mod 缓存目录不存在，无法迁移。");
+  }
+
+  if (resolve(sourceRoot) !== resolve(targetRoot)) {
+    if (existsSync(targetRoot)) {
+      throw new Error(`目标缓存目录已存在，无法迁移：${targetRoot}`);
+    }
+
+    await mkdir(dirname(targetRoot), { recursive: true });
+    await cp(sourceRoot, targetRoot, {
+      recursive: true,
+      force: true,
+      errorOnExist: false
+    });
+    await rm(sourceRoot, { recursive: true, force: true });
+  }
+
+  const files = await listFiles(targetRoot);
+
+  return {
+    rootPath: targetRoot,
+    files,
+    manifest: await readManifest(targetRoot, files),
+    coverImage: findCoverImage(files)
+  };
+});
+
 electron.ipcMain.handle("mods:install", async (_event, options: {
   modRoot: string;
   gamePath: string;
@@ -1734,6 +4013,7 @@ electron.ipcMain.handle("mods:uninstall", async (_event, options: {
 electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
   modRoot: string;
   gamePath: string;
+  targetFolderName?: string;
   strategy: {
     kind: string;
     installPath?: string;
@@ -1747,17 +4027,32 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
     pass?: string[];
     dictionaryFile?: string;
     requireParent?: boolean;
+    targetScope?: InstallTargetScope;
+    documentsGameFolder?: string;
+    iniFileName?: string;
+    localAppDataGameFolder?: string;
+    pluginsHeader?: string;
+    updateGeneralTestFiles?: boolean;
+    extension?: string;
+    prefix?: string;
+    startIndex?: number;
+    listFileName?: string;
+    rootFile?: string;
+    managedToolFileName?: string;
     reason?: string;
   };
+  useSymlink?: boolean;
 }) => {
   const installPath = options.strategy.installPath ?? "";
+  const targetScope = normalizeTargetScope(options.strategy.targetScope);
+  const targetRoot = getTargetScopeRoot(options.gamePath, targetScope);
   let targetFiles: string[] = [];
 
   switch (options.strategy.kind) {
     case "general":
       targetFiles = await planGeneralStrategy({
         modRoot: options.modRoot,
-        gamePath: options.gamePath,
+        gamePath: targetRoot,
         installPath,
         keepPath: options.strategy.keepPath
       });
@@ -1765,17 +4060,25 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
     case "folder":
       targetFiles = await planFolderStrategy({
         modRoot: options.modRoot,
-        gamePath: options.gamePath,
+        gamePath: targetRoot,
         installPath,
         folderName: options.strategy.folderName ?? "",
         include: options.strategy.include,
         spare: options.strategy.spare
       });
       break;
+    case "folderRoot":
+      targetFiles = await planFolderRootStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        targetFolderName: options.targetFolderName
+      });
+      break;
     case "file":
       targetFiles = await planFileStrategy({
         modRoot: options.modRoot,
-        gamePath: options.gamePath,
+        gamePath: targetRoot,
         installPath,
         fileName: options.strategy.fileName ?? "",
         isExtname: options.strategy.isExtname
@@ -1784,11 +4087,20 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
     case "fileSibling":
       targetFiles = await planFileSiblingStrategy({
         modRoot: options.modRoot,
-        gamePath: options.gamePath,
+        gamePath: targetRoot,
         installPath,
         fileName: options.strategy.fileName ?? "",
         isExtname: options.strategy.isExtname,
         pass: options.strategy.pass
+      });
+      break;
+    case "fileOnly":
+      targetFiles = await planFileOnlyStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        fileName: options.strategy.fileName ?? "",
+        isExtname: options.strategy.isExtname
       });
       break;
     case "folderParent":
@@ -1797,7 +4109,7 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
       }
       targetFiles = await planFolderParentStrategy({
         modRoot: options.modRoot,
-        gamePath: options.gamePath,
+        gamePath: targetRoot,
         installPath,
         folderName: options.strategy.folderName ?? ""
       });
@@ -1805,7 +4117,7 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
     case "fileMap":
       targetFiles = await planFileMapStrategy({
         modRoot: options.modRoot,
-        gamePath: options.gamePath,
+        gamePath: targetRoot,
         installPath,
         dictionaryFile: options.strategy.dictionaryFile ?? ""
       });
@@ -1813,11 +4125,110 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
     case "fileIntoParentFolder":
       targetFiles = await planFileIntoParentFolderStrategy({
         modRoot: options.modRoot,
-        gamePath: options.gamePath,
+        gamePath: targetRoot,
         installPath,
         fileName: options.strategy.fileName ?? "",
         isExtname: options.strategy.isExtname,
         requireParent: options.strategy.requireParent
+      });
+      break;
+    case "bethesdaData":
+      targetFiles = await planBethesdaDataStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        folderName: options.strategy.folderName ?? ""
+      });
+      break;
+    case "bethesdaPluginFiles":
+      targetFiles = await planBethesdaPluginFilesStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath
+      });
+      break;
+    case "oblivionPlugins":
+      targetFiles = await planOblivionPluginsStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath
+      });
+      break;
+    case "noMansSkyMods":
+      targetFiles = await planGeneralStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        keepPath: options.strategy.keepPath
+      });
+      break;
+    case "numberedPak":
+      targetFiles = await planNumberedPakStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        extension: options.strategy.extension ?? "pak",
+        prefix: options.strategy.prefix ?? "data",
+        startIndex: options.strategy.startIndex ?? 2,
+        listFileName: options.strategy.listFileName ?? "pakList.txt"
+      });
+      break;
+    case "watchDogsPatch":
+      targetFiles = await planWatchDogsPatchStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        listFileName: options.strategy.listFileName ?? "pakList.txt"
+      });
+      break;
+    case "michangshengLinkedFolder":
+      targetFiles = await planMiChangShengLinkedFolderStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        rootFile: options.strategy.rootFile ?? "mod.bin"
+      });
+      break;
+    case "michangshengDllPlugins":
+      targetFiles = await planFileOnlyStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        fileName: "dll",
+        isExtname: true
+      });
+      break;
+    case "inzoiModKit":
+      targetFiles = await planFileStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        fileName: "mod_manifest.json"
+      });
+      break;
+    case "bg3Pak":
+      targetFiles = await planFileOnlyStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        fileName: "pak",
+        isExtname: true
+      });
+      break;
+    case "redDeadAsi":
+      targetFiles = await planFileSiblingStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        fileName: options.strategy.fileName ?? "asi",
+        isExtname: options.strategy.isExtname
+      });
+      break;
+    case "redDeadLml":
+      targetFiles = await planRedDeadLmlStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath
       });
       break;
     case "manual":
@@ -1827,14 +4238,19 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
   }
 
   return {
-    targetFiles,
-    conflicts: targetFiles.filter((file) => existsSync(safeJoin(options.gamePath, file)))
+    targetFiles: targetFiles.map((file) => formatScopedFile(targetScope, file)),
+    conflicts: options.useSymlink && options.strategy.kind === "folderRoot"
+      ? []
+      : targetFiles
+        .filter((file) => existsSync(safeJoin(targetRoot, file)))
+        .map((file) => formatScopedFile(targetScope, file))
   };
 });
 
 electron.ipcMain.handle("mods:applyStrategy", async (_event, options: {
   modRoot: string;
   gamePath: string;
+  targetFolderName?: string;
   strategy: {
     kind: string;
     installPath?: string;
@@ -1848,12 +4264,27 @@ electron.ipcMain.handle("mods:applyStrategy", async (_event, options: {
     pass?: string[];
     dictionaryFile?: string;
     requireParent?: boolean;
+    targetScope?: InstallTargetScope;
+    documentsGameFolder?: string;
+    iniFileName?: string;
+    localAppDataGameFolder?: string;
+    pluginsHeader?: string;
+    updateGeneralTestFiles?: boolean;
+    extension?: string;
+    prefix?: string;
+    startIndex?: number;
+    listFileName?: string;
+    rootFile?: string;
+    managedToolFileName?: string;
     reason?: string;
   };
   isInstall: boolean;
   useSymlink?: boolean;
+  managedToolCandidates?: string[];
 }) => {
   const installPath = options.strategy.installPath ?? "";
+  const targetScope = normalizeTargetScope(options.strategy.targetScope);
+  const targetRoot = getTargetScopeRoot(options.gamePath, targetScope);
   let deployedFiles: string[] = [];
 
   try {
@@ -1861,17 +4292,17 @@ electron.ipcMain.handle("mods:applyStrategy", async (_event, options: {
       case "general":
         deployedFiles = await applyGeneralStrategy({
           modRoot: options.modRoot,
-          gamePath: options.gamePath,
+          gamePath: targetRoot,
           installPath,
           keepPath: options.strategy.keepPath,
           isInstall: options.isInstall,
           useSymlink: options.useSymlink
         });
-        return { deployedFiles };
+        break;
       case "folder":
         deployedFiles = await applyFolderStrategy({
           modRoot: options.modRoot,
-          gamePath: options.gamePath,
+          gamePath: targetRoot,
           installPath,
           folderName: Array.isArray(options.strategy.folderName)
             ? (options.strategy.folderName[0] ?? "")
@@ -1881,22 +4312,32 @@ electron.ipcMain.handle("mods:applyStrategy", async (_event, options: {
           isInstall: options.isInstall,
           useSymlink: options.useSymlink
         });
-        return { deployedFiles };
+        break;
+      case "folderRoot":
+        deployedFiles = await applyFolderRootStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          targetFolderName: options.targetFolderName,
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
       case "file":
         deployedFiles = await applyFileStrategy({
           modRoot: options.modRoot,
-          gamePath: options.gamePath,
+          gamePath: targetRoot,
           installPath,
           fileName: options.strategy.fileName ?? "",
           isExtname: options.strategy.isExtname,
           commonParent: options.strategy.commonParent,
           isInstall: options.isInstall
         });
-        return { deployedFiles };
+        break;
       case "fileSibling":
         deployedFiles = await applyFileSiblingStrategy({
           modRoot: options.modRoot,
-          gamePath: options.gamePath,
+          gamePath: targetRoot,
           installPath,
           fileName: options.strategy.fileName ?? "",
           isExtname: options.strategy.isExtname,
@@ -1904,33 +4345,44 @@ electron.ipcMain.handle("mods:applyStrategy", async (_event, options: {
           isInstall: options.isInstall,
           useSymlink: options.useSymlink
         });
-        return { deployedFiles };
+        break;
+      case "fileOnly":
+        deployedFiles = await applyFileOnlyStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          fileName: options.strategy.fileName ?? "",
+          isExtname: options.strategy.isExtname,
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
       case "folderParent":
         if (Array.isArray(options.strategy.folderName)) {
           throw new Error("folderParent 策略只支持单个 folderName。");
         }
         deployedFiles = await applyFolderParentStrategy({
           modRoot: options.modRoot,
-          gamePath: options.gamePath,
+          gamePath: targetRoot,
           installPath,
           folderName: options.strategy.folderName ?? "",
           isInstall: options.isInstall
         });
-        return { deployedFiles };
+        break;
       case "fileMap":
         deployedFiles = await applyFileMapStrategy({
           modRoot: options.modRoot,
-          gamePath: options.gamePath,
+          gamePath: targetRoot,
           installPath,
           dictionaryFile: options.strategy.dictionaryFile ?? "",
           isInstall: options.isInstall,
           useSymlink: options.useSymlink
         });
-        return { deployedFiles };
+        break;
       case "fileIntoParentFolder":
         deployedFiles = await applyFileIntoParentFolderStrategy({
           modRoot: options.modRoot,
-          gamePath: options.gamePath,
+          gamePath: targetRoot,
           installPath,
           fileName: options.strategy.fileName ?? "",
           isExtname: options.strategy.isExtname,
@@ -1938,16 +4390,157 @@ electron.ipcMain.handle("mods:applyStrategy", async (_event, options: {
           isInstall: options.isInstall,
           useSymlink: options.useSymlink
         });
-        return { deployedFiles };
+        break;
+      case "bethesdaData":
+        deployedFiles = await applyBethesdaDataStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          folderName: options.strategy.folderName ?? "",
+          documentsGameFolder: options.strategy.documentsGameFolder ?? "",
+          iniFileName: options.strategy.iniFileName ?? "",
+          localAppDataGameFolder: options.strategy.localAppDataGameFolder ?? "",
+          pluginsHeader: options.strategy.pluginsHeader,
+          updateGeneralTestFiles: options.strategy.updateGeneralTestFiles,
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
+      case "bethesdaPluginFiles":
+        deployedFiles = await applyBethesdaPluginFilesStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          documentsGameFolder: options.strategy.documentsGameFolder ?? "",
+          iniFileName: options.strategy.iniFileName ?? "",
+          localAppDataGameFolder: options.strategy.localAppDataGameFolder ?? "",
+          pluginsHeader: options.strategy.pluginsHeader,
+          updateGeneralTestFiles: options.strategy.updateGeneralTestFiles,
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
+      case "oblivionPlugins":
+        deployedFiles = await applyOblivionPluginsStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
+      case "noMansSkyMods":
+        if (options.isInstall) {
+          await ensureNoMansSkyModsEnabled(targetRoot);
+        }
+        deployedFiles = await applyGeneralStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          keepPath: options.strategy.keepPath,
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
+      case "numberedPak":
+        deployedFiles = await applyNumberedPakStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          extension: options.strategy.extension ?? "pak",
+          prefix: options.strategy.prefix ?? "data",
+          startIndex: options.strategy.startIndex ?? 2,
+          listFileName: options.strategy.listFileName ?? "pakList.txt",
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
+      case "watchDogsPatch":
+        deployedFiles = await applyWatchDogsPatchStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          listFileName: options.strategy.listFileName ?? "pakList.txt",
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
+      case "michangshengLinkedFolder":
+        deployedFiles = await applyMiChangShengLinkedFolderStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          rootFile: options.strategy.rootFile ?? "mod.bin",
+          isInstall: options.isInstall
+        });
+        break;
+      case "michangshengDllPlugins":
+        await ensureMiChangShengModBin(targetRoot);
+        deployedFiles = await applyFileOnlyStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          fileName: "dll",
+          isExtname: true,
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
+      case "inzoiModKit":
+        deployedFiles = await applyInzoiModKitStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          isInstall: options.isInstall
+        });
+        break;
+      case "bg3Pak":
+        deployedFiles = await applyBg3PakStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          managedToolFileName: options.strategy.managedToolFileName ?? "BaldursGate3.dll",
+          managedToolCandidates: options.managedToolCandidates,
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
+      case "redDeadAsi":
+        deployedFiles = await applyRedDeadAsiStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          fileName: options.strategy.fileName ?? "asi",
+          isExtname: options.strategy.isExtname,
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
+      case "redDeadLml":
+        deployedFiles = await applyRedDeadLmlStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
+        });
+        break;
       case "manual":
         throw new Error(options.strategy.reason || "该 Mod 类型需要手动安装。");
       default:
         throw new Error(`未知安装策略: ${options.strategy.kind}`);
     }
+
+    return {
+      deployedFiles: deployedFiles.map((file) => formatScopedFile(targetScope, file))
+    };
   } catch (error) {
     if (options.isInstall && deployedFiles.length > 0) {
       try {
-        await deleteRelativeFiles(options.gamePath, deployedFiles);
+        await deleteRelativeFiles(
+          options.gamePath,
+          deployedFiles.map((file) => formatScopedFile(targetScope, file))
+        );
       } catch {
         // 保留原始错误，让调用方看到真正的安装失败原因。
       }
@@ -1965,7 +4558,7 @@ electron.ipcMain.handle("mods:removeDeployedFiles", async (_event, options: {
   return true;
 });
 
-electron.app.setAsDefaultProtocolClient(NXM_PROTOCOL);
+registerNxmProtocol();
 
 if (!electron.app.requestSingleInstanceLock()) {
   electron.app.quit();

@@ -1,5 +1,5 @@
 import type { GameAdapter, ModTypeRule } from "@/types/domain";
-import { hasFile, hasPathPart } from "@/adapters/utils";
+import { hasExtension, hasFile, hasPathPart } from "@/adapters/utils";
 
 export const monsterHunterWorldAdapter: GameAdapter = {
   presetId: "monsterhunterworld",
@@ -28,10 +28,10 @@ export const monsterHunterWorldAdapter: GameAdapter = {
       id: "plugins",
       name: "插件",
       install: {
-        kind: "folder",
-        installPath: "plugins",
-        folderName: "plugins",
-        spare: true
+        kind: "fileSibling",
+        installPath: "nativePC/plugins",
+        fileName: ".dll",
+        isExtname: true
       }
     },
     {
@@ -46,6 +46,7 @@ export const monsterHunterWorldAdapter: GameAdapter = {
   checkModType(files) {
     if (hasFile(files, "dtdata.dll") || hasFile(files, "loader.dll")) return "stracker";
     if (hasPathPart(files, "plugins")) return "plugins";
+    if (hasExtension(files, "dll")) return "plugins";
     if (hasPathPart(files, "nativePC")) return "nativePc";
     return "nativePc";
   }

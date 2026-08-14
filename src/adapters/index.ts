@@ -5,12 +5,16 @@ import { commonAdapter } from "@/adapters/common";
 import { cyberpunk2077Adapter } from "@/adapters/cyberpunk2077";
 import { eldenRingAdapter } from "@/adapters/eldenring";
 import { createGta5Adapter } from "@/adapters/gta5";
+import { glossEngineDefinitions } from "@/adapters/gloss-engine-definitions";
+import { createGlossRuleAdapter, glossRuleDefinitions } from "@/adapters/gloss-rule-definitions";
+import { inzoiAdapter } from "@/adapters/inzoi";
 import { createReEngineAdapter, monsterHunterWorldAdapter } from "@/adapters/monsterhunter";
+import { oblivionRemasteredAdapter } from "@/adapters/oblivionremastered";
 import { skyrimSeAdapter } from "@/adapters/skyrimse";
 import { stardewValleyAdapter } from "@/adapters/stardewvalley";
 import { taleOfImmortalAdapter } from "@/adapters/taleofimmortal";
 import { createCatalogAdapter } from "@/adapters/utils";
-import { createUnityAdapter } from "@/adapters/unity";
+import { createMelonLoaderAdapter, createUnityAdapter } from "@/adapters/unity";
 import { createUnrealAdapter } from "@/adapters/unreal";
 import type { GameAdapter } from "@/types/domain";
 
@@ -19,9 +23,11 @@ const explicitAdapters: GameAdapter[] = [
   cyberpunk2077Adapter,
   createGta5Adapter("gta5", "Grand Theft Auto V"),
   createGta5Adapter("gta5enhanced", "Grand Theft Auto V Enhanced"),
+  inzoiAdapter,
   monsterHunterWorldAdapter,
   createReEngineAdapter("monsterhunterrise", "MonsterHunterRise"),
   createReEngineAdapter("monsterhunterwilds", "Monster Hunter Wilds"),
+  oblivionRemasteredAdapter,
   skyrimSeAdapter,
   stardewValleyAdapter,
   taleOfImmortalAdapter,
@@ -36,12 +42,43 @@ const explicitAdapters: GameAdapter[] = [
 ];
 
 const explicitAdapterMap = new Map(explicitAdapters.map((adapter) => [adapter.presetId, adapter]));
+const glossEngineAdapterMap = new Map(
+  gamePresets
+    .map((preset): [string, GameAdapter] | null => {
+      const definition = glossEngineDefinitions[preset.id];
+      if (!definition) return null;
+
+      switch (definition.kind) {
+        case "unreal":
+          return [preset.id, createUnrealAdapter(preset.id, preset.name, definition.basePath)];
+        case "unity":
+          return [preset.id, createUnityAdapter(preset.id, preset.name)];
+        case "melon":
+          return [preset.id, createMelonLoaderAdapter(preset.id, preset.name)];
+        case "reengine":
+          return [preset.id, createReEngineAdapter(preset.id, preset.name)];
+        default:
+          return null;
+      }
+    })
+    .filter((entry): entry is [string, GameAdapter] => Boolean(entry))
+);
 const catalogAdapterMap = new Map(
   gamePresets.map((preset) => [preset.id, createCatalogAdapter(preset)])
 );
+const glossRuleAdapterMap = new Map(
+  Object.entries(glossRuleDefinitions).map(([presetId, definition]) => [
+    presetId,
+    createGlossRuleAdapter(presetId, definition)
+  ])
+);
 
 export function getGameAdapter(presetId: string): GameAdapter {
-  return explicitAdapterMap.get(presetId) ?? catalogAdapterMap.get(presetId) ?? commonAdapter;
+  return explicitAdapterMap.get(presetId) ??
+    glossEngineAdapterMap.get(presetId) ??
+    glossRuleAdapterMap.get(presetId) ??
+    catalogAdapterMap.get(presetId) ??
+    commonAdapter;
 }
 
 export function getModType(adapter: GameAdapter, typeId: string) {

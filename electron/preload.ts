@@ -54,22 +54,44 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
   }) => electron.ipcRenderer.invoke("fs:findFileByName", options) as Promise<string>,
   findSteamGamePath: (steamAppId: number) =>
     electron.ipcRenderer.invoke("steam:findGamePath", steamAppId) as Promise<string>,
-  validateNexusApiKey: (apiKey: string) =>
-    electron.ipcRenderer.invoke("nexus:validateApiKey", apiKey) as Promise<unknown>,
+  validateNexusApiKey: (options: string | { apiKey: string; proxyUrl?: string }) =>
+    electron.ipcRenderer.invoke("nexus:validateApiKey", options) as Promise<unknown>,
   listNexusMods: (options: unknown) =>
     electron.ipcRenderer.invoke("nexus:listMods", options) as Promise<unknown>,
   getNexusModDetail: (options: unknown) =>
     electron.ipcRenderer.invoke("nexus:getModDetail", options) as Promise<unknown>,
   getNexusDownloadUrl: (options: unknown) =>
     electron.ipcRenderer.invoke("nexus:getDownloadUrl", options) as Promise<string>,
+  translateText: (options: {
+    text: string;
+    provider: string;
+    targetLang: "zh-CN";
+    sourceLang?: string;
+    proxyUrl?: string;
+    baiduAppId?: string;
+    baiduSecret?: string;
+    youdaoAppKey?: string;
+    youdaoSecret?: string;
+    tencentSecretId?: string;
+    tencentSecretKey?: string;
+    tencentRegion?: string;
+    volcengineAccessKeyId?: string;
+    volcengineSecretAccessKey?: string;
+    volcengineRegion?: string;
+  }) => electron.ipcRenderer.invoke("translate:text", options) as Promise<string>,
   downloadFile: (options: {
+    taskId?: string;
     url: string;
     outputPath: string;
+    resume?: boolean;
+    proxyUrl?: string;
   }) => electron.ipcRenderer.invoke("downloads:downloadFile", options) as Promise<{
     outputPath: string;
     receivedBytes: number;
     totalBytes: number;
   }>,
+  cancelDownload: (taskId: string) =>
+    electron.ipcRenderer.invoke("downloads:cancel", taskId) as Promise<boolean>,
   createBackupZip: (options: {
     sourcePath: string;
     outputPath: string;
@@ -99,13 +121,45 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
     outputPath: string;
     size: number;
   }>,
+  readGmmManifest: (packagePath: string) =>
+    electron.ipcRenderer.invoke("gmm:readManifest", packagePath) as Promise<Record<string, unknown>>,
+  importGamePack: (options: {
+    packagePath: string;
+    storagePath: string;
+    gameName: string;
+    overwrite?: boolean;
+  }) => electron.ipcRenderer.invoke("gmm:importGamePack", options) as Promise<{
+    manifest: Record<string, unknown>;
+    mods: Array<{ folder: string; rootPath: string; files: string[]; coverImage?: string }>;
+  }>,
   importModFolder: (options: {
     sourcePath: string;
     storagePath: string;
     gameId: string;
+    gameName?: string;
     modId: string;
   }) =>
     electron.ipcRenderer.invoke("mods:importFolder", options) as Promise<{
+      rootPath: string;
+      files: string[];
+      coverImage?: string;
+      manifest?: {
+        name?: string;
+        version?: string;
+        author?: string;
+        website?: string;
+        description?: string;
+        tags?: string[];
+        requirements?: string[];
+      };
+    }>,
+  migrateModCacheFolder: (options: {
+    sourcePath: string;
+    storagePath: string;
+    gameName: string;
+    folderName: string;
+  }) =>
+    electron.ipcRenderer.invoke("mods:migrateCacheFolder", options) as Promise<{
       rootPath: string;
       files: string[];
       coverImage?: string;
@@ -132,16 +186,20 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
   applyModStrategy: (options: {
     modRoot: string;
     gamePath: string;
+    targetFolderName?: string;
     strategy: unknown;
     isInstall: boolean;
     useSymlink?: boolean;
+    managedToolCandidates?: string[];
   }) => electron.ipcRenderer.invoke("mods:applyStrategy", options) as Promise<{
     deployedFiles: string[];
   }>,
   createInstallPlan: (options: {
     modRoot: string;
     gamePath: string;
+    targetFolderName?: string;
     strategy: unknown;
+    useSymlink?: boolean;
   }) => electron.ipcRenderer.invoke("mods:createInstallPlan", options) as Promise<{
     targetFiles: string[];
     conflicts: string[];

@@ -6,13 +6,18 @@ import {
   CheckCircle2,
   FolderOpen,
   Gamepad2,
+  GripVertical,
   HardDrive,
   Info,
+  LayoutGrid,
   LoaderCircle,
+  List,
   ListTree,
   ScrollText,
   PackagePlus,
+  Pause,
   Play,
+  RotateCcw,
   Search,
   Settings,
   SquarePen,
@@ -21,17 +26,25 @@ import {
   XCircle,
   ChevronDown,
   ChevronUp,
-  Plus
+  Languages,
+  Plus,
+  User
 } from "lucide-vue-next";
 import { useLibraryStore } from "@/stores/library";
-import type { LocalMod } from "@/types/domain";
+import type { CustomAdapterRule, LocalMod } from "@/types/domain";
 
 const library = useLibraryStore();
-type AppTab = "manager" | "nexus" | "download" | "logs" | "backup" | "settings" | "about";
+type AppTab = "games" | "manager" | "nexus" | "download" | "logs" | "backup" | "settings" | "about";
 
 const activeTab = ref<AppTab>("manager");
 const showAddGameModal = ref(false);
+const showGameInfoModal = ref(false);
+const showGameSettingsModal = ref(false);
 const contextMenu = ref({ visible: false, x: 0, y: 0, gameId: "" });
+const draggingModId = ref("");
+const dragOverModId = ref("");
+const previewImage = ref({ visible: false, url: "", title: "" });
+const modViewMode = ref<"list" | "grid">("list");
 
 const showGameContextMenu = (e: MouseEvent, gameId: string) => {
   contextMenu.value = {
@@ -42,10 +55,46 @@ const showGameContextMenu = (e: MouseEvent, gameId: string) => {
   };
 };
 
-const deleteContextGame = async () => {
-  if (window.confirm("确定要删除这个游戏吗？")) {
-    await library.removeGame(contextMenu.value.gameId);
+async function selectContextGame() {
+  if (!contextMenu.value.gameId) return false;
+  await chooseGame(contextMenu.value.gameId);
+  contextMenu.value.visible = false;
+  return true;
+}
+
+async function openContextGameInfo() {
+  if (await selectContextGame()) {
+    showGameInfoModal.value = true;
   }
+}
+
+async function openContextGameSettings() {
+  if (await selectContextGame()) {
+    showGameSettingsModal.value = true;
+  }
+}
+
+async function launchContextGame() {
+  if (await selectContextGame()) {
+    await library.launchActiveGame();
+  }
+}
+
+async function openContextGameFolder() {
+  if (await selectContextGame()) {
+    await openActiveGamePath();
+  }
+}
+
+const deleteContextGame = async () => {
+  const game = library.games.find((item) => item.id === contextMenu.value.gameId);
+  if (!game) return;
+
+  if (window.confirm(`确定要删除游戏“${game.name}”吗？`)) {
+    await library.removeGame(game.id);
+  }
+
+  contextMenu.value.visible = false;
 };
 
 onMounted(() => {
@@ -53,12 +102,16 @@ onMounted(() => {
     if (contextMenu.value.visible) {
       contextMenu.value.visible = false;
     }
+    openDropdownId.value = "";
   });
 });
 const editingInstallPath = ref("");
 const showPresetPicker = ref(false);
 const dragActive = ref(false);
 const expandedModId = ref("");
+const openDropdownId = ref("");
+const editingModId = ref("");
+const showModEditModal = ref(false);
 const coverUrls = ref<Record<string, string>>({});
 const gameCoverUrls = ref<Record<string, string>>({});
 const showBatchEdit = ref(false);
@@ -69,6 +122,7 @@ const batchVersion = ref("");
 const batchAuthor = ref("");
 const batchWebsite = ref("");
 const batchTags = ref("");
+const quickTagName = ref("");
 const gmmName = ref("");
 const gmmAuthor = ref("");
 const gmmVersion = ref("");
@@ -85,10 +139,138 @@ const toastMessage = ref("");
 const customDownloadUrl = ref("");
 const customDownloadName = ref("");
 const backupName = ref("");
+const customRuleName = ref("");
+const customRuleDetectKind = ref<CustomAdapterRule["detect"]["kind"]>("always");
+const customRuleDetectValue = ref("");
+const customRuleInstallKind = ref<"general" | "folderRoot" | "folder" | "file" | "fileSibling" | "manual">("general");
+const customRuleInstallPath = ref("");
+const customRuleInstallName = ref("");
+const customRuleKeepPath = ref(true);
 
 const storageLabel = computed(
   () => library.settings.storagePath || "还没有选择 Mod 存储路径"
 );
+
+const nexusGames = computed(() =>
+  library.games.filter((game) => game.presetId && game.nexusDomain)
+);
+
+const editingMod = computed(() =>
+  library.mods.find((mod) => mod.id === editingModId.value) ?? null
+);
+
+function toggleDropdown(id: string) {
+  openDropdownId.value = openDropdownId.value === id ? "" : id;
+}
+
+function closeDropdown() {
+  openDropdownId.value = "";
+}
+
+function typeFilterLabel() {
+  if (library.selectedTypeId === "all") return "全部类型";
+  return library.activeAdapter?.modTypes.find((type) => type.id === library.selectedTypeId)?.name ?? "全部类型";
+}
+
+function tagFilterLabel() {
+  return library.selectedTag === "all" ? "全部标签" : library.selectedTag;
+}
+
+function sortLabel() {
+  const labels = {
+    custom: "自定义排序",
+    createdDesc: "最近导入",
+    createdAsc: "最早导入",
+    nameAsc: "名称 A-Z",
+    nameDesc: "名称 Z-A",
+    installedFirst: "已安装优先"
+  };
+
+  return labels[library.sortMode];
+}
+
+function modTypeLabel(mod: LocalMod) {
+  return library.activeAdapter?.modTypes.find((type) => type.id === mod.modTypeId)?.name ?? mod.modTypeName;
+}
+
+function detectKindLabel(kind: CustomAdapterRule["detect"]["kind"]) {
+  const labels = {
+    always: "默认",
+    fileName: "文件名",
+    extension: "扩展名",
+    pathPart: "路径片段"
+  };
+
+  return labels[kind];
+}
+
+function installStrategyLabel(strategy: CustomAdapterRule["install"]) {
+  switch (strategy.kind) {
+    case "folder":
+      return `匹配文件夹 ${Array.isArray(strategy.folderName) ? strategy.folderName.join(", ") : strategy.folderName} -> ${strategy.installPath || "游戏根目录"}`;
+    case "folderRoot":
+      return `文件夹根内容 -> ${strategy.installPath || "游戏根目录"}`;
+    case "file":
+      return `匹配文件 ${strategy.fileName || "*"} -> ${strategy.installPath || "游戏根目录"}`;
+    case "fileSibling":
+      return `匹配文件同级 -> ${strategy.installPath || "游戏根目录"}`;
+    case "fileOnly":
+      return `仅匹配文件 ${strategy.fileName || "*"} -> ${strategy.installPath || "游戏根目录"}`;
+    case "folderParent":
+      return `匹配父文件夹 ${strategy.folderName || "*"} -> ${strategy.installPath || "游戏根目录"}`;
+    case "fileMap":
+      return `按字典 ${strategy.dictionaryFile || "*"} -> ${strategy.installPath || "游戏根目录"}`;
+    case "fileIntoParentFolder":
+      return `匹配文件进父目录 ${strategy.fileName || "*"} -> ${strategy.installPath || "游戏根目录"}`;
+    case "manual":
+      return strategy.reason;
+    case "general":
+      return `全部内容 -> ${strategy.installPath || "游戏根目录"}${strategy.keepPath === false ? "，不保留路径" : ""}`;
+    default:
+      return "内置安装规则";
+  }
+}
+
+function customRuleSummary(rule: CustomAdapterRule) {
+  const detectValue = rule.detect.kind === "always" ? "" : ` ${rule.detect.value || "*"}`;
+  return `${detectKindLabel(rule.detect.kind)}${detectValue} / ${installStrategyLabel(rule.install)}`;
+}
+
+function resetCustomRuleForm() {
+  customRuleName.value = "";
+  customRuleDetectKind.value = "always";
+  customRuleDetectValue.value = "";
+  customRuleInstallKind.value = "general";
+  customRuleInstallPath.value = "";
+  customRuleInstallName.value = "";
+  customRuleKeepPath.value = true;
+}
+
+async function saveCustomAdapterRule() {
+  if (customRuleDetectKind.value !== "always" && !customRuleDetectValue.value.trim()) {
+    library.setError("请填写识别值。");
+    return;
+  }
+
+  await library.addCustomAdapterRule({
+    name: customRuleName.value,
+    detectKind: customRuleDetectKind.value,
+    detectValue: customRuleDetectValue.value,
+    installKind: customRuleInstallKind.value,
+    installPath: customRuleInstallPath.value,
+    installName: customRuleInstallName.value,
+    keepPath: customRuleKeepPath.value
+  });
+
+  if (!library.error) {
+    resetCustomRuleForm();
+  }
+}
+
+function openModEdit(mod: LocalMod) {
+  editingModId.value = mod.id;
+  showModEditModal.value = true;
+}
 
 watch(
   () => library.error,
@@ -171,6 +353,17 @@ watch(
 async function chooseGame(gameId: string) {
   await library.setActiveGame(gameId);
   editingInstallPath.value = library.activeGame?.installPath ?? "";
+}
+
+async function chooseNexusGame(gameId: string) {
+  const game = library.games.find((item) => item.id === gameId);
+  if (!game?.presetId || !game.nexusDomain) {
+    library.setError("这个游戏没有 Nexus 配置。");
+    return;
+  }
+
+  await chooseGame(game.id);
+  library.setNexusPreset(game.presetId);
 }
 
 async function addCustomGame() {
@@ -328,6 +521,19 @@ async function applyBatchEdit() {
   showBatchEdit.value = false;
 }
 
+async function addQuickTagToSelected() {
+  const tags = splitTags(quickTagName.value);
+  if (tags.length === 0) return;
+
+  if (library.selectedMods.length === 0) {
+    library.setError("请先勾选要添加分类标签的 Mod。");
+    return;
+  }
+
+  await library.updateSelectedMods({ appendTags: tags });
+  quickTagName.value = "";
+}
+
 async function exportSelectedGmm() {
   await library.exportModsToGmm({
     targetMods: library.selectedMods,
@@ -383,10 +589,144 @@ function formatDate(value: string | number) {
   return date.toLocaleDateString("zh-CN");
 }
 
+function visibleBackupTreeEntries(backupId: string) {
+  const entries = library.backupContents[backupId] ?? [];
+  const folders = new Set<string>();
+
+  for (const entry of entries) {
+    const parts = entry.path.replace(/\\/g, "/").split("/").filter(Boolean);
+    parts.pop();
+
+    for (let index = 1; index <= parts.length; index += 1) {
+      folders.add(parts.slice(0, index).join("/"));
+    }
+  }
+
+  const folderEntries = [...folders].map((path) => ({
+    path,
+    isDirectory: true,
+    size: 0
+  }));
+  const allEntries = [...folderEntries, ...entries]
+    .sort((left, right) => {
+      const leftParts = left.path.split("/");
+      const rightParts = right.path.split("/");
+      const parentCompare = leftParts.slice(0, -1).join("/").localeCompare(rightParts.slice(0, -1).join("/"), "zh-CN");
+      if (parentCompare !== 0) return parentCompare;
+      if (left.isDirectory !== right.isDirectory) return left.isDirectory ? -1 : 1;
+      return leftParts.at(-1)!.localeCompare(rightParts.at(-1)!, "zh-CN");
+    })
+    .map((entry) => {
+      const parts = entry.path.replace(/\\/g, "/").split("/").filter(Boolean);
+      return {
+        ...entry,
+        name: parts.at(-1) ?? entry.path,
+        depth: Math.max(0, parts.length - 1)
+      };
+    });
+
+  return allEntries.slice(0, 200);
+}
+
+function sanitizeNexusHtml(html: string) {
+  if (!html) return "";
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  doc.querySelectorAll("script, style, iframe, object, embed, form").forEach((node) => node.remove());
+  doc.querySelectorAll("*").forEach((node) => {
+    [...node.attributes].forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value.trim().toLowerCase();
+
+      if (name.startsWith("on") || value.startsWith("javascript:")) {
+        node.removeAttribute(attribute.name);
+      }
+    });
+  });
+
+  return doc.body.innerHTML;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function safeLink(url: string) {
+  const normalized = url.replace(/&amp;/g, "&").trim();
+  return /^https?:\/\//i.test(normalized) ? escapeHtml(normalized) : "";
+}
+
+function renderNexusBbCode(value: string) {
+  let html = escapeHtml(value)
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/&lt;br\s*\/?&gt;/gi, "<br />")
+    .replace(/&lt;\/?(?:p|div)&gt;/gi, "<br />")
+    .replace(/\[\/?(?:size|font|center|left|right|color|quote)(?:=[^\]]*)?\]/gi, "")
+    .replace(/\[(?:br|hr)\s*\/?\]/gi, "<br />")
+    .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, "<strong>$1</strong>")
+    .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, "<em>$1</em>")
+    .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, "<span class=\"bbUnderline\">$1</span>")
+    .replace(/\[img\]([\s\S]*?)\[\/img\]/gi, (_match, url: string) => {
+      const href = safeLink(url);
+      return href ? `<img src="${href}" alt="" />` : "";
+    })
+    .replace(/\[url=([^\]]+)\]([\s\S]*?)\[\/url\]/gi, (_match, url: string, label: string) => {
+      const href = safeLink(url);
+      return href ? `<a href="${href}" target="_blank" rel="noreferrer">${label}</a>` : label;
+    })
+    .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, (_match, url: string) => {
+      const href = safeLink(url);
+      return href ? `<a href="${href}" target="_blank" rel="noreferrer">${href}</a>` : url;
+    })
+    .replace(/\[\*\]/g, "<br />• ")
+    .replace(/\[\/?list(?:=[^\]]*)?\]/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/\n/g, "<br />");
+
+  html = html.replace(/(?:<br \/>){3,}/g, "<br /><br />");
+  return sanitizeNexusHtml(html);
+}
+
+function renderNexusDescription(value: string, format: string) {
+  if (!value) return "暂无说明。";
+  return /\[[a-z*]+(?:=[^\]]+)?\]/i.test(value)
+    ? renderNexusBbCode(value)
+    : sanitizeNexusHtml(format === "html" ? value : escapeHtml(value).replace(/\n/g, "<br />"));
+}
+
+function openPreviewImage(url: string, title: string) {
+  if (!url) return;
+  previewImage.value = { visible: true, url, title };
+}
+
+function beginModDrag(mod: LocalMod) {
+  if (!library.canReorderMods) {
+    library.setError("拖拽排序前请先清空搜索、类型和标签筛选。");
+    return;
+  }
+
+  draggingModId.value = mod.id;
+}
+
+async function dropModOn(target: LocalMod) {
+  if (!draggingModId.value) return;
+  await library.reorderActiveMods(draggingModId.value, target.id);
+  draggingModId.value = "";
+  dragOverModId.value = "";
+}
+
 function downloadStatusText(status: string) {
   const map: Record<string, string> = {
     queued: "排队中",
     downloading: "下载中",
+    paused: "已暂停",
     completed: "已完成",
     failed: "失败",
     external: "网页下载"
@@ -408,6 +748,11 @@ async function saveAndValidateNexusApiKey() {
 }
 
 async function searchNexusMods() {
+  if (!nexusGames.value.some((game) => game.presetId === library.nexusPresetId)) {
+    library.setError("请先在左侧选择已经添加过的 Nexus 游戏。");
+    return;
+  }
+
   library.nexusPage = 1;
   await library.loadNexusMods(1);
 }
@@ -552,6 +897,18 @@ async function confirmRemoveSelectedMods() {
       </div>
     </div>
 
+    <div v-if="previewImage.visible" class="steam-modal-overlay imagePreviewOverlay" @click.self="previewImage.visible = false">
+      <div class="imagePreviewModal">
+        <div class="steam-modal-header">
+          <span>{{ previewImage.title || "预览图" }}</span>
+          <button class="iconButton" @click="previewImage.visible = false">
+            <X :size="16" />
+          </button>
+        </div>
+        <img :src="previewImage.url" alt="" />
+      </div>
+    </div>
+
     <!-- Steam Style Modal for Nexus Auth -->
     <div v-if="showNexusAuthModal" class="steam-modal-overlay" @click.self="showNexusAuthModal = false">
       <div class="steam-modal">
@@ -578,6 +935,251 @@ async function confirmRemoveSelectedMods() {
         </div>
         <div class="steam-modal-footer">
           <button class="primary" @click="showNexusAuthModal = false">完成</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showGameInfoModal && library.activeGame" class="steam-modal-overlay" @click.self="showGameInfoModal = false">
+      <div class="steam-modal">
+        <div class="steam-modal-header">
+          <Info :size="16" />
+          <span>游戏信息</span>
+          <button class="close-btn" @click="showGameInfoModal = false"><X :size="18" /></button>
+        </div>
+        <div class="steam-modal-content gameModalContent">
+          <div class="gameModalHero">
+            <img v-if="gameCoverUrls[library.activeGame.id]" :src="gameCoverUrls[library.activeGame.id]" alt="" />
+            <Gamepad2 v-else :size="30" />
+            <input
+              class="gameNameInput"
+              :value="library.activeGame.name"
+              @change="library.updateGame(library.activeGame.id, { name: ($event.target as HTMLInputElement).value.trim() || library.activeGame.name })"
+            />
+          </div>
+          <div class="gameInfoGrid">
+            <label>
+              游戏目录
+              <span>{{ library.activeGame.path || "未设置" }}</span>
+            </label>
+            <label>
+              EXE
+              <span>{{ library.activeGame.exeNames.length ? library.activeGame.exeNames.join(", ") : "未设置" }}</span>
+            </label>
+            <label>
+              Steam
+              <span>{{ library.activeGame.steamAppId || "无" }}</span>
+            </label>
+            <label>
+              Nexus
+              <span>{{ library.activeGame.nexusDomain || "无" }}</span>
+            </label>
+            <label>
+              适配
+              <span>{{ library.activeGame.adapterStatus === "implemented" ? "已接入安装规则" : library.activeGame.adapterStatus === "custom" ? "自定义通用规则" : "通用规则" }}</span>
+            </label>
+          </div>
+        </div>
+        <div class="steam-modal-footer">
+          <button class="secondary" @click="openActiveGamePath">打开目录</button>
+          <button class="primary" @click="showGameInfoModal = false">完成</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showGameSettingsModal && library.activeGame" class="steam-modal-overlay" @click.self="showGameSettingsModal = false">
+      <div class="steam-modal">
+        <div class="steam-modal-header">
+          <Settings :size="16" />
+          <span>高级设置</span>
+          <button class="close-btn" @click="showGameSettingsModal = false"><X :size="18" /></button>
+        </div>
+        <div class="steam-modal-content gameModalContent">
+          <div class="gameActionGrid">
+            <button class="secondary" :disabled="library.busy" @click="library.chooseActiveGamePath">
+              <SquarePen :size="16" />
+              游戏目录
+            </button>
+            <button class="secondary" :disabled="library.busy" @click="library.chooseActiveGameExecutable">
+              选择 exe
+            </button>
+            <button class="secondary" :disabled="!library.activeGame.steamAppId || library.busy" @click="library.locateActiveGameFromSteam">
+              Steam 定位
+            </button>
+            <button class="secondary" :disabled="library.busy" @click="chooseActiveGameCover">
+              封面
+            </button>
+            <button class="secondary" :disabled="!library.settings.storagePath" @click="library.openActiveGameModFolder">
+              Mod 缓存
+            </button>
+          </div>
+          <label class="modalField">
+            启动参数
+            <input
+              :value="library.activeGame.launchArgs"
+              placeholder="例如 -windowed 或 --skip-launcher"
+              @change="library.updateGame(library.activeGame.id, { launchArgs: ($event.target as HTMLInputElement).value })"
+            />
+          </label>
+          <div class="customAdapterPanel">
+            <div class="customAdapterHeader">
+              <strong>自定义 adapter</strong>
+              <span>{{ library.activeGame.customAdapterRules.length }} 条规则</span>
+            </div>
+            <div v-if="library.activeGame.customAdapterRules.length === 0" class="customAdapterEmpty">
+              当前使用内置规则。
+            </div>
+            <div v-else class="customAdapterRuleList">
+              <article
+                v-for="rule in library.activeGame.customAdapterRules"
+                :key="rule.id"
+                class="customAdapterRuleItem"
+              >
+                <div>
+                  <strong>{{ rule.name }}</strong>
+                  <span>{{ customRuleSummary(rule) }}</span>
+                </div>
+                <button class="danger iconOnly" :disabled="library.busy" title="删除规则" @click="library.removeCustomAdapterRule(rule.id)">
+                  <Trash2 :size="14" />
+                </button>
+              </article>
+            </div>
+            <div class="customAdapterForm">
+              <div class="modalTwoCols">
+                <label class="modalField">
+                  类型名称
+                  <input v-model="customRuleName" placeholder="例如 PAK / BepInEx / Mods" />
+                </label>
+                <label class="modalField">
+                  安装目录
+                  <input v-model="customRuleInstallPath" placeholder="相对游戏根目录，留空为根目录" />
+                </label>
+              </div>
+              <div class="modalTwoCols">
+                <label class="modalField">
+                  识别方式
+                  <select v-model="customRuleDetectKind">
+                    <option value="always">默认</option>
+                    <option value="fileName">文件名</option>
+                    <option value="extension">扩展名</option>
+                    <option value="pathPart">路径片段</option>
+                  </select>
+                </label>
+                <label class="modalField">
+                  识别值
+                  <input v-model="customRuleDetectValue" :disabled="customRuleDetectKind === 'always'" placeholder="pak / BepInEx / winhttp.dll" />
+                </label>
+              </div>
+              <div class="modalTwoCols">
+                <label class="modalField">
+                  安装方式
+                  <select v-model="customRuleInstallKind">
+                    <option value="general">复制全部内容</option>
+                    <option value="folderRoot">复制文件夹根内容</option>
+                    <option value="folder">匹配文件夹</option>
+                    <option value="file">匹配文件</option>
+                    <option value="fileSibling">匹配文件同级</option>
+                    <option value="manual">手动安装</option>
+                  </select>
+                </label>
+                <label class="modalField">
+                  匹配名称
+                  <input v-model="customRuleInstallName" :disabled="customRuleInstallKind === 'general' || customRuleInstallKind === 'folderRoot' || customRuleInstallKind === 'manual'" placeholder="默认使用识别值" />
+                </label>
+              </div>
+              <div class="customAdapterFooter">
+                <label class="inlineCheck">
+                  <input v-model="customRuleKeepPath" type="checkbox" :disabled="customRuleInstallKind !== 'general'" />
+                  保留原目录结构
+                </label>
+                <button class="primary" :disabled="library.busy" @click="saveCustomAdapterRule">
+                  添加规则
+                </button>
+              </div>
+            </div>
+          </div>
+          <div v-if="library.settings.debugMode" class="typeStrip">
+            <span v-for="type in library.activeAdapter?.modTypes ?? []" :key="type.id">
+              {{ type.name }}
+            </span>
+          </div>
+        </div>
+        <div class="steam-modal-footer">
+          <button class="primary" @click="showGameSettingsModal = false">完成</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showModEditModal && editingMod" class="steam-modal-overlay" @click.self="showModEditModal = false">
+      <div class="steam-modal modEditModal">
+        <div class="steam-modal-header">
+          <SquarePen :size="16" />
+          <span>编辑 Mod</span>
+          <button class="close-btn" @click="showModEditModal = false"><X :size="18" /></button>
+        </div>
+        <div class="steam-modal-content gameModalContent">
+          <label class="modalField">
+            名称
+            <input
+              :value="editingMod.name"
+              @change="library.updateMod(editingMod.id, { name: ($event.target as HTMLInputElement).value, updatedAt: Date.now() })"
+            />
+          </label>
+          <div class="modalTwoCols">
+            <label class="modalField">
+              版本
+              <input
+                :value="editingMod.version"
+                placeholder="版本"
+                @change="library.updateMod(editingMod.id, { version: ($event.target as HTMLInputElement).value, updatedAt: Date.now() })"
+              />
+            </label>
+            <label class="modalField">
+              作者
+              <input
+                :value="editingMod.author"
+                placeholder="作者"
+                @change="library.updateMod(editingMod.id, { author: ($event.target as HTMLInputElement).value, updatedAt: Date.now() })"
+              />
+            </label>
+          </div>
+          <div class="modalTwoCols">
+            <label class="modalField">
+              标签
+              <input
+                :value="editingMod.tags.join(', ')"
+                placeholder="用空格或逗号分隔"
+                @change="library.updateMod(editingMod.id, { tags: splitTags(($event.target as HTMLInputElement).value), updatedAt: Date.now() })"
+              />
+            </label>
+            <label class="modalField">
+              前置
+              <input
+                :value="editingMod.requirements.join(', ')"
+                placeholder="BepInEx, SKSE..."
+                @change="library.updateMod(editingMod.id, { requirements: splitTags(($event.target as HTMLInputElement).value), updatedAt: Date.now() })"
+              />
+            </label>
+          </div>
+          <label class="modalField">
+            来源网址
+            <input
+              :value="editingMod.website"
+              placeholder="来源网址"
+              @change="library.updateMod(editingMod.id, { website: ($event.target as HTMLInputElement).value, updatedAt: Date.now() })"
+            />
+          </label>
+          <label class="modalField">
+            描述
+            <textarea
+              :value="editingMod.description"
+              placeholder="安装说明、备注或来源说明"
+              @change="library.updateMod(editingMod.id, { description: ($event.target as HTMLTextAreaElement).value, updatedAt: Date.now() })"
+            />
+          </label>
+        </div>
+        <div class="steam-modal-footer">
+          <button class="secondary" @click="openModCache(editingMod)">打开缓存</button>
+          <button class="primary" @click="showModEditModal = false">完成</button>
         </div>
       </div>
     </div>
@@ -730,63 +1332,6 @@ async function confirmRemoveSelectedMods() {
               <PackagePlus :size="24" />
               松开导入到当前游戏
             </div>
-            <div class="activeGameBar">
-              <div>
-                <span>当前游戏</span>
-                <img
-                  v-if="library.activeGame && gameCoverUrls[library.activeGame.id]"
-                  class="activeGameCover"
-                  :src="gameCoverUrls[library.activeGame.id]"
-                  alt=""
-                />
-                <input
-                  v-if="library.activeGame"
-                  class="gameNameInput"
-                  :value="library.activeGame.name"
-                  @change="library.updateGame(library.activeGame.id, { name: ($event.target as HTMLInputElement).value.trim() || library.activeGame.name })"
-                />
-                <strong v-else>未选择</strong>
-                <small>{{ library.activeGame?.path ?? "添加游戏后才能导入和安装 Mod" }}</small>
-                <div v-if="library.activeGame" class="gameMeta">
-                  <span v-if="library.activeGame.exeNames.length">
-                    EXE: {{ library.activeGame.exeNames.join(", ") }}
-                  </span>
-                  <span>
-                    适配: {{ library.activeGame.adapterStatus === "implemented" ? "已接入安装规则" : library.activeGame.adapterStatus === "custom" ? "自定义通用规则" : "已加入目录，当前使用通用安装" }}
-                  </span>
-                  <span>
-                    Nexus: {{ library.activeGame.nexusDomain || "未配置" }}
-                  </span>
-                </div>
-              </div>
-              <div class="compactActions">
-                <button class="iconButton" :disabled="!library.activeGame || library.busy" title="启动游戏" @click="library.launchActiveGame">
-                  <Play :size="17" />
-                </button>
-                <button class="iconButton" :disabled="!library.activeGame" title="打开游戏目录" @click="openActiveGamePath">
-                  <FolderOpen :size="17" />
-                </button>
-                <button class="iconButton" :disabled="!library.activeGame || library.busy" title="选择游戏目录" @click="library.chooseActiveGamePath">
-                  <SquarePen :size="17" />
-                </button>
-                <button class="secondary" :disabled="!library.activeGame || library.busy" @click="library.chooseActiveGameExecutable">
-                  选择 exe
-                </button>
-                <button class="secondary" :disabled="!library.activeGame?.steamAppId || library.busy" @click="library.locateActiveGameFromSteam">
-                  Steam 定位
-                </button>
-                <button class="secondary" :disabled="!library.activeGame || library.busy" @click="chooseActiveGameCover">
-                  封面
-                </button>
-                <button class="iconButton" :disabled="!library.activeGame || !library.settings.storagePath" title="打开当前游戏 Mod 目录" @click="library.openActiveGameModFolder">
-                  <Archive :size="17" />
-                </button>
-                <button class="iconButton danger" :disabled="!library.activeGame" title="移除游戏" @click="confirmRemoveActiveGame">
-                  <Trash2 :size="17" />
-                </button>
-              </div>
-            </div>
-
             <div class="toolsRow">
               <button class="primary" :disabled="library.busy" @click="library.importLocalMods">
                 <PackagePlus :size="17" />
@@ -796,40 +1341,97 @@ async function confirmRemoveSelectedMods() {
                 <Search :size="17" />
                 <input v-model="library.search" placeholder="搜索 Mod 名称、作者、标签或来源路径" />
               </label>
-              <select v-model="library.selectedTypeId" class="typeFilter">
-                <option value="all">全部类型</option>
-                <option
-                  v-for="type in library.activeAdapter?.modTypes ?? []"
-                  :key="type.id"
-                  :value="type.id"
-                >
-                  {{ type.name }}
-                </option>
-              </select>
-              <select v-model="library.selectedTag" class="typeFilter">
-                <option value="all">全部标签</option>
-                <option v-for="tag in library.activeTags" :key="tag" :value="tag">
-                  {{ tag }}
-                </option>
-              </select>
-              <select v-model="library.sortMode" class="sortFilter">
-                <option value="createdDesc">最近导入</option>
-                <option value="createdAsc">最早导入</option>
-                <option value="nameAsc">名称 A-Z</option>
-                <option value="nameDesc">名称 Z-A</option>
-                <option value="installedFirst">已安装优先</option>
-              </select>
+              <div class="steamSelect" @click.stop>
+                <button @click="toggleDropdown('mod-type-filter')">
+                  {{ typeFilterLabel() }}
+                  <ChevronDown :size="13" />
+                </button>
+                <div v-if="openDropdownId === 'mod-type-filter'" class="steamSelectMenu">
+                  <button @click="library.selectedTypeId = 'all'; closeDropdown()">全部类型</button>
+                  <button
+                    v-for="type in library.activeAdapter?.modTypes ?? []"
+                    :key="type.id"
+                    @click="library.selectedTypeId = type.id; closeDropdown()"
+                  >
+                    {{ type.name }}
+                  </button>
+                </div>
+              </div>
+              <div class="steamSelect" @click.stop>
+                <button @click="toggleDropdown('mod-tag-filter')">
+                  {{ tagFilterLabel() }}
+                  <ChevronDown :size="13" />
+                </button>
+                <div v-if="openDropdownId === 'mod-tag-filter'" class="steamSelectMenu">
+                  <button @click="library.selectedTag = 'all'; closeDropdown()">全部标签</button>
+                  <button
+                    v-for="tag in library.activeTags"
+                    :key="tag"
+                    @click="library.selectedTag = tag; closeDropdown()"
+                  >
+                    {{ tag }}
+                  </button>
+                </div>
+              </div>
+              <div class="steamSelect" @click.stop>
+                <button @click="toggleDropdown('mod-sort-filter')">
+                  {{ sortLabel() }}
+                  <ChevronDown :size="13" />
+                </button>
+                <div v-if="openDropdownId === 'mod-sort-filter'" class="steamSelectMenu">
+                  <button @click="library.sortMode = 'custom'; closeDropdown()">自定义排序</button>
+                  <button @click="library.sortMode = 'createdDesc'; closeDropdown()">最近导入</button>
+                  <button @click="library.sortMode = 'createdAsc'; closeDropdown()">最早导入</button>
+                  <button @click="library.sortMode = 'nameAsc'; closeDropdown()">名称 A-Z</button>
+                  <button @click="library.sortMode = 'nameDesc'; closeDropdown()">名称 Z-A</button>
+                  <button @click="library.sortMode = 'installedFirst'; closeDropdown()">已安装优先</button>
+                </div>
+              </div>
               <div class="stats">
                 <span>{{ library.activeMods.length }} 个 Mod</span>
                 <span>{{ library.installedCount }} 个已安装</span>
               </div>
+              <div class="viewSwitch">
+                <button
+                  class="iconButton"
+                  :class="{ active: modViewMode === 'list' }"
+                  title="列表视图"
+                  @click="modViewMode = 'list'"
+                >
+                  <List :size="16" />
+                </button>
+                <button
+                  class="iconButton"
+                  :class="{ active: modViewMode === 'grid' }"
+                  title="网格视图"
+                  @click="modViewMode = 'grid'"
+                >
+                  <LayoutGrid :size="16" />
+                </button>
+              </div>
             </div>
 
-            <div class="batchBar">
-              <span>已选择 {{ library.selectedMods.length }} 个</span>
-              <button class="secondary" :disabled="library.activeMods.length === 0" @click="library.selectAllVisibleMods">
-                全选当前列表
+            <div class="tagToolsRow">
+              <span class="tagToolsTitle">分类标签</span>
+              <button
+                v-for="tag in library.activeTags"
+                :key="tag"
+                class="tagChip"
+                :class="{ active: library.selectedTag === tag }"
+                :style="{ borderColor: tagColor(tag), color: tagColor(tag) }"
+                @click="library.selectedTag = library.selectedTag === tag ? 'all' : tag"
+              >
+                {{ tag }}
               </button>
+              <span v-if="library.activeTags.length === 0" class="muted">暂无标签</span>
+              <input v-model="quickTagName" class="tagQuickInput" placeholder="给选中 Mod 添加标签" @keyup.enter="addQuickTagToSelected" />
+              <button class="secondary" :disabled="library.selectedMods.length === 0 || !quickTagName.trim()" @click="addQuickTagToSelected">
+                添加
+              </button>
+            </div>
+
+            <div v-if="library.selectedMods.length > 0" class="batchBar">
+              <span>已选择 {{ library.selectedMods.length }} 个</span>
               <button class="secondary" :disabled="library.selectedMods.length === 0" @click="library.clearSelection">
                 清空
               </button>
@@ -880,33 +1482,6 @@ async function confirmRemoveSelectedMods() {
               </button>
             </div>
 
-            <div class="installPathRow">
-              <label>安装到游戏目录下的相对路径</label>
-              <input
-                v-model="editingInstallPath"
-                :disabled="!library.activeGame"
-                placeholder="留空表示直接安装到游戏根目录，例如 Mods 或 BepInEx/plugins"
-                @blur="saveInstallPath"
-                @keyup.enter="saveInstallPath"
-              />
-            </div>
-
-            <div class="installPathRow">
-              <label>启动参数</label>
-              <input
-                :value="library.activeGame?.launchArgs ?? ''"
-                :disabled="!library.activeGame"
-                placeholder="例如 -windowed 或 --skip-launcher"
-                @change="library.activeGame && library.updateGame(library.activeGame.id, { launchArgs: ($event.target as HTMLInputElement).value })"
-              />
-            </div>
-
-            <div v-if="library.activeGame?.typeNames.length" class="typeStrip">
-              <span v-for="type in library.activeAdapter?.modTypes ?? []" :key="type.id">
-                {{ type }}
-              </span>
-            </div>
-
             <div v-if="library.busy" class="loadingLine">
               <LoaderCircle :size="18" class="spin" />
               正在处理本地文件...
@@ -916,159 +1491,105 @@ async function confirmRemoveSelectedMods() {
               当前游戏还没有本地 Mod。点击“导入 Mod”选择文件夹或文件，系统会复制到你的 Mod 存储目录并生成记录。
             </div>
 
-            <article v-for="mod in library.activeMods" :key="mod.id" class="modRow">
-              <label class="rowCheck">
-                <input
-                  type="checkbox"
-                  :checked="library.selectedModIds.includes(mod.id)"
-                  @change="library.toggleModSelection(mod.id, ($event.target as HTMLInputElement).checked)"
-                />
-              </label>
-              <div class="statusIcon" :class="{ installed: mod.installed }">
-                <img v-if="coverUrls[mod.id]" :src="coverUrls[mod.id]" alt="" />
-                <CheckCircle2 v-else-if="mod.installed" :size="18" />
-                <Archive v-else :size="18" />
-              </div>
-              <div class="modBody">
-                <div class="modTitle">
+            <div v-else-if="modViewMode === 'list'" class="steamModTable">
+              <div class="steamModHeader">
+                <label class="rowCheck">
                   <input
-                    :value="mod.name"
-                    @change="library.updateMod(mod.id, { name: ($event.target as HTMLInputElement).value, updatedAt: Date.now() })"
-                  />
-                  <span :class="['badge', mod.installed ? 'ok' : 'muted']">
-                    {{ mod.installed ? "已安装" : "未安装" }}
-                  </span>
-                  <span v-if="mod.deployedFiles.length" class="badge muted">
-                    {{ mod.deployedFiles.length }} 个部署文件
-                  </span>
-                  <span
-                    v-for="tag in mod.tags"
-                    :key="tag"
-                    class="tagBadge"
-                    :style="{ borderColor: tagColor(tag), color: tagColor(tag) }"
-                  >
-                    {{ tag }}
-                  </span>
-                </div>
-                <p>{{ formatFiles(mod) }}</p>
-                <small>{{ mod.rootPath }}</small>
-                <div class="modMetaRow">
-                  <label>
-                    类型
-                    <select
-                      :value="mod.modTypeId"
-                      @change="changeModType(mod, ($event.target as HTMLSelectElement).value)"
-                    >
-                      <option
-                        v-for="type in library.activeAdapter?.modTypes ?? []"
-                        :key="type.id"
-                        :value="type.id"
-                      >
-                        {{ type.name }}
-                      </option>
-                    </select>
-                  </label>
-                  <label>
-                    版本
-                    <input
-                      :value="mod.version"
-                      placeholder="版本"
-                      @change="library.updateMod(mod.id, { version: ($event.target as HTMLInputElement).value, updatedAt: Date.now() })"
-                    />
-                  </label>
-                  <label>
-                    作者
-                    <input
-                      :value="mod.author"
-                      placeholder="作者"
-                      @change="library.updateMod(mod.id, { author: ($event.target as HTMLInputElement).value, updatedAt: Date.now() })"
-                    />
-                  </label>
-                </div>
-                <div class="modMetaRow">
-                  <label>
-                    标签
-                    <input
-                      :value="mod.tags.join(', ')"
-                      placeholder="用空格或逗号分隔"
-                      @change="library.updateMod(mod.id, { tags: splitTags(($event.target as HTMLInputElement).value), updatedAt: Date.now() })"
-                    />
-                  </label>
-                  <label v-if="mod.tags.length">
-                    标签色
-                    <select
-                      :value="tagColor(mod.tags[0])"
-                      @change="library.setTagColor(mod.tags[0], ($event.target as HTMLSelectElement).value)"
-                    >
-                      <option
-                        v-for="color in library.tagPalette"
-                        :key="color"
-                        :value="color"
-                      >
-                        {{ color }}
-                      </option>
-                    </select>
-                  </label>
-                  <label>
-                    前置
-                    <input
-                      :value="mod.requirements.join(', ')"
-                      placeholder="BepInEx, SKSE..."
-                      @change="library.updateMod(mod.id, { requirements: splitTags(($event.target as HTMLInputElement).value), updatedAt: Date.now() })"
-                    />
-                  </label>
-                  <label>
-                    网址
-                    <input
-                      :value="mod.website"
-                      placeholder="来源网址"
-                      @change="library.updateMod(mod.id, { website: ($event.target as HTMLInputElement).value, updatedAt: Date.now() })"
-                    />
-                  </label>
-                </div>
-                <label class="modDescription">
-                  描述
-                  <textarea
-                    :value="mod.description"
-                    placeholder="记录安装说明、前置依赖或来源备注"
-                    @change="library.updateMod(mod.id, { description: ($event.target as HTMLTextAreaElement).value, updatedAt: Date.now() })"
+                    type="checkbox"
+                    :checked="library.activeMods.length > 0 && library.selectedMods.length === library.activeMods.length"
+                    @change="($event.target as HTMLInputElement).checked ? library.selectAllVisibleMods() : library.clearSelection()"
                   />
                 </label>
+                <span></span>
+                <span>名称</span>
+                <span>版本</span>
+                <span>类型</span>
+                <span>状态</span>
+                <span>预览</span>
+                <span>操作</span>
               </div>
-              <div class="modActions">
-                <button v-if="!mod.installed" class="primary" :disabled="library.busy" @click="library.installMod(mod)">
-                  <Play :size="16" />
-                  安装
-                </button>
-                <button v-else class="secondary" :disabled="library.busy" @click="confirmUninstallMod(mod)">
-                  卸载
-                </button>
-                <button
-                  v-if="mod.installed"
-                  class="iconButton"
-                  :disabled="library.busy"
-                  title="查看部署文件"
-                  @click="toggleModDetails(mod.id)"
+              <template v-for="mod in library.activeMods" :key="mod.id">
+                <article
+                  class="steamModRow"
+                  :class="{ dragging: draggingModId === mod.id, dragOver: dragOverModId === mod.id }"
+                  :draggable="library.canReorderMods && !library.busy"
+                  @dragstart="beginModDrag(mod)"
+                  @dragover.prevent="dragOverModId = mod.id"
+                  @dragleave="dragOverModId === mod.id && (dragOverModId = '')"
+                  @drop.prevent="dropModOn(mod)"
+                  @dragend="draggingModId = ''; dragOverModId = ''"
                 >
-                  <ListTree :size="16" />
-                </button>
-                <button
-                  v-else
-                  class="iconButton"
-                  :disabled="library.busy"
-                  title="预览安装计划"
-                  @click="previewModInstallPlan(mod)"
-                >
-                  <ListTree :size="16" />
-                </button>
-                <button class="iconButton" :disabled="library.busy" title="打开 Mod 缓存目录" @click="openModCache(mod)">
-                  <FolderOpen :size="16" />
-                </button>
-                <button class="iconButton danger" :disabled="library.busy" title="删除本地 Mod" @click="confirmRemoveMod(mod)">
-                  <Trash2 :size="16" />
-                </button>
-              </div>
-              <div v-if="expandedModId === mod.id" class="modDetails">
+                  <label class="rowCheck">
+                    <input
+                      type="checkbox"
+                      :checked="library.selectedModIds.includes(mod.id)"
+                      @change="library.toggleModSelection(mod.id, ($event.target as HTMLInputElement).checked)"
+                    />
+                  </label>
+                  <button class="dragHandle" :disabled="!library.canReorderMods || library.busy" title="拖拽排序">
+                    <GripVertical :size="16" />
+                  </button>
+                  <div class="steamModName">
+                    <Archive :size="16" />
+                    <strong :title="mod.name">{{ mod.name }}</strong>
+                    <span v-for="tag in mod.tags.slice(0, 2)" :key="tag" class="tagBadge" :style="{ borderColor: tagColor(tag), color: tagColor(tag) }">
+                      {{ tag }}
+                    </span>
+                  </div>
+                  <span class="steamModVersion">{{ mod.version || "1.0.0" }}</span>
+                  <div class="steamSelect steamSelectCompact" @click.stop>
+                    <button @click="toggleDropdown(`mod-type-${mod.id}`)">
+                      {{ modTypeLabel(mod) }}
+                      <ChevronDown :size="13" />
+                    </button>
+                    <div v-if="openDropdownId === `mod-type-${mod.id}`" class="steamSelectMenu">
+                      <button
+                        v-for="type in library.activeAdapter?.modTypes ?? []"
+                        :key="type.id"
+                        @click="changeModType(mod, type.id); closeDropdown()"
+                      >
+                        {{ type.name }}
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    class="steamToggleCell"
+                    :class="{ active: mod.installed }"
+                    :disabled="library.busy"
+                    @click="mod.installed ? confirmUninstallMod(mod) : library.installMod(mod)"
+                  >
+                    <span class="steamToggle"><span /></span>
+                    {{ mod.installed ? "已安装" : "未安装" }}
+                  </button>
+                  <div class="modPreviewCell">
+                    <button
+                      v-if="coverUrls[mod.id]"
+                      class="modThumbButton"
+                      :title="`查看预览图：${mod.name}`"
+                      @click="openPreviewImage(coverUrls[mod.id], mod.name)"
+                    >
+                      <img :src="coverUrls[mod.id]" alt="" />
+                    </button>
+                    <button
+                      v-else
+                      class="iconButton"
+                      :disabled="library.busy"
+                      :title="mod.installed ? '查看部署文件' : '预览安装计划'"
+                      @click="mod.installed ? toggleModDetails(mod.id) : previewModInstallPlan(mod)"
+                    >
+                      <ListTree :size="16" />
+                    </button>
+                  </div>
+                  <div class="steamRowActions">
+                    <button class="secondary" :disabled="library.busy" @click="openModEdit(mod)">
+                      编辑
+                    </button>
+                    <button class="iconButton danger" :disabled="library.busy" title="删除本地 Mod" @click="confirmRemoveMod(mod)">
+                      <Trash2 :size="16" />
+                    </button>
+                  </div>
+                </article>
+                <div v-if="expandedModId === mod.id" class="modDetails steamModDetails">
                 <template v-if="mod.installed">
                   <strong>部署文件</strong>
                   <p v-if="mod.deployedFiles.length === 0">当前还没有部署记录，旧记录卸载会回退到安装策略匹配。</p>
@@ -1099,8 +1620,105 @@ async function confirmRemoveSelectedMods() {
                     仅显示前 80 个，共 {{ library.installPlans[mod.id]?.targetFiles.length }} 个文件。
                   </p>
                 </template>
-              </div>
-            </article>
+                </div>
+              </template>
+            </div>
+            <div v-else class="steamModGrid">
+              <article
+                v-for="mod in library.activeMods"
+                :key="mod.id"
+                class="steamModCard"
+                :class="{ installed: mod.installed, selected: library.selectedModIds.includes(mod.id), dragging: draggingModId === mod.id, dragOver: dragOverModId === mod.id }"
+                :draggable="library.canReorderMods && !library.busy"
+                @dragstart="beginModDrag(mod)"
+                @dragover.prevent="dragOverModId = mod.id"
+                @dragleave="dragOverModId === mod.id && (dragOverModId = '')"
+                @drop.prevent="dropModOn(mod)"
+                @dragend="draggingModId = ''; dragOverModId = ''"
+              >
+                <div class="modCardCover">
+                  <img v-if="coverUrls[mod.id]" :src="coverUrls[mod.id]" alt="" @click="openPreviewImage(coverUrls[mod.id], mod.name)" />
+                  <Archive v-else :size="32" />
+                  <label class="modCardCheck">
+                    <input
+                      type="checkbox"
+                      :checked="library.selectedModIds.includes(mod.id)"
+                      @change="library.toggleModSelection(mod.id, ($event.target as HTMLInputElement).checked)"
+                    />
+                  </label>
+                  <button class="modCardDrag" :disabled="!library.canReorderMods || library.busy" title="拖拽排序">
+                    <GripVertical :size="16" />
+                  </button>
+                </div>
+
+                <div class="modCardBody">
+                  <h3 :title="mod.name">{{ mod.name }}</h3>
+                  <div class="modCardMeta">
+                    <span>{{ mod.version || "1.0.0" }}</span>
+                    <span>{{ mod.files.length }} 个文件</span>
+                    <span>{{ modTypeLabel(mod) }}</span>
+                  </div>
+                  <div class="modCardTags" v-if="mod.tags.length">
+                    <span v-for="tag in mod.tags.slice(0, 3)" :key="tag" class="tagBadge" :style="{ borderColor: tagColor(tag), color: tagColor(tag) }">
+                      {{ tag }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="modCardActions">
+                  <button
+                    class="steamToggleCell"
+                    :class="{ active: mod.installed }"
+                    :disabled="library.busy"
+                    @click="mod.installed ? confirmUninstallMod(mod) : library.installMod(mod)"
+                  >
+                    <span class="steamToggle"><span /></span>
+                    {{ mod.installed ? "已安装" : "未安装" }}
+                  </button>
+                  <button
+                    class="iconButton"
+                    :disabled="library.busy"
+                    :title="mod.installed ? '查看部署文件' : '预览安装计划'"
+                    @click="mod.installed ? toggleModDetails(mod.id) : previewModInstallPlan(mod)"
+                  >
+                    <ListTree :size="16" />
+                  </button>
+                  <button class="iconButton" :disabled="library.busy" title="编辑" @click="openModEdit(mod)">
+                    <SquarePen :size="16" />
+                  </button>
+                  <button class="iconButton danger" :disabled="library.busy" title="删除本地 Mod" @click="confirmRemoveMod(mod)">
+                    <Trash2 :size="16" />
+                  </button>
+                </div>
+
+                <div v-if="expandedModId === mod.id" class="modDetails steamModDetails modCardDetails">
+                  <template v-if="mod.installed">
+                    <strong>部署文件</strong>
+                    <p v-if="mod.deployedFiles.length === 0">当前还没有部署记录，旧记录卸载会回退到安装策略匹配。</p>
+                    <ul v-else>
+                      <li v-for="file in visibleDeployedFiles(mod)" :key="file">{{ file }}</li>
+                    </ul>
+                  </template>
+                  <template v-else>
+                    <strong>安装计划</strong>
+                    <p v-if="!library.installPlans[mod.id]">点击计划按钮后会显示准备写入游戏目录的相对路径。</p>
+                    <p v-else-if="visiblePlanFiles(mod).length === 0">没有匹配到可自动安装的文件。</p>
+                    <p v-else-if="conflictCount(mod) > 0" class="conflictText">
+                      检测到 {{ conflictCount(mod) }} 个冲突文件，直接安装会被阻止。
+                    </p>
+                    <ul v-if="visiblePlanFiles(mod).length > 0">
+                      <li
+                        v-for="file in visiblePlanFiles(mod)"
+                        :key="file"
+                        :class="{ conflict: library.installPlans[mod.id]?.conflicts.includes(file) }"
+                      >
+                        {{ file }}
+                      </li>
+                    </ul>
+                  </template>
+                </div>
+              </article>
+            </div>
           </section>
         </div>
       </section>
@@ -1112,20 +1730,23 @@ async function confirmRemoveSelectedMods() {
           <section class="panel gamePanel">
             <div class="panelHeader">
               <h2>Nexus 游戏</h2>
-              <span>支持 {{ library.nexusPresets.length }} 个</span>
+              <span>{{ nexusGames.length }} 个已添加</span>
+            </div>
+            <div v-if="nexusGames.length === 0" class="empty">
+              还没有添加带 Nexus 配置的游戏。
             </div>
             <button
-              v-for="preset in library.nexusPresets"
-              :key="preset.id"
+              v-for="game in nexusGames"
+              :key="game.id"
               class="gameItem"
-              :class="{ active: library.nexusPresetId === preset.id }"
-              @click="library.setNexusPreset(preset.id)"
+              :class="{ active: library.nexusPresetId === game.presetId }"
+              @click="chooseNexusGame(game.id)"
             >
-              <Gamepad2 :size="18" />
+              <img v-if="gameCoverUrls[game.id]" :src="gameCoverUrls[game.id]" alt="" />
+              <Gamepad2 v-else :size="18" />
               <span>
-                {{ preset.name }}
-                <small v-if="preset.nexusDomain">{{ preset.nexusDomain }}</small>
-                <small v-else>暂无 Nexus 配置</small>
+                {{ game.name }}
+                <small>{{ game.nexusDomain }}</small>
               </span>
             </button>
           </section>
@@ -1134,7 +1755,7 @@ async function confirmRemoveSelectedMods() {
           <section class="panel managerPanel">
 
             <!-- Mod Details View -->
-            <div v-if="library.selectedNexusMod" class="nexusDetailView" style="display: flex; flex-direction: column; gap: 18px;">
+            <div v-if="library.selectedNexusMod" class="nexusDetailView">
               <div class="activeGameBar">
                 <button class="secondary" @click="library.selectedNexusMod = null">
                   ← 返回列表
@@ -1146,41 +1767,102 @@ async function confirmRemoveSelectedMods() {
                 <img v-if="library.selectedNexusMod.cover" :src="library.selectedNexusMod.cover" alt="" />
                 <div>
                   <h2>{{ library.selectedNexusMod.title }}</h2>
-                  <p>{{ library.selectedNexusMod.summary || "无摘要" }}</p>
+                  <p>
+                    {{
+                      library.nexusTranslationVisible && library.nexusTranslatedSummary
+                        ? library.nexusTranslatedSummary
+                        : library.selectedNexusMod.summary || "无摘要"
+                    }}
+                  </p>
                   <div class="gameMeta">
                     <span>{{ library.selectedNexusMod.author || "未知作者" }}</span>
                     <span>{{ library.selectedNexusMod.version || "无版本" }}</span>
                     <span>{{ formatDate(library.selectedNexusMod.updatedAt) }} 更新</span>
+                    <span>{{ formatNumber(library.selectedNexusMod.downloads) }} 下载</span>
+                    <span>{{ formatNumber(library.selectedNexusMod.likes) }} 点赞</span>
+                  </div>
+                  <div class="nexusCategoryRow" v-if="library.selectedNexusMod.categories.length > 0">
+                    <span v-for="category in library.selectedNexusMod.categories" :key="category">{{ category }}</span>
                   </div>
                 </div>
               </div>
 
               <div class="detailActions">
                 <button class="secondary" @click="library.openNexusUrl(library.selectedNexusMod.website)">打开 Nexus 页面</button>
+                <button
+                  class="secondary"
+                  :disabled="library.nexusTranslationLoading"
+                  @click="library.translateSelectedNexusMod(library.nexusTranslationVisible)"
+                >
+                  <LoaderCircle v-if="library.nexusTranslationLoading" :size="16" class="spin" />
+                  <Languages v-else :size="16" />
+                  {{ library.nexusTranslationVisible ? "刷新翻译" : "翻译成中文" }}
+                </button>
+                <button
+                  v-if="library.nexusTranslationVisible"
+                  class="secondary"
+                  @click="library.showOriginalNexusText"
+                >
+                  查看原文
+                </button>
+              </div>
+              <p v-if="library.nexusTranslationError" class="translationError">
+                {{ library.nexusTranslationError }}
+              </p>
+
+              <div v-if="library.selectedNexusMod.images.length > 0" class="nexusImageGallery">
+                <button
+                  v-for="image in library.selectedNexusMod.images"
+                  :key="image.id"
+                  class="nexusImageThumb"
+                  :title="image.title"
+                  @click="openPreviewImage(image.imageUrl || image.thumbnailUrl, image.title)"
+                >
+                  <img :src="image.thumbnailUrl || image.imageUrl" alt="" />
+                </button>
               </div>
 
-              <h3>文件</h3>
-              <div v-if="library.selectedNexusMod.files.length === 0" class="empty">
-                Nexus 没返回可下载文件。
+              <div class="nexusDetailColumns">
+                <section class="nexusDescriptionBlock">
+                  <h3>说明</h3>
+                  <div
+                    v-if="library.nexusTranslationVisible && library.nexusTranslatedDescription"
+                    class="nexusDescription translatedText"
+                  >
+                    {{ library.nexusTranslatedDescription }}
+                  </div>
+                  <div
+                    v-else
+                    class="nexusDescription"
+                    v-html="renderNexusDescription(library.selectedNexusMod.description, library.selectedNexusMod.descriptionFormat)"
+                  />
+                </section>
+
+                <section class="nexusFilesBlock">
+                  <h3>文件</h3>
+                  <div v-if="library.selectedNexusMod.files.length === 0" class="empty">
+                    Nexus 没返回可下载文件。
+                  </div>
+                  <article v-for="file in library.selectedNexusMod.files" :key="file.id" class="fileRow">
+                    <div>
+                      <strong>{{ file.name }}</strong>
+                      <span>
+                        {{ file.categoryName || "文件" }}
+                        · {{ file.version || "无版本" }}
+                        · {{ formatBytes(file.size) }}
+                        · {{ formatDate(file.createdAt) }}
+                      </span>
+                    </div>
+                    <div class="compactActions">
+                      <button class="secondary" @click="library.openNexusUrl(file.detailsUrl)">网页</button>
+                      <button class="primary" :disabled="library.busy" @click="library.downloadNexusFile(file)">
+                        <ArrowDownToLine :size="16" />
+                        下载
+                      </button>
+                    </div>
+                  </article>
+                </section>
               </div>
-              <article v-for="file in library.selectedNexusMod.files" :key="file.id" class="fileRow">
-                <div>
-                  <strong>{{ file.name }}</strong>
-                  <span>
-                    {{ file.categoryName || "文件" }}
-                    · {{ file.version || "无版本" }}
-                    · {{ formatBytes(file.size) }}
-                    · {{ formatDate(file.createdAt) }}
-                  </span>
-                </div>
-                <div class="compactActions">
-                  <button class="secondary" @click="library.openNexusUrl(file.detailsUrl)">网页</button>
-                  <button class="primary" :disabled="library.busy" @click="library.downloadNexusFile(file)">
-                    <ArrowDownToLine :size="16" />
-                    下载
-                  </button>
-                </div>
-              </article>
             </div>
 
             <!-- Mod List View -->
@@ -1304,14 +1986,14 @@ async function confirmRemoveSelectedMods() {
             
             <article v-for="task in library.activeDownloads" :key="task.id" class="steamDownloadTask">
               <div class="taskIconWrapper">
-                <HardDrive :size="28" v-if="task.source === 'custom'" class="taskIcon" />
+                <HardDrive :size="28" v-if="task.source === 'Custom'" class="taskIcon" />
                 <Archive :size="28" v-else class="taskIcon" />
               </div>
               
               <div class="taskMain">
                 <div class="taskTitleRow">
                   <h3 :title="task.modName || task.fileName">{{ task.modName || task.fileName }}</h3>
-                  <span class="taskStatusBadge" :class="{ ok: task.status === 'completed', error: task.status === 'failed', active: task.status === 'downloading' }">
+                  <span class="taskStatusBadge" :class="{ ok: task.status === 'completed', error: task.status === 'failed', active: task.status === 'downloading', paused: task.status === 'paused' }">
                     {{ downloadStatusText(task.status) }}
                   </span>
                 </div>
@@ -1321,7 +2003,7 @@ async function confirmRemoveSelectedMods() {
 
                 <div class="taskMetaRow">
                   <span class="metaItem"><Gamepad2 :size="12" /> {{ task.gameName || '未知游戏' }}</span>
-                  <span class="metaItem"><ListTree :size="12" /> {{ task.source === 'nexus' ? 'NexusMods' : '自定义链接' }}</span>
+                  <span class="metaItem"><ListTree :size="12" /> {{ task.source === 'NexusMods' ? 'NexusMods' : '自定义链接' }}</span>
                   
                   <span class="metaItem progressText" v-if="task.totalBytes > 0">
                     {{ formatBytes(task.receivedBytes) }} / {{ formatBytes(task.totalBytes) }}
@@ -1331,12 +2013,24 @@ async function confirmRemoveSelectedMods() {
                   </span>
                 </div>
                 
-                <div class="taskProgressBar" v-if="task.status === 'downloading'">
+                <div class="taskProgressBar" v-if="['downloading', 'paused'].includes(task.status)">
                   <div class="progressFill" :style="{ width: task.totalBytes > 0 ? `${Math.min(100, Math.round((task.receivedBytes / task.totalBytes) * 100))}%` : '100%' }" :class="{ indeterminate: task.totalBytes === 0 }"></div>
                 </div>
               </div>
               
               <div class="taskActionsRight">
+                <button v-if="task.status === 'downloading'" class="secondary" title="暂停下载" @click="library.pauseDownloadTask(task.id)">
+                  <Pause :size="16" />
+                </button>
+                <button
+                  v-else-if="['paused', 'failed', 'queued'].includes(task.status)"
+                  class="secondary"
+                  title="继续下载"
+                  :disabled="!task.url"
+                  @click="library.resumeDownloadTask(task.id)"
+                >
+                  <RotateCcw :size="16" />
+                </button>
                 <button class="secondary" title="打开文件位置" :disabled="!task.outputPath" @click="library.openDownloadFolder(task)">
                   <FolderOpen :size="16" />
                 </button>
@@ -1388,15 +2082,56 @@ async function confirmRemoveSelectedMods() {
         </div>
       </section>
 
-      <section v-else-if="activeTab === 'backup'" class="page steamDownloadsPage">
-        <div class="steamDownloadsWrapper">
+      <section v-else-if="activeTab === 'backup'" class="page" style="padding: 0; height: 100%;">
+        <div class="workspaceGrid">
+          <section class="panel gamePanel">
+            <div class="panelHeader">
+              <h2>游戏库</h2>
+              <span>{{ library.games.length }} 个</span>
+            </div>
+            <button class="addGameButton" @click="showPresetPicker = true">
+              <Plus :size="18" />
+            </button>
+            <div v-if="library.games.length === 0" class="empty">
+              还没有添加游戏。
+            </div>
+            <button
+              v-for="game in library.games"
+              :key="game.id"
+              class="gameItem"
+              :class="{ active: library.activeGameId === game.id }"
+              @click="chooseGame(game.id)"
+            >
+              <img v-if="gameCoverUrls[game.id]" :src="gameCoverUrls[game.id]" alt="" />
+              <Gamepad2 v-else :size="18" />
+              <span>
+                {{ game.name }}
+                <small v-if="game.steamAppId">Steam {{ game.steamAppId }}</small>
+              </span>
+            </button>
+          </section>
+
+          <section class="panel managerPanel steamDownloadsPage">
+            <div class="steamDownloadsWrapper">
           <div class="steamDownloadsHeader">
-            <h2>游戏备份 <span>({{ library.backups.length }})</span></h2>
+            <h2>整合包与备份 <span>({{ library.backups.length }})</span></h2>
             
             <div class="steamCustomDownloadRow">
               <input v-model="backupName" placeholder="备份名称(可选)" />
-              <button class="primary" :disabled="!library.activeGame || library.busy" @click="createBackup">
-                创建当前游戏备份
+              <button class="primary" :disabled="!library.activeGame || library.busy" @click="library.exportActiveGamePack(backupName)">
+                导出整合包 .zip
+              </button>
+              <button class="secondary" :disabled="!library.settings.storagePath || library.busy" @click="library.restoreActiveGamePack">
+                导入整合包
+              </button>
+              <button class="secondary" :disabled="!library.activeGame || library.busy" @click="library.importBackupFile">
+                选择备份文件
+              </button>
+              <button class="secondary" :disabled="!library.activeGame || library.busy" @click="createBackup">
+                备份游戏安装目录
+              </button>
+              <button class="secondary" :disabled="!library.activeGame || library.busy" @click="library.createActiveSaveBackup(backupName)">
+                备份存档目录
               </button>
               <button class="secondary" :disabled="!library.settings.storagePath" @click="library.openBackupFolder()">
                 <FolderOpen :size="14" /> 打开目录
@@ -1450,16 +2185,24 @@ async function confirmRemoveSelectedMods() {
               <div v-if="library.backupContents[backup.id]?.length" class="backupContentsBox">
                 <strong>备份内容:</strong>
                 <ul class="backupFileList">
-                  <li v-for="entry in library.backupContents[backup.id].slice(0, 100)" :key="entry.path">
-                    <span class="fileType">{{ entry.isDirectory ? "目录" : "文件" }}</span> {{ entry.path }} <span v-if="!entry.isDirectory" class="fileSize">({{ formatBytes(entry.size) }})</span>
+                  <li
+                    v-for="entry in visibleBackupTreeEntries(backup.id)"
+                    :key="`${entry.isDirectory ? 'dir' : 'file'}:${entry.path}`"
+                    :style="{ paddingLeft: `${entry.depth * 16}px` }"
+                  >
+                    <span class="fileType">{{ entry.isDirectory ? "目录" : "文件" }}</span>
+                    <span class="backupTreeName" :title="entry.path">{{ entry.name }}</span>
+                    <span v-if="!entry.isDirectory" class="fileSize">({{ formatBytes(entry.size) }})</span>
                   </li>
                 </ul>
-                <p v-if="library.backupContents[backup.id].length > 100" class="muted">
-                  仅显示前 100 项，共 {{ library.backupContents[backup.id].length }} 项。
+                <p v-if="library.backupContents[backup.id].length > 200" class="muted">
+                  仅显示前 200 项，共 {{ library.backupContents[backup.id].length }} 个文件。
                 </p>
               </div>
             </article>
           </div>
+        </div>
+          </section>
         </div>
       </section>
 
@@ -1589,6 +2332,149 @@ async function confirmRemoveSelectedMods() {
 
                 <div class="steamSettingRow">
                   <div class="settingInfo">
+                    <label>联网请求使用代理</label>
+                    <span>Nexus 浏览、API Key 校验、下载直链和普通下载都会使用此代理。</span>
+                  </div>
+                  <div class="settingControl">
+                    <label class="steamToggle">
+                      <input type="checkbox" :checked="library.settings.proxyEnabled" @change="library.updateSettings({ proxyEnabled: ($event.target as HTMLInputElement).checked })" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="steamSettingRow">
+                  <div class="settingInfo">
+                    <label>代理地址</label>
+                    <span>例如 http://127.0.0.1:7890 或 socks5://127.0.0.1:7890。</span>
+                  </div>
+                  <div class="settingControl" style="min-width: 320px;">
+                    <input
+                      class="steamInput"
+                      :value="library.settings.proxyUrl"
+                      placeholder="127.0.0.1:7890"
+                      @change="library.updateSettings({ proxyUrl: ($event.target as HTMLInputElement).value })"
+                    />
+                  </div>
+                </div>
+
+                <div class="steamSettingRow">
+                  <div class="settingInfo">
+                    <label>Nexus 内容翻译</label>
+                    <span>实验性免费源可能限流或失效；译文会缓存在本地，不覆盖原文。</span>
+                  </div>
+                  <div class="settingControl">
+                    <select
+                      class="steamSelectBox"
+                      :value="library.settings.translationProvider"
+                      @change="library.updateSettings({ translationProvider: ($event.target as HTMLSelectElement).value as typeof library.settings.translationProvider })"
+                    >
+                      <option value="off">关闭</option>
+                      <option value="google-gtx">Google 免费接口</option>
+                      <option value="baidu">百度翻译开放平台</option>
+                      <option value="youdao">有道智云翻译</option>
+                      <option value="tencent">腾讯云机器翻译</option>
+                      <option value="volcengine">火山引擎机器翻译</option>
+                    </select>
+                  </div>
+                </div>
+
+                <template v-if="library.settings.translationProvider === 'baidu'">
+                  <div class="steamSettingRow">
+                    <div class="settingInfo">
+                      <label>百度翻译 AppID</label>
+                    </div>
+                    <div class="settingControl" style="min-width: 320px;">
+                      <input class="steamInput" :value="library.settings.baiduTranslateAppId" @change="library.updateSettings({ baiduTranslateAppId: ($event.target as HTMLInputElement).value })" />
+                    </div>
+                  </div>
+                  <div class="steamSettingRow">
+                    <div class="settingInfo">
+                      <label>百度翻译密钥</label>
+                    </div>
+                    <div class="settingControl" style="min-width: 320px;">
+                      <input class="steamInput" type="password" :value="library.settings.baiduTranslateSecret" @change="library.updateSettings({ baiduTranslateSecret: ($event.target as HTMLInputElement).value })" />
+                    </div>
+                  </div>
+                </template>
+
+                <template v-if="library.settings.translationProvider === 'youdao'">
+                  <div class="steamSettingRow">
+                    <div class="settingInfo">
+                      <label>有道智云应用 ID</label>
+                    </div>
+                    <div class="settingControl" style="min-width: 320px;">
+                      <input class="steamInput" :value="library.settings.youdaoTranslateAppKey" @change="library.updateSettings({ youdaoTranslateAppKey: ($event.target as HTMLInputElement).value })" />
+                    </div>
+                  </div>
+                  <div class="steamSettingRow">
+                    <div class="settingInfo">
+                      <label>有道智云应用密钥</label>
+                    </div>
+                    <div class="settingControl" style="min-width: 320px;">
+                      <input class="steamInput" type="password" :value="library.settings.youdaoTranslateSecret" @change="library.updateSettings({ youdaoTranslateSecret: ($event.target as HTMLInputElement).value })" />
+                    </div>
+                  </div>
+                </template>
+
+                <template v-if="library.settings.translationProvider === 'tencent'">
+                  <div class="steamSettingRow">
+                    <div class="settingInfo">
+                      <label>腾讯云 SecretId</label>
+                    </div>
+                    <div class="settingControl" style="min-width: 320px;">
+                      <input class="steamInput" :value="library.settings.tencentTranslateSecretId" @change="library.updateSettings({ tencentTranslateSecretId: ($event.target as HTMLInputElement).value })" />
+                    </div>
+                  </div>
+                  <div class="steamSettingRow">
+                    <div class="settingInfo">
+                      <label>腾讯云 SecretKey</label>
+                    </div>
+                    <div class="settingControl" style="min-width: 320px;">
+                      <input class="steamInput" type="password" :value="library.settings.tencentTranslateSecretKey" @change="library.updateSettings({ tencentTranslateSecretKey: ($event.target as HTMLInputElement).value })" />
+                    </div>
+                  </div>
+                  <div class="steamSettingRow">
+                    <div class="settingInfo">
+                      <label>腾讯云地域</label>
+                      <span>默认 ap-guangzhou。</span>
+                    </div>
+                    <div class="settingControl" style="min-width: 320px;">
+                      <input class="steamInput" :value="library.settings.tencentTranslateRegion" @change="library.updateSettings({ tencentTranslateRegion: ($event.target as HTMLInputElement).value })" />
+                    </div>
+                  </div>
+                </template>
+
+                <template v-if="library.settings.translationProvider === 'volcengine'">
+                  <div class="steamSettingRow">
+                    <div class="settingInfo">
+                      <label>火山引擎 AccessKey ID</label>
+                    </div>
+                    <div class="settingControl" style="min-width: 320px;">
+                      <input class="steamInput" :value="library.settings.volcengineTranslateAccessKeyId" @change="library.updateSettings({ volcengineTranslateAccessKeyId: ($event.target as HTMLInputElement).value })" />
+                    </div>
+                  </div>
+                  <div class="steamSettingRow">
+                    <div class="settingInfo">
+                      <label>火山引擎 Secret AccessKey</label>
+                    </div>
+                    <div class="settingControl" style="min-width: 320px;">
+                      <input class="steamInput" type="password" :value="library.settings.volcengineTranslateSecretAccessKey" @change="library.updateSettings({ volcengineTranslateSecretAccessKey: ($event.target as HTMLInputElement).value })" />
+                    </div>
+                  </div>
+                  <div class="steamSettingRow">
+                    <div class="settingInfo">
+                      <label>火山引擎地域</label>
+                      <span>默认 cn-north-1。</span>
+                    </div>
+                    <div class="settingControl" style="min-width: 320px;">
+                      <input class="steamInput" :value="library.settings.volcengineTranslateRegion" @change="library.updateSettings({ volcengineTranslateRegion: ($event.target as HTMLInputElement).value })" />
+                    </div>
+                  </div>
+                </template>
+
+                <div class="steamSettingRow">
+                  <div class="settingInfo">
                     <label>允许游戏运行时修改 Mod</label>
                   </div>
                   <div class="settingControl">
@@ -1666,6 +2552,18 @@ async function confirmRemoveSelectedMods() {
       class="steamContextMenu"
       :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
     >
+      <button @click.stop="openContextGameInfo">
+        <Info :size="14" /> 游戏信息
+      </button>
+      <button @click.stop="openContextGameSettings">
+        <Settings :size="14" /> 高级设置
+      </button>
+      <button @click.stop="launchContextGame">
+        <Play :size="14" /> 启动游戏
+      </button>
+      <button @click.stop="openContextGameFolder">
+        <FolderOpen :size="14" /> 打开目录
+      </button>
       <button @click.stop="deleteContextGame">
         <Trash2 :size="14" style="color: #ff5e5e;" /> 删除游戏
       </button>

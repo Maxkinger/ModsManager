@@ -9,10 +9,12 @@ export const skyrimSeAdapter: GameAdapter = {
       id: "data",
       name: "Data",
       install: {
-        kind: "folder",
+        kind: "bethesdaData",
         installPath: "Data",
         folderName: "Data",
-        spare: true
+        documentsGameFolder: "Skyrim Special Edition",
+        iniFileName: "Skyrim.ini",
+        localAppDataGameFolder: "Skyrim Special Edition"
       }
     },
     {

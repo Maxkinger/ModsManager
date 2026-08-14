@@ -12,7 +12,13 @@
     "dist": "npm run build && electron-builder --win",
     "preview": "electron-vite preview",
     "typecheck": "vue-tsc --noEmit",
-    "check:adapters": "node scripts/check-adapters.cjs"
+    "check:adapters": "node scripts/check-adapters.cjs",
+    "check:adapter-rules": "node scripts/check-adapter-rules.cjs",
+    "check:archive-import": "node scripts/check-archive-import-security.cjs",
+    "check:install-safety": "node scripts/check-install-uninstall-safety.cjs",
+    "check:import-flow": "node scripts/check-import-flow.cjs",
+    "check:real-mod-folders": "node scripts/check-real-mod-folders.cjs",
+    "check:all": "npm run typecheck && npm run check:adapters && npm run check:adapter-rules && npm run check:archive-import && npm run check:install-safety && npm run check:import-flow && npm run check:real-mod-folders && npm run build"
   },
   "build": {
     "appId": "com.mayfly.modmanager",
@@ -46,6 +52,7 @@
     "adm-zip": "^0.6.0",
     "lucide-vue-next": "^0.468.0",
     "pinia": "^2.2.6",
+    "undici": "^6.28.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },

@@ -42,12 +42,16 @@ declare global {
         maxDepth?: number;
       }) => Promise<string>;
       findSteamGamePath: (steamAppId: number) => Promise<string>;
-      validateNexusApiKey: (apiKey: string) => Promise<import("./domain").NexusUser>;
+      validateNexusApiKey: (options: string | {
+        apiKey: string;
+        proxyUrl?: string;
+      }) => Promise<import("./domain").NexusUser>;
       listNexusMods: (options: {
         apiKey: string;
         gameDomain: string;
         page: number;
         pageSize: number;
+        proxyUrl?: string;
         searchText?: string;
         sort?: "default" | "updatedAt" | "createdAt" | "downloads";
         facets?: {
@@ -60,21 +64,46 @@ declare global {
         apiKey: string;
         gameDomain: string;
         modId: string;
+        proxyUrl?: string;
       }) => Promise<import("./domain").NexusModDetail>;
       getNexusDownloadUrl: (options: {
         apiKey: string;
         gameDomain: string;
         modId: string;
         fileId: string;
+        proxyUrl?: string;
+        key?: string;
+        expires?: string;
+      }) => Promise<string>;
+      translateText: (options: {
+        text: string;
+        provider: import("./domain").AppSettings["translationProvider"];
+        targetLang: "zh-CN";
+        sourceLang?: string;
+        proxyUrl?: string;
+        baiduAppId?: string;
+        baiduSecret?: string;
+        youdaoAppKey?: string;
+        youdaoSecret?: string;
+        tencentSecretId?: string;
+        tencentSecretKey?: string;
+        tencentRegion?: string;
+        volcengineAccessKeyId?: string;
+        volcengineSecretAccessKey?: string;
+        volcengineRegion?: string;
       }) => Promise<string>;
       downloadFile: (options: {
+        taskId?: string;
         url: string;
         outputPath: string;
+        resume?: boolean;
+        proxyUrl?: string;
       }) => Promise<{
         outputPath: string;
         receivedBytes: number;
         totalBytes: number;
       }>;
+      cancelDownload: (taskId: string) => Promise<boolean>;
       createBackupZip: (options: {
         sourcePath: string;
         outputPath: string;
@@ -103,11 +132,41 @@ declare global {
         outputPath: string;
         size: number;
       }>;
+      readGmmManifest: (packagePath: string) => Promise<Record<string, unknown>>;
+      importGamePack: (options: {
+        packagePath: string;
+        storagePath: string;
+        gameName: string;
+        overwrite?: boolean;
+      }) => Promise<{
+        manifest: Record<string, unknown>;
+        mods: Array<{ folder: string; rootPath: string; files: string[]; coverImage?: string }>;
+      }>;
       importModFolder: (options: {
         sourcePath: string;
         storagePath: string;
         gameId: string;
+        gameName?: string;
         modId: string;
+      }) => Promise<{
+        rootPath: string;
+        files: string[];
+        coverImage?: string;
+        manifest?: {
+          name?: string;
+          version?: string;
+          author?: string;
+        website?: string;
+        description?: string;
+        tags?: string[];
+          requirements?: string[];
+        };
+      }>;
+      migrateModCacheFolder: (options: {
+        sourcePath: string;
+        storagePath: string;
+        gameName: string;
+        folderName: string;
       }) => Promise<{
         rootPath: string;
         files: string[];
@@ -135,16 +194,20 @@ declare global {
       applyModStrategy: (options: {
         modRoot: string;
         gamePath: string;
+        targetFolderName?: string;
         strategy: import("./domain").InstallStrategy;
         isInstall: boolean;
         useSymlink?: boolean;
+        managedToolCandidates?: string[];
       }) => Promise<{
         deployedFiles: string[];
       }>;
       createInstallPlan: (options: {
         modRoot: string;
         gamePath: string;
+        targetFolderName?: string;
         strategy: import("./domain").InstallStrategy;
+        useSymlink?: boolean;
       }) => Promise<import("./domain").InstallPlan>;
       removeDeployedFiles: (options: {
         gamePath: string;
