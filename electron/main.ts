@@ -93,8 +93,8 @@ function getResourcePath(fileName: string) {
 
 function readWindowState() {
   const fallback = {
-    width: 1320,
-    height: 840
+    width: 1200,
+    height: 800
   };
   const filePath = join(electron.app.getPath("userData"), "window-state.json");
 
@@ -102,8 +102,8 @@ function readWindowState() {
     const saved = JSON.parse(readFileSync(filePath, "utf-8")) as Partial<Electron.Rectangle>;
 
     return {
-      width: Math.max(1080, Number(saved.width) || fallback.width),
-      height: Math.max(680, Number(saved.height) || fallback.height),
+      width: Math.max(1024, Number(saved.width) || fallback.width),
+      height: Math.max(768, Number(saved.height) || fallback.height),
       x: typeof saved.x === "number" ? saved.x : undefined,
       y: typeof saved.y === "number" ? saved.y : undefined
     };
@@ -126,8 +126,8 @@ function createWindow() {
   const windowState = readWindowState();
   const win = new electron.BrowserWindow({
     ...windowState,
-    minWidth: 1080,
-    minHeight: 680,
+    minWidth: 1024,
+    minHeight: 768,
     title: "Mayfly Mod Manager",
     icon: getResourcePath("icon.ico"),
     backgroundColor: "#0f1216",
@@ -3259,6 +3259,11 @@ electron.ipcMain.handle("shell:fileUrl", async (_event, targetPath: string) => {
   return pathToFileURL(resolve(targetPath)).toString();
 });
 
+electron.ipcMain.handle("app:openDevTools", async () => {
+  if (mainWindow) {
+    mainWindow.webContents.openDevTools();
+  }
+});
 electron.ipcMain.handle("app:launchExecutable", async (_event, options: {
   executablePath: string;
   cwd?: string;
@@ -3669,6 +3674,8 @@ electron.ipcMain.handle("downloads:downloadFile", async (_event, options: {
 
   try {
     const reader = response.body.getReader();
+    let lastReportTime = 0;
+    const totalBytes = totalBytesFromHeaders(response.headers, startingBytes, receivedBytes);
 
     while (true) {
       const { done, value } = await reader.read();
@@ -3676,6 +3683,16 @@ electron.ipcMain.handle("downloads:downloadFile", async (_event, options: {
       if (!value) continue;
       receivedBytes += value.byteLength;
       await file.write(Buffer.from(value));
+
+      const now = Date.now();
+      if (taskId && mainWindow && now - lastReportTime > 250) {
+        mainWindow.webContents.send("downloads:progress", {
+          taskId,
+          receivedBytes,
+          totalBytes: totalBytes || receivedBytes
+        });
+        lastReportTime = now;
+      }
     }
   } finally {
     await file.close();

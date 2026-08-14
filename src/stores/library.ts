@@ -1720,9 +1720,7 @@ export const useLibraryStore = defineStore("library", () => {
       ...result.facets.tag.map((facet) => facet.label)
     ];
     const itemTexts = result.items.flatMap((item) => [
-      item.title,
-      item.summary,
-      ...item.categories
+      item.title
     ]);
     const textMap = await translateManyTexts([...facetLabels, ...itemTexts], "nexus:list");
     const translateFacet = <T extends { label: string }>(facet: T) => ({
@@ -1737,8 +1735,8 @@ export const useLibraryStore = defineStore("library", () => {
       items: result.items.map((item) => ({
         ...item,
         title: translatedValue(textMap, item.title),
-        summary: translatedValue(textMap, item.summary),
-        categories: item.categories.map((category) => translatedValue(textMap, category))
+        summary: item.summary,
+        categories: item.categories
       })),
       facets: {
         categoryName: result.facets.categoryName.map(translateFacet),
@@ -1754,7 +1752,6 @@ export const useLibraryStore = defineStore("library", () => {
     const source = nexusTranslationSource(detail);
     const shortTextMap = await translateManyTexts([
       detail.title,
-      detail.summary,
       ...detail.categories,
       ...detail.images.map((image) => image.title),
       ...detail.files.flatMap((file) => [
@@ -1781,7 +1778,7 @@ export const useLibraryStore = defineStore("library", () => {
     return {
       ...detail,
       title: translatedValue(shortTextMap, detail.title),
-      summary: translatedValue(shortTextMap, detail.summary),
+      summary: detail.summary,
       categories: detail.categories.map((category) => translatedValue(shortTextMap, category)),
       images: detail.images.map((image) => ({
         ...image,
@@ -1793,6 +1790,27 @@ export const useLibraryStore = defineStore("library", () => {
         categoryName: translatedValue(shortTextMap, file.categoryName)
       }))
     };
+  }
+
+  function protectBbCode(text: string) {
+    const placeholders: string[] = [];
+    let protectedText = text.replace(/\[(img|url|youtube|video|spoiler)(?:=[^\]]+)?\][\s\S]*?\[\/\1\]/gi, (match) => {
+      placeholders.push(match);
+      return ` MAYFLY_TOKEN_${placeholders.length - 1}_ `;
+    });
+    
+    protectedText = protectedText.replace(/\[\/?(?:b|i|u|s|size|font|center|left|right|color|quote|hr|br|list|li|\*)(?:=[^\]]*)?\]/gi, (match) => {
+      placeholders.push(match);
+      return ` MAYFLY_TOKEN_${placeholders.length - 1}_ `;
+    });
+    
+    return { protectedText, placeholders };
+  }
+
+  function restoreBbCode(text: string, placeholders: string[]) {
+    return text.replace(/MAYFLY_TOKEN_(\d+)_/gi, (match, index) => {
+      return placeholders[Number(index)] || match;
+    });
   }
 
   async function translateSelectedNexusMod(force = false) {
@@ -1810,10 +1828,14 @@ export const useLibraryStore = defineStore("library", () => {
 
     try {
       const source = nexusTranslationSource(detail);
-      const [summary, description] = await Promise.all([
+      const { protectedText, placeholders } = protectBbCode(source.description);
+      
+      const [summary, rawTranslatedDescription] = await Promise.all([
         translateTextCached(source.summary, `nexus:${detail.id}:summary`, force),
-        translateTextCached(source.description, `nexus:${detail.id}:description`, force)
+        translateTextCached(protectedText, `nexus:${detail.id}:description_v2`, force)
       ]);
+
+      const description = restoreBbCode(rawTranslatedDescription, placeholders);
 
       nexusTranslatedSummary.value = summary;
       nexusTranslatedDescription.value = description;
@@ -1927,10 +1949,37 @@ export const useLibraryStore = defineStore("library", () => {
     );
   }
 
+  const speedTracker = new Map<string, { lastTime: number; lastBytes: number }>();
+  window.mayfly.onDownloadProgress((data) => {
+    const task = downloads.value.find((t) => t.id === data.taskId);
+    if (!task || task.status !== "downloading") return;
+
+    const now = Date.now();
+    const track = speedTracker.get(data.taskId);
+    let speed = task.speed || 0;
+
+    if (track) {
+      const timeDiff = (now - track.lastTime) / 1000;
+      if (timeDiff > 0) {
+        const bytesDiff = Math.max(0, data.receivedBytes - track.lastBytes);
+        const currentSpeed = bytesDiff / timeDiff;
+        speed = speed ? speed * 0.5 + currentSpeed * 0.5 : currentSpeed;
+      }
+    }
+
+    speedTracker.set(data.taskId, { lastTime: now, lastBytes: data.receivedBytes });
+
+    updateDownloadTask(data.taskId, {
+      receivedBytes: data.receivedBytes,
+      totalBytes: data.totalBytes,
+      speed
+    });
+  });
+
   function isAbortError(caught: unknown) {
     return caught instanceof Error && (
       caught.name === "AbortError" ||
-      /abort|cancel|取消|中止/iu.test(caught.message)
+      /abort|cancel|取消|终止|terminated/iu.test(caught.message)
     );
   }
 

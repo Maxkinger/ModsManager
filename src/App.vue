@@ -28,7 +28,9 @@ import {
   ChevronUp,
   Languages,
   Plus,
-  User
+  User,
+  Download,
+  Calendar
 } from "lucide-vue-next";
 import { useLibraryStore } from "@/stores/library";
 import type { CustomAdapterRule, LocalMod } from "@/types/domain";
@@ -44,7 +46,9 @@ const contextMenu = ref({ visible: false, x: 0, y: 0, gameId: "" });
 const draggingModId = ref("");
 const dragOverModId = ref("");
 const previewImage = ref({ visible: false, url: "", title: "" });
+const selectedNexusImageIndex = ref(0);
 const modViewMode = ref<"list" | "grid">("list");
+const openDevTools = () => window.mayfly.openDevTools();
 
 const showGameContextMenu = (e: MouseEvent, gameId: string) => {
   contextMenu.value = {
@@ -364,6 +368,14 @@ async function chooseNexusGame(gameId: string) {
 
   await chooseGame(game.id);
   library.setNexusPreset(game.presetId);
+  
+  // 自动触发搜索并重置过滤条件
+  library.nexusSearch = "";
+  library.nexusCategory = "";
+  library.nexusLanguage = "";
+  library.nexusTag = "";
+  library.nexusSort = "downloads";
+  await searchNexusMods();
 }
 
 async function addCustomGame() {
@@ -764,13 +776,7 @@ async function nextNexusPage(step: number, append = false) {
 }
 
 const handleMainScroll = (e: Event) => {
-  const target = e.target as HTMLElement;
-  if (!target) return;
-  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 200) {
-    if (activeTab.value === 'nexus' && !library.selectedNexusMod && !library.nexusLoading && library.nexusPage < (library.nexusTotalPages || 1)) {
-      nextNexusPage(1, true);
-    }
-  }
+  // Infinite scroll disabled in favor of manual pagination widget
 };
 
 async function startCustomDownload() {
@@ -810,6 +816,7 @@ async function previewModInstallPlan(mod: LocalMod) {
 
 async function dropLocalMods(event: DragEvent) {
   dragActive.value = false;
+  if (draggingModId.value) return;
   const files = Array.from(event.dataTransfer?.files ?? []);
   const paths = files.map((file) => window.mayfly.getPathForFile(file)).filter(Boolean);
 
@@ -1199,7 +1206,7 @@ async function confirmRemoveSelectedMods() {
           日志
         </button>
         <button :class="{ active: activeTab === 'backup' }" @click="activeTab = 'backup'">
-          备份
+          整合包
         </button>
         <button :class="{ active: activeTab === 'settings' }" @click="activeTab = 'settings'">
           设置
@@ -1323,16 +1330,49 @@ async function confirmRemoveSelectedMods() {
           <section
             class="panel managerPanel"
             :class="{ dragging: dragActive }"
-            @dragenter.prevent="dragActive = true"
-            @dragover.prevent="dragActive = true"
+            @dragenter.prevent="dragActive = !draggingModId"
+            @dragover.prevent="dragActive = !draggingModId"
             @dragleave.prevent="dragActive = false"
             @drop.prevent="dropLocalMods"
           >
+            <div v-if="library.activeGame" class="steamHeroBanner">
+              <div class="heroBg" :style="gameCoverUrls[library.activeGame.id] ? { backgroundImage: `url('${gameCoverUrls[library.activeGame.id]}')` } : {}"></div>
+              <div class="heroGradientBottom"></div>
+              <div class="heroGradientLeft"></div>
+              <div class="heroContent">
+                <div class="heroMain">
+                  <h1 class="heroTitle">{{ library.activeGame.name }}</h1>
+                  <div class="heroActions">
+                    <button class="steamPlayBtn" @click="library.launchActiveGame()">
+                      <Play :size="20" fill="currentColor" />
+                      启动游戏
+                    </button>
+                    <div class="heroStats">
+                      <span>状态</span>
+                      <strong>{{ library.activeGame.adapterStatus === 'implemented' ? '已接入规则' : '通用规则' }}</strong>
+                    </div>
+                  </div>
+                </div>
+                <div class="heroSummary">
+                  <div class="heroSummaryCard">
+                    <span>已启用 Mod</span>
+                    <strong>{{ library.installedCount }}</strong>
+                  </div>
+                  <div class="heroSummaryCard">
+                    <span>全部 Mod</span>
+                    <strong>{{ library.activeMods.length }}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div v-if="dragActive" class="dropOverlay">
               <PackagePlus :size="24" />
               松开导入到当前游戏
             </div>
-            <div class="toolsRow">
+            
+            <div class="managerContent">
+              <div class="stickyFilters">
+              <div class="toolsRow">
               <button class="primary" :disabled="library.busy" @click="library.importLocalMods">
                 <PackagePlus :size="17" />
                 导入 Mod
@@ -1451,6 +1491,7 @@ async function confirmRemoveSelectedMods() {
                 批量删除
               </button>
             </div>
+            </div> <!-- end of stickyFilters -->
 
             <div v-if="showBatchEdit" class="batchEditPanel">
               <select v-model="batchTypeId">
@@ -1719,6 +1760,7 @@ async function confirmRemoveSelectedMods() {
                 </div>
               </article>
             </div>
+            </div>
           </section>
         </div>
       </section>
@@ -1752,85 +1794,76 @@ async function confirmRemoveSelectedMods() {
           </section>
 
           <!-- Right Content: Manager Panel -->
-          <section class="panel managerPanel">
+          <section class="panel managerPanel" @scroll="handleMainScroll">
 
             <!-- Mod Details View -->
-            <div v-if="library.selectedNexusMod" class="nexusDetailView">
-              <div class="activeGameBar">
+            <div v-if="library.selectedNexusMod" class="nexusDetailView managerContent">
+              <div class="activeGameBar" style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #2a2d33;">
                 <button class="secondary" @click="library.selectedNexusMod = null">
                   ← 返回列表
                 </button>
-                <span>{{ library.selectedNexusMod.title }}</span>
+                <span style="font-size: 20px; font-weight: 300; color: #dcdedf; margin-left: 12px;">{{ library.selectedNexusMod.title }}</span>
               </div>
 
-              <div class="detailHero">
-                <img v-if="library.selectedNexusMod.cover" :src="library.selectedNexusMod.cover" alt="" />
-                <div>
-                  <h2>{{ library.selectedNexusMod.title }}</h2>
-                  <p>
-                    {{
-                      library.nexusTranslationVisible && library.nexusTranslatedSummary
-                        ? library.nexusTranslatedSummary
-                        : library.selectedNexusMod.summary || "无摘要"
-                    }}
+              <div class="steamWorkshopHero">
+                <div class="heroCarousel">
+                  <div class="heroMainImageWrapper" @click="library.selectedNexusMod.images.length > 0 ? openPreviewImage(library.selectedNexusMod.images[selectedNexusImageIndex]?.imageUrl || library.selectedNexusMod.images[selectedNexusImageIndex]?.thumbnailUrl, library.selectedNexusMod.images[selectedNexusImageIndex]?.title) : null">
+                    <img v-if="library.selectedNexusMod.images.length > 0" :src="library.selectedNexusMod.images[selectedNexusImageIndex]?.imageUrl || library.selectedNexusMod.images[selectedNexusImageIndex]?.thumbnailUrl" alt="" class="heroMainImage" />
+                    <img v-else-if="library.selectedNexusMod.cover" :src="library.selectedNexusMod.cover" alt="" class="heroMainImage" />
+                    <div v-else class="noCover"><Archive :size="64" /></div>
+                  </div>
+                  
+                  <div class="heroThumbnails" v-if="library.selectedNexusMod.images.length > 1">
+                    <button v-for="(img, idx) in library.selectedNexusMod.images" :key="img.id" class="heroThumb" :class="{ active: selectedNexusImageIndex === idx }" @click="selectedNexusImageIndex = idx">
+                      <img :src="img.thumbnailUrl || img.imageUrl" />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="heroSidebar">
+                  <div class="sidebarPanel">
+                    <h3>Mod 信息</h3>
+                    <div class="metaRow"><span>作者</span><strong>{{ library.selectedNexusMod.author || '未知' }}</strong></div>
+                    <div class="metaRow"><span>版本</span><strong>{{ library.selectedNexusMod.version || '无' }}</strong></div>
+                    <div class="metaRow"><span>更新</span><strong>{{ formatDate(library.selectedNexusMod.updatedAt).split(' ')[0] }}</strong></div>
+                    <div class="metaRow"><span>下载</span><strong>{{ (library.selectedNexusMod.downloads || 0).toLocaleString() }}</strong></div>
+                    <div class="metaRow"><span>点赞</span><strong>{{ (library.selectedNexusMod.likes || 0).toLocaleString() }}</strong></div>
+                  </div>
+
+                  <div class="sidebarPanel" v-if="library.selectedNexusMod.categories.length > 0">
+                    <h3>分类标签</h3>
+                    <div class="nexusCategoryRow" style="margin-top: 12px;">
+                      <span v-for="category in library.selectedNexusMod.categories" :key="category">{{ category }}</span>
+                    </div>
+                  </div>
+
+                  <div class="sidebarActions">
+                    <button class="secondary" @click="library.openNexusUrl(library.selectedNexusMod.website)" style="width: 100%; justify-content: center;">打开 Nexus 页面</button>
+                    <button class="secondary" :disabled="library.nexusTranslationLoading" @click="library.translateSelectedNexusMod(library.nexusTranslationVisible)" style="width: 100%; justify-content: center; margin-top: 8px;">
+                      <LoaderCircle v-if="library.nexusTranslationLoading" :size="16" class="spin" />
+                      <Languages v-else :size="16" />
+                      {{ library.nexusTranslationVisible ? "刷新翻译" : "翻译成中文" }}
+                    </button>
+                    <button v-if="library.nexusTranslationVisible" class="secondary" @click="library.showOriginalNexusText" style="width: 100%; justify-content: center; margin-top: 8px;">查看原文</button>
+                  </div>
+
+                  <p v-if="library.nexusTranslationError" class="translationError" style="margin-top: 12px;">
+                    {{ library.nexusTranslationError }}
                   </p>
-                  <div class="gameMeta">
-                    <span>{{ library.selectedNexusMod.author || "未知作者" }}</span>
-                    <span>{{ library.selectedNexusMod.version || "无版本" }}</span>
-                    <span>{{ formatDate(library.selectedNexusMod.updatedAt) }} 更新</span>
-                    <span>{{ formatNumber(library.selectedNexusMod.downloads) }} 下载</span>
-                    <span>{{ formatNumber(library.selectedNexusMod.likes) }} 点赞</span>
-                  </div>
-                  <div class="nexusCategoryRow" v-if="library.selectedNexusMod.categories.length > 0">
-                    <span v-for="category in library.selectedNexusMod.categories" :key="category">{{ category }}</span>
-                  </div>
                 </div>
               </div>
 
-              <div class="detailActions">
-                <button class="secondary" @click="library.openNexusUrl(library.selectedNexusMod.website)">打开 Nexus 页面</button>
-                <button
-                  class="secondary"
-                  :disabled="library.nexusTranslationLoading"
-                  @click="library.translateSelectedNexusMod(library.nexusTranslationVisible)"
-                >
-                  <LoaderCircle v-if="library.nexusTranslationLoading" :size="16" class="spin" />
-                  <Languages v-else :size="16" />
-                  {{ library.nexusTranslationVisible ? "刷新翻译" : "翻译成中文" }}
-                </button>
-                <button
-                  v-if="library.nexusTranslationVisible"
-                  class="secondary"
-                  @click="library.showOriginalNexusText"
-                >
-                  查看原文
-                </button>
-              </div>
-              <p v-if="library.nexusTranslationError" class="translationError">
-                {{ library.nexusTranslationError }}
-              </p>
-
-              <div v-if="library.selectedNexusMod.images.length > 0" class="nexusImageGallery">
-                <button
-                  v-for="image in library.selectedNexusMod.images"
-                  :key="image.id"
-                  class="nexusImageThumb"
-                  :title="image.title"
-                  @click="openPreviewImage(image.imageUrl || image.thumbnailUrl, image.title)"
-                >
-                  <img :src="image.thumbnailUrl || image.imageUrl" alt="" />
-                </button>
-              </div>
-
-              <div class="nexusDetailColumns">
-                <section class="nexusDescriptionBlock">
-                  <h3>说明</h3>
+              <div class="nexusDetailColumns" style="margin-top: 32px; gap: 32px;">
+                <section class="nexusDescriptionBlock" style="flex: 2; min-width: 0;">
+                  <h3 style="font-size: 18px; border-bottom: 1px solid #2a2d33; padding-bottom: 8px; margin-bottom: 16px;">说明</h3>
+                  <div style="font-size: 14px; color: #b8b6b4; line-height: 1.6; padding: 12px; background: rgba(0,0,0,0.2); border-left: 3px solid #67c1f5; margin-bottom: 24px;">
+                    {{ library.nexusTranslationVisible && library.nexusTranslatedSummary ? library.nexusTranslatedSummary : library.selectedNexusMod.summary || "无摘要" }}
+                  </div>
                   <div
                     v-if="library.nexusTranslationVisible && library.nexusTranslatedDescription"
                     class="nexusDescription translatedText"
-                  >
-                    {{ library.nexusTranslatedDescription }}
-                  </div>
+                    v-html="renderNexusDescription(library.nexusTranslatedDescription, library.selectedNexusMod.descriptionFormat)"
+                  />
                   <div
                     v-else
                     class="nexusDescription"
@@ -1838,8 +1871,8 @@ async function confirmRemoveSelectedMods() {
                   />
                 </section>
 
-                <section class="nexusFilesBlock">
-                  <h3>文件</h3>
+                <section class="nexusFilesBlock" style="flex: 1;">
+                  <h3 style="font-size: 18px; border-bottom: 1px solid #2a2d33; padding-bottom: 8px; margin-bottom: 16px;">文件</h3>
                   <div v-if="library.selectedNexusMod.files.length === 0" class="empty">
                     Nexus 没返回可下载文件。
                   </div>
@@ -1866,7 +1899,7 @@ async function confirmRemoveSelectedMods() {
             </div>
 
             <!-- Mod List View -->
-            <div v-else class="nexusListView" style="display: flex; flex-direction: column; gap: 18px;">
+            <div v-else class="nexusListView managerContent" style="gap: 18px;">
               <!-- Steam Filter Bar -->
               <div class="steamFilterBar">
                 <div class="steamFilterLeft">
@@ -1930,12 +1963,18 @@ async function confirmRemoveSelectedMods() {
               </div>
 
               <!-- Steam Grid Cards -->
-              <div v-else class="steamCardsGrid">
+              <div v-else class="steamCardsGrid horizontalGrid" :class="{ 'is-loading': library.nexusLoading }">
+                <!-- Loading overlay for existing list -->
+                <div v-if="library.nexusLoading" class="gridLoadingOverlay">
+                  <div class="loadingSpinnerWrapper">
+                    <LoaderCircle :size="32" class="spin" />
+                  </div>
+                </div>
                 <article
                   v-for="item in library.nexusMods"
                   :key="item.id"
-                  class="steamCard"
-                  @click="library.openNexusModDetail(item)"
+                  class="steamCard horizontalCard"
+                  @click="library.openNexusModDetail(item); selectedNexusImageIndex = 0;"
                 >
                   <div class="cardCover">
                     <img v-if="item.cover" :src="item.cover" alt="" />
@@ -1944,8 +1983,14 @@ async function confirmRemoveSelectedMods() {
                       <span>查看详情</span>
                     </div>
                   </div>
-                  <div class="cardInfo">
-                    <h3 :title="item.title">{{ item.title || `Mod ${item.id}` }}</h3>
+                  <div class="cardInfoHorizontal" style="flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 12px; height: 60px;">
+                    <div class="cardInfoTitle" style="width: 100%;">
+                      <h3 :title="item.title" style="flex: 1; font-size: 14px; margin-bottom: 2px;">{{ item.title || `Mod ${item.id}` }}</h3>
+                    </div>
+                    <div style="display: flex; gap: 16px; font-size: 11px; color: #8f98a0; width: 100%;">
+                      <span title="下载量"><Download :size="11" style="vertical-align: -2px; margin-right: 4px;"/>{{ (item.downloads || 0).toLocaleString() }}</span>
+                      <span title="更新日期"><Calendar :size="11" style="vertical-align: -2px; margin-right: 4px;"/>{{ formatDate(item.updatedAt).split(' ')[0] }}</span>
+                    </div>
                   </div>
                 </article>
               </div>
@@ -2006,10 +2051,10 @@ async function confirmRemoveSelectedMods() {
                   <span class="metaItem"><ListTree :size="12" /> {{ task.source === 'NexusMods' ? 'NexusMods' : '自定义链接' }}</span>
                   
                   <span class="metaItem progressText" v-if="task.totalBytes > 0">
-                    {{ formatBytes(task.receivedBytes) }} / {{ formatBytes(task.totalBytes) }}
+                    <span v-if="task.status === 'downloading' && task.speed">{{ formatBytes(task.speed) }}/s • </span>{{ formatBytes(task.receivedBytes) }} / {{ formatBytes(task.totalBytes) }}
                   </span>
                   <span class="metaItem progressText" v-else>
-                    {{ formatBytes(task.receivedBytes) }} 已下载
+                    <span v-if="task.status === 'downloading' && task.speed">{{ formatBytes(task.speed) }}/s • </span>{{ formatBytes(task.receivedBytes) }} 已下载
                   </span>
                 </div>
                 
@@ -2086,12 +2131,16 @@ async function confirmRemoveSelectedMods() {
         <div class="workspaceGrid">
           <section class="panel gamePanel">
             <div class="panelHeader">
-              <h2>游戏库</h2>
-              <span>{{ library.games.length }} 个</span>
+              <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div>
+                  <h2>游戏库</h2>
+                  <span>支持 {{ library.games.length }} 个</span>
+                </div>
+                <button class="steamAddGameBtn" @click="showPresetPicker = true" title="添加游戏">
+                  <Plus :size="16" />
+                </button>
+              </div>
             </div>
-            <button class="addGameButton" @click="showPresetPicker = true">
-              <Plus :size="18" />
-            </button>
             <div v-if="library.games.length === 0" class="empty">
               还没有添加游戏。
             </div>
@@ -2113,35 +2162,29 @@ async function confirmRemoveSelectedMods() {
 
           <section class="panel managerPanel steamDownloadsPage">
             <div class="steamDownloadsWrapper">
-          <div class="steamDownloadsHeader">
-            <h2>整合包与备份 <span>({{ library.backups.length }})</span></h2>
+          <div class="steamDownloadsHeader" style="display: flex; justify-content: space-between; align-items: center; padding: 24px 32px 16px; border-bottom: 1px solid #2a2d33;">
+            <div class="headerLeft">
+              <h2>整合包管理 <span>({{ library.backups.length }} 个)</span></h2>
+              <span class="muted" style="font-size: 13px; margin-top: 6px; display: block;">可以导出当前游戏的 Mod 整合包，或从外部导入。</span>
+            </div>
             
-            <div class="steamCustomDownloadRow">
-              <input v-model="backupName" placeholder="备份名称(可选)" />
-              <button class="primary" :disabled="!library.activeGame || library.busy" @click="library.exportActiveGamePack(backupName)">
-                导出整合包 .zip
+            <div class="steamCustomDownloadRow" style="display: flex; gap: 8px; align-items: center;">
+              <input v-model="backupName" class="steamInput" placeholder="整合包名称(可选)" style="width: 180px; height: 32px; padding: 0 10px;" />
+              <button class="primary" :disabled="!library.activeGame || library.busy" @click="library.exportActiveGamePack(backupName)" style="white-space: nowrap; height: 32px;">
+                导出 .zip
               </button>
-              <button class="secondary" :disabled="!library.settings.storagePath || library.busy" @click="library.restoreActiveGamePack">
-                导入整合包
+              <button class="secondary" :disabled="!library.settings.storagePath || library.busy" @click="library.restoreActiveGamePack" style="white-space: nowrap; height: 32px;">
+                导入
               </button>
-              <button class="secondary" :disabled="!library.activeGame || library.busy" @click="library.importBackupFile">
-                选择备份文件
-              </button>
-              <button class="secondary" :disabled="!library.activeGame || library.busy" @click="createBackup">
-                备份游戏安装目录
-              </button>
-              <button class="secondary" :disabled="!library.activeGame || library.busy" @click="library.createActiveSaveBackup(backupName)">
-                备份存档目录
-              </button>
-              <button class="secondary" :disabled="!library.settings.storagePath" @click="library.openBackupFolder()">
-                <FolderOpen :size="14" /> 打开目录
+              <button class="secondary" :disabled="!library.settings.storagePath" @click="library.openBackupFolder()" style="white-space: nowrap; height: 32px; display: flex; align-items: center;">
+                <FolderOpen :size="14" style="margin-right: 6px;" /> 打开目录
               </button>
             </div>
           </div>
 
           <div class="steamDownloadsList">
             <div v-if="library.backups.length === 0" class="empty">
-              还没有备份。先在管理页选择一个游戏，再创建备份。
+              当前没有整合包记录。您可以在上方导出整合包，或从外部导入。
             </div>
 
             <article v-for="backup in library.backups" :key="backup.id" class="steamDownloadTask" style="flex-direction: column; gap: 12px;">
@@ -2329,6 +2372,19 @@ async function confirmRemoveSelectedMods() {
                     </label>
                   </div>
                 </div>
+
+                <div class="steamSettingRow">
+                  <div class="settingInfo">
+                    <label>开发者工具 (DevTools)</label>
+                    <span>用于调试网络请求和界面问题，适合进阶用户。</span>
+                  </div>
+                  <div class="settingControl">
+                    <button class="secondary" @click="openDevTools()">
+                      打开调试工具
+                    </button>
+                  </div>
+                </div>
+
 
                 <div class="steamSettingRow">
                   <div class="settingInfo">

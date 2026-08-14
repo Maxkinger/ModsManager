@@ -25,6 +25,7 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
     cwd?: string;
     args?: string[];
   }) => electron.ipcRenderer.invoke("app:launchExecutable", options) as Promise<boolean>,
+  openDevTools: () => electron.ipcRenderer.invoke("app:openDevTools") as Promise<void>,
   setLaunchAtStartup: (enabled: boolean) =>
     electron.ipcRenderer.invoke("app:setLaunchAtStartup", enabled) as Promise<boolean>,
   readStore: <T>(fileName: string, fallback: T) =>
@@ -92,6 +93,9 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
   }>,
   cancelDownload: (taskId: string) =>
     electron.ipcRenderer.invoke("downloads:cancel", taskId) as Promise<boolean>,
+  onDownloadProgress: (callback: (data: { taskId: string; receivedBytes: number; totalBytes: number }) => void) => {
+    electron.ipcRenderer.on("downloads:progress", (_event, data) => callback(data as any));
+  },
   createBackupZip: (options: {
     sourcePath: string;
     outputPath: string;

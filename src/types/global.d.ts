@@ -23,6 +23,7 @@ declare global {
         cwd?: string;
         args?: string[];
       }) => Promise<boolean>;
+      openDevTools: () => Promise<void>;
       setLaunchAtStartup: (enabled: boolean) => Promise<boolean>;
       readStore: <T>(fileName: string, fallback: T) => Promise<T>;
       writeStore: (fileName: string, value: unknown) => Promise<boolean>;
@@ -104,6 +105,7 @@ declare global {
         totalBytes: number;
       }>;
       cancelDownload: (taskId: string) => Promise<boolean>;
+      onDownloadProgress: (callback: (data: { taskId: string; receivedBytes: number; totalBytes: number }) => void) => void;
       createBackupZip: (options: {
         sourcePath: string;
         outputPath: string;

@@ -305,6 +305,7 @@ export interface DownloadTask {
   status: "queued" | "downloading" | "paused" | "completed" | "failed" | "external";
   receivedBytes: number;
   totalBytes: number;
+  speed?: number;
   error: string;
   createdAt: number;
   updatedAt: number;
