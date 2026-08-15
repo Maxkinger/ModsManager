@@ -490,17 +490,17 @@ function normalizeModUpdateSource(value: unknown): ModUpdateSource | undefined {
     downloadedAt: Number(value.downloadedAt) || Date.now(),
     check: check
       ? {
-          status: ["latest", "available", "unsupported", "failed"].includes(String(check.status))
-            ? check.status as ModUpdateCheck["status"]
-            : "unknown",
-          checkedAt: Number(check.checkedAt) || 0,
-          message: String(check.message || ""),
-          latestFileId: String(check.latestFileId || ""),
-          latestFileName: String(check.latestFileName || ""),
-          latestVersion: String(check.latestVersion || ""),
-          latestUploadedAt: String(check.latestUploadedAt || ""),
-          detailsUrl: String(check.detailsUrl || "")
-        }
+        status: ["latest", "available", "unsupported", "failed"].includes(String(check.status))
+          ? check.status as ModUpdateCheck["status"]
+          : "unknown",
+        checkedAt: Number(check.checkedAt) || 0,
+        message: String(check.message || ""),
+        latestFileId: String(check.latestFileId || ""),
+        latestFileName: String(check.latestFileName || ""),
+        latestVersion: String(check.latestVersion || ""),
+        latestUploadedAt: String(check.latestUploadedAt || ""),
+        detailsUrl: String(check.detailsUrl || "")
+      }
       : undefined
   };
 }
@@ -745,6 +745,7 @@ export const useLibraryStore = defineStore("library", () => {
   const initialized = ref(false);
   const busy = ref(false);
   const error = ref("");
+  const updateCheckResult = ref({ visible: false, available: 0, failed: 0 });
   const packageProgress = ref<PackageProgress>({
     visible: false,
     operation: "",
@@ -781,6 +782,7 @@ export const useLibraryStore = defineStore("library", () => {
   const selectedTag = ref("all");
   const sortMode = ref<"custom" | "createdDesc" | "createdAsc" | "nameAsc" | "nameDesc" | "installedFirst">("createdDesc");
   const selectedModIds = ref<string[]>([]);
+  const selectedProfileId = ref("");
   const profileApplying = ref(false);
   const updateCheckingIds = ref<string[]>([]);
   const presetSearch = ref("");
@@ -859,6 +861,13 @@ export const useLibraryStore = defineStore("library", () => {
     const keyword = search.value.trim().toLowerCase();
     let list = mods.value.filter((mod) => mod.gameId === activeGameId.value);
 
+    if (selectedProfileId.value) {
+      const profile = activeProfiles.value.find((p) => p.id === selectedProfileId.value);
+      if (profile) {
+        list = list.filter((mod) => profile.enabledModIds.includes(mod.id));
+      }
+    }
+
     if (selectedTypeId.value !== "all") {
       list = list.filter((mod) => mod.modTypeId === selectedTypeId.value);
     }
@@ -900,7 +909,8 @@ export const useLibraryStore = defineStore("library", () => {
   const canReorderMods = computed(() =>
     !search.value.trim() &&
     selectedTypeId.value === "all" &&
-    selectedTag.value === "all"
+    selectedTag.value === "all" &&
+    !selectedProfileId.value
   );
 
   const selectedMods = computed(() =>
@@ -1357,6 +1367,9 @@ export const useLibraryStore = defineStore("library", () => {
     nexusMods.value = [];
     nexusTotalCount.value = 0;
     nexusTotalPages.value = 0;
+    nexusMods.value = [];
+    nexusTotalCount.value = 0;
+    nexusTotalPages.value = 0;
     nexusFacets.value = { categoryName: [], languageName: [], tag: [] };
     selectedNexusMod.value = null;
     error.value = "";
@@ -1548,14 +1561,14 @@ export const useLibraryStore = defineStore("library", () => {
     }
 
     try {
-    await window.mayfly.launchExecutable({
-      executablePath,
-      cwd: dirName(executablePath),
-      args: activeGame.value.launchArgs
-        .split(/\s+/u)
-        .map((arg) => arg.trim())
-        .filter(Boolean)
-    });
+      await window.mayfly.launchExecutable({
+        executablePath,
+        cwd: dirName(executablePath),
+        args: activeGame.value.launchArgs
+          .split(/\s+/u)
+          .map((arg) => arg.trim())
+          .filter(Boolean)
+      });
     } catch (caught) {
       error.value = caught instanceof Error ? caught.message : "启动游戏失败";
     }
@@ -1967,6 +1980,7 @@ export const useLibraryStore = defineStore("library", () => {
     error.value = "";
 
     try {
+      const _startTime = performance.now();
       const result = await window.mayfly.listNexusMods({
         ...nexusRequestAuth(),
         gameDomain: nexusPreset.value.nexusDomain,
@@ -1981,6 +1995,12 @@ export const useLibraryStore = defineStore("library", () => {
           tag: nexusTag.value
         }
       });
+      const _duration = Math.round(performance.now() - _startTime);
+      console.groupCollapsed(`%c🌐 [Nexus API] List Mods - ${_duration}ms`, "color: #1a9fff; font-weight: bold;");
+      console.log("Request Page:", page);
+      console.log("Response:", result);
+      console.groupEnd();
+      await recordLog("info", "network", `[API/Nexus] 获取列表耗时 ${_duration}ms`, `第 ${page} 页 / ${nexusPageSize.value} 条`);
 
       const displayResult = await translateNexusListResult(result);
 
@@ -2059,28 +2079,47 @@ export const useLibraryStore = defineStore("library", () => {
       return cached.text;
     }
 
-    const translated = await window.mayfly.translateText({
-      text: normalized,
-      provider: settings.value.translationProvider,
-      targetLang: settings.value.translationTargetLang,
-      proxyUrl: activeProxyUrl(),
-      baiduAppId: settings.value.baiduTranslateAppId,
-      baiduSecret: settings.value.baiduTranslateSecret,
-      youdaoAppKey: settings.value.youdaoTranslateAppKey,
-      youdaoSecret: settings.value.youdaoTranslateSecret,
-      tencentSecretId: settings.value.tencentTranslateSecretId,
-      tencentSecretKey: settings.value.tencentTranslateSecretKey,
-      tencentRegion: settings.value.tencentTranslateRegion,
-      volcengineAccessKeyId: settings.value.volcengineTranslateAccessKeyId,
-      volcengineSecretAccessKey: settings.value.volcengineTranslateSecretAccessKey,
-      volcengineRegion: settings.value.volcengineTranslateRegion,
-      ollamaBaseUrl: settings.value.ollamaTranslateBaseUrl,
-      ollamaModel: settings.value.ollamaTranslateModel,
-      ollamaTimeoutMs: settings.value.ollamaTranslateTimeoutMs
-    });
+    const _startTime = performance.now();
+    try {
+      const translated = await window.mayfly.translateText({
+        text: normalized,
+        provider: settings.value.translationProvider,
+        targetLang: settings.value.translationTargetLang,
+        proxyUrl: activeProxyUrl(),
+        baiduAppId: settings.value.baiduTranslateAppId,
+        baiduSecret: settings.value.baiduTranslateSecret,
+        youdaoAppKey: settings.value.youdaoTranslateAppKey,
+        youdaoSecret: settings.value.youdaoTranslateSecret,
+        tencentSecretId: settings.value.tencentTranslateSecretId,
+        tencentSecretKey: settings.value.tencentTranslateSecretKey,
+        tencentRegion: settings.value.tencentTranslateRegion,
+        volcengineAccessKeyId: settings.value.volcengineTranslateAccessKeyId,
+        volcengineSecretAccessKey: settings.value.volcengineTranslateSecretAccessKey,
+        volcengineRegion: settings.value.volcengineTranslateRegion,
+        ollamaBaseUrl: settings.value.ollamaTranslateBaseUrl,
+        ollamaModel: settings.value.ollamaTranslateModel,
+        ollamaTimeoutMs: settings.value.ollamaTranslateTimeoutMs
+      });
+      const _duration = Math.round(performance.now() - _startTime);
+      console.groupCollapsed(`%c📝 [Translate API] - ${_duration}ms`, "color: #4cd964; font-weight: bold;");
+      console.log("Provider:", settings.value.translationProvider);
+      console.log("Original:", normalized);
+      console.log("Translated:", translated);
+      console.groupEnd();
+      await recordLog("info", "network", `[API/翻译] 耗时 ${_duration}ms`, `文本: ${normalized.slice(0, 50)}...\n提供商: ${settings.value.translationProvider}`);
 
-    cacheTranslation(key, translated);
-    return translated;
+      cacheTranslation(key, translated);
+      return translated;
+    } catch (error) {
+      const _duration = Math.round(performance.now() - _startTime);
+      console.groupCollapsed(`%c❌ [Translate API] Failed - ${_duration}ms`, "color: #ff3b30; font-weight: bold;");
+      console.log("Provider:", settings.value.translationProvider);
+      console.log("Original:", normalized);
+      console.error(error);
+      console.groupEnd();
+      await recordLog("error", "network", `[API/翻译] 请求失败，耗时 ${_duration}ms`, error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   }
 
   function canTranslateNexusText() {
@@ -2089,17 +2128,56 @@ export const useLibraryStore = defineStore("library", () => {
 
   async function translateManyTexts(values: string[], context: string, force = false) {
     const result = new Map<string, string>();
-    const uniqueValues = [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+    const uniqueValues = [...new Set(values.map((value) => value.replace(/\r?\n/g, " ").trim()).filter(Boolean))];
+
+    if (uniqueValues.length === 0) return result;
+
+    const missingValues: string[] = [];
 
     for (const value of uniqueValues) {
+      const individualContext = `${context}:${hashText(value)}`;
+      const key = [
+        settings.value.translationProvider,
+        settings.value.translationTargetLang,
+        individualContext,
+        hashText(value)
+      ].join(":");
+      
+      const cached = translationCache.value[key];
+      if (cached && !force) {
+        result.set(value, cached.text);
+      } else {
+        missingValues.push(value);
+      }
+    }
+
+    if (missingValues.length > 0) {
       try {
-        result.set(value, await translateTextCached(value, `${context}:${hashText(value)}`, force));
+        const combinedText = missingValues.join("\n");
+        const translatedCombined = await translateTextCached(combinedText, `${context}:batch`, force);
+        
+        const translatedLines = translatedCombined.split("\n").map(line => line.trim());
+
+        for (let i = 0; i < missingValues.length; i++) {
+          const original = missingValues[i];
+          const translated = translatedLines[i] || original;
+          result.set(original, translated);
+
+          const individualContext = `${context}:${hashText(original)}`;
+          const key = [
+            settings.value.translationProvider,
+            settings.value.translationTargetLang,
+            individualContext,
+            hashText(original)
+          ].join(":");
+          cacheTranslation(key, translated);
+        }
       } catch (caught) {
-        result.set(value, value);
+        for (const value of missingValues) result.set(value, value);
         await recordLog(
           "error",
           "translate",
-          `翻译失败：${value.slice(0, 40)}`,
+          `批量翻译失败：${missingValues.length} 项`,
           caught instanceof Error ? caught.message : String(caught)
         );
       }
@@ -2117,9 +2195,7 @@ export const useLibraryStore = defineStore("library", () => {
     if (!canTranslateNexusText()) return result;
 
     const facetLabels = [
-      ...result.facets.categoryName.map((facet) => facet.label),
-      ...result.facets.languageName.map((facet) => facet.label),
-      ...result.facets.tag.map((facet) => facet.label)
+      ...result.facets.categoryName.map((facet) => facet.label)
     ];
     const itemTexts = result.items.flatMap((item) => [
       item.title
@@ -2142,8 +2218,8 @@ export const useLibraryStore = defineStore("library", () => {
       })),
       facets: {
         categoryName: result.facets.categoryName.map(translateFacet),
-        languageName: result.facets.languageName.map(translateFacet),
-        tag: result.facets.tag.map(translateFacet)
+        languageName: [],
+        tag: result.facets.tag // return untranslated tags since they are not shown
       }
     };
   }
@@ -2200,12 +2276,12 @@ export const useLibraryStore = defineStore("library", () => {
       placeholders.push(match);
       return ` MAYFLY_TOKEN_${placeholders.length - 1}_ `;
     });
-    
+
     protectedText = protectedText.replace(/\[\/?(?:b|i|u|s|size|font|center|left|right|color|quote|hr|br|list|li|\*)(?:=[^\]]*)?\]/gi, (match) => {
       placeholders.push(match);
       return ` MAYFLY_TOKEN_${placeholders.length - 1}_ `;
     });
-    
+
     return { protectedText, placeholders };
   }
 
@@ -2231,7 +2307,7 @@ export const useLibraryStore = defineStore("library", () => {
     try {
       const source = nexusTranslationSource(detail);
       const { protectedText, placeholders } = protectBbCode(source.description);
-      
+
       const [summary, rawTranslatedDescription] = await Promise.all([
         translateTextCached(source.summary, `nexus:${detail.id}:summary`, force),
         translateTextCached(protectedText, `nexus:${detail.id}:description_v2`, force)
@@ -2336,18 +2412,18 @@ export const useLibraryStore = defineStore("library", () => {
       await updateMod(mod.id, {
         updateSource: source
           ? {
-              ...source,
-              check: {
-                status: "unsupported",
-                checkedAt: Date.now(),
-                message: "这个 Mod 没有可用的 Nexus 来源信息。",
-                latestFileId: "",
-                latestFileName: "",
-                latestVersion: "",
-                latestUploadedAt: "",
-                detailsUrl: ""
-              }
+            ...source,
+            check: {
+              status: "unsupported",
+              checkedAt: Date.now(),
+              message: "这个 Mod 没有可用的 Nexus 来源信息。",
+              latestFileId: "",
+              latestFileName: "",
+              latestVersion: "",
+              latestUploadedAt: "",
+              detailsUrl: ""
             }
+          }
           : undefined
       });
       return null;
@@ -2432,6 +2508,18 @@ export const useLibraryStore = defineStore("library", () => {
         await checkModUpdate(mod);
       }
       await recordLog("info", "updates", `已检查 ${targets.length} 个 Nexus 来源 Mod 更新。`);
+
+      let availableCount = 0;
+      let failedCount = 0;
+      for (const mod of targets) {
+        const status = mod.updateSource?.check?.status;
+        if (status === "available") availableCount++;
+        else if (status === "failed") failedCount++;
+      }
+      updateCheckResult.value = { visible: true, available: availableCount, failed: failedCount };
+      setTimeout(() => {
+        if (updateCheckResult.value.visible) updateCheckResult.value.visible = false;
+      }, 5000);
     } finally {
       busy.value = false;
     }
@@ -2890,9 +2978,9 @@ export const useLibraryStore = defineStore("library", () => {
       activeGameId.value = localGame.id;
       await importLocalModsFromPaths([outputPath], "", task.updateSource
         ? {
-            [outputPath]: task.updateSource,
-            [normalizeText(outputPath)]: task.updateSource
-          }
+          [outputPath]: task.updateSource,
+          [normalizeText(outputPath)]: task.updateSource
+        }
         : {});
       activeGameId.value = previousActiveGameId;
       return;
@@ -2940,7 +3028,9 @@ export const useLibraryStore = defineStore("library", () => {
       await importCompletedDownload(task, result.outputPath);
     } catch (caught) {
       const current = downloads.value.find((item) => item.id === task.id);
-      if (current?.status === "paused" || isAbortError(caught)) {
+
+      // 1. Manually paused by user
+      if (current?.status === "paused") {
         await refreshDownloadSize(current ?? task);
         updateDownloadTask(task.id, {
           status: "paused",
@@ -2950,11 +3040,21 @@ export const useLibraryStore = defineStore("library", () => {
         return;
       }
 
+      // 2. Unexpected error or disconnect (including aborts not triggered by user)
+      await refreshDownloadSize(current ?? task);
       updateDownloadTask(task.id, {
         status: "failed",
-        error: caught instanceof Error ? caught.message : "下载失败"
+        error: "连接异常，3秒后自动重试..."
       });
       await persist();
+
+      // Schedule auto-retry
+      window.setTimeout(() => {
+        const checkTask = downloads.value.find((item) => item.id === task.id);
+        if (checkTask && checkTask.status === "failed") {
+          resumeDownloadTask(task.id).catch(console.error);
+        }
+      }, 3000);
     }
   }
 
@@ -3693,16 +3793,16 @@ export const useLibraryStore = defineStore("library", () => {
         games.value = games.value.map((game) =>
           game.id === targetGame?.id
             ? {
-                ...game,
-                name: gameName,
-                path: String(gameMeta.path || game.path),
-                installPath: String(gameMeta.installPath || game.installPath),
-                launchArgs: String(gameMeta.launchArgs || game.launchArgs),
-                coverUrl: String(gameMeta.coverUrl || game.coverUrl),
-                customAdapterRules: normalizeCustomAdapterRules(gameMeta.customAdapterRules).length > 0
-                  ? normalizeCustomAdapterRules(gameMeta.customAdapterRules)
-                  : game.customAdapterRules
-              }
+              ...game,
+              name: gameName,
+              path: String(gameMeta.path || game.path),
+              installPath: String(gameMeta.installPath || game.installPath),
+              launchArgs: String(gameMeta.launchArgs || game.launchArgs),
+              coverUrl: String(gameMeta.coverUrl || game.coverUrl),
+              customAdapterRules: normalizeCustomAdapterRules(gameMeta.customAdapterRules).length > 0
+                ? normalizeCustomAdapterRules(gameMeta.customAdapterRules)
+                : game.customAdapterRules
+            }
             : game
         );
         targetGame = games.value.find((game) => game.id === targetGame?.id) ?? targetGame;
@@ -4009,7 +4109,8 @@ export const useLibraryStore = defineStore("library", () => {
       id: createId("profile"),
       gameId: activeGame.value.id,
       name,
-      ...snapshot,
+      enabledModIds: selectedModIds.value.length > 0 ? [...selectedModIds.value] : snapshot.enabledModIds,
+      modOrder: snapshot.modOrder,
       createdAt: now,
       updatedAt: now
     };
@@ -4025,10 +4126,45 @@ export const useLibraryStore = defineStore("library", () => {
 
     modProfiles.value = modProfiles.value.map((item) =>
       item.id === profileId
-        ? { ...item, ...currentProfileSnapshot(activeGame.value!.id), updatedAt: Date.now() }
+        ? {
+          ...item,
+          enabledModIds: selectedModIds.value.length > 0 ? [...selectedModIds.value] : currentProfileSnapshot(activeGame.value!.id).enabledModIds,
+          modOrder: currentProfileSnapshot(activeGame.value!.id).modOrder,
+          updatedAt: Date.now()
+        }
         : item
     );
     await persist();
+    return true;
+  }
+
+  async function addSelectedModsToProfile(profileId: string) {
+    if (!activeGame.value || selectedModIds.value.length === 0) return false;
+    const profile = activeProfiles.value.find((item) => item.id === profileId);
+    if (!profile) return false;
+
+    const newIds = [...new Set([...profile.enabledModIds, ...selectedModIds.value])];
+    modProfiles.value = modProfiles.value.map((item) =>
+      item.id === profileId ? { ...item, enabledModIds: newIds, updatedAt: Date.now() } : item
+    );
+    await persist();
+    clearSelection();
+    return true;
+  }
+
+  async function removeSelectedModsFromProfile(profileId: string) {
+    if (!activeGame.value || selectedModIds.value.length === 0) return false;
+    const profile = activeProfiles.value.find((item) => item.id === profileId);
+    if (!profile) return false;
+
+    const idsToRemove = new Set(selectedModIds.value);
+    const newIds = profile.enabledModIds.filter(id => !idsToRemove.has(id));
+
+    modProfiles.value = modProfiles.value.map((item) =>
+      item.id === profileId ? { ...item, enabledModIds: newIds, updatedAt: Date.now() } : item
+    );
+    await persist();
+    clearSelection();
     return true;
   }
 
@@ -4285,6 +4421,7 @@ export const useLibraryStore = defineStore("library", () => {
     selectedNexusMod,
     nexusAuthorized,
     tagPalette,
+    selectedProfileId,
     activeMods,
     activeTags,
     activeProfiles,
@@ -4295,6 +4432,8 @@ export const useLibraryStore = defineStore("library", () => {
     activeDownloads,
     packageProgress,
     updateBatchProgress,
+    updateCheckResult,
+    checkModUpdate,
     updateCheckingIds,
     appUpdateChecking,
     appUpdateDialogVisible,
@@ -4370,6 +4509,8 @@ export const useLibraryStore = defineStore("library", () => {
     updateSelectedMods,
     createModProfile,
     saveModProfile,
+    addSelectedModsToProfile,
+    removeSelectedModsFromProfile,
     renameModProfile,
     removeModProfile,
     applyModProfile,
@@ -4381,6 +4522,7 @@ export const useLibraryStore = defineStore("library", () => {
     selectAllVisibleMods,
     clearSelection,
     reorderActiveMods,
-    setError
+    setError,
+    translateTextCached
   };
 });

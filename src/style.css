@@ -13,8 +13,8 @@
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 3px;
+  height: 3px;
 }
 
 ::-webkit-scrollbar-track {
@@ -22,12 +22,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #343c47;
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #464f5c;
+  background: rgba(255, 255, 255, 0.25);
 }
 
 body {
@@ -169,7 +169,7 @@ button:disabled {
   height: 36px;
   border-radius: 4px;
   object-fit: cover;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .gameItem small,
@@ -261,6 +261,8 @@ button:disabled {
   font-weight: 500;
   font-size: 13px;
   border: 1px solid transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .primary {
@@ -312,7 +314,8 @@ button:disabled {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow-y: auto;
+  overflow-y: overlay;
+  overflow-x: hidden;
 }
 
 .gamePanel {
@@ -384,7 +387,7 @@ button:disabled {
   color: #ffffff;
   margin: 0 0 16px 0;
   letter-spacing: 0.5px;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
 .heroActions {
@@ -410,7 +413,7 @@ button:disabled {
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(45, 115, 255, 0.3);
   transition: all 0.2s ease;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .steamPlayBtn:hover {
@@ -456,7 +459,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   min-width: 120px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .heroSummaryCard span {
@@ -472,6 +475,7 @@ button:disabled {
   color: #66c0f4;
   font-weight: 300;
 }
+
 .heroSummaryCard:last-child strong {
   color: #ffffff;
 }
@@ -616,7 +620,7 @@ button:disabled {
   background: #172235;
 }
 
-.gameLibraryItem > img,
+.gameLibraryItem>img,
 .gameLibraryIcon {
   width: 72px;
   height: 54px;
@@ -740,9 +744,9 @@ button:disabled {
   top: 0;
   z-index: 30;
   background: #12141a;
-  margin: -24px -24px 16px -24px;
-  padding: 0 24px 16px 24px;
-  box-shadow: 0 8px 16px -8px rgba(0,0,0,0.5);
+  margin: -24px -24px 0 -24px;
+  padding: 0 24px 0 24px;
+  box-shadow: 0 8px 16px -8px rgba(0, 0, 0, 0.5);
 }
 
 .stickyFilters .toolsRow {
@@ -755,14 +759,31 @@ button:disabled {
   border-top: 1px solid #3d4450;
   border-bottom: 1px solid #3d4450;
   padding: 12px 24px;
-  margin: -24px -24px 16px -24px;
+  margin: -24px -24px 12px -24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  flex-wrap: wrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 20;
+}
+
+.toolsGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #252c36;
 }
 
 .toolsRow select {
@@ -786,7 +807,7 @@ button:disabled {
   min-width: 118px;
 }
 
-.steamSelect > button {
+.steamSelect>button {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
@@ -803,8 +824,8 @@ button:disabled {
   transition: all 0.2s ease;
 }
 
-.steamSelect > button:hover,
-.steamSelect > button:focus {
+.steamSelect>button:hover,
+.steamSelect>button:focus {
   border-color: rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
@@ -845,12 +866,13 @@ button:disabled {
   min-width: 96px;
 }
 
-.steamSelectCompact > button {
+.steamSelectCompact>button {
   border-color: transparent;
   background: rgba(255, 255, 255, 0.04);
   color: #9ea8b3;
 }
-.steamSelectCompact > button:hover {
+
+.steamSelectCompact>button:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
 }
@@ -858,6 +880,7 @@ button:disabled {
 .steamModTable {
   width: 100%;
   max-width: 100%;
+  margin-top: 20px;
   border: 1px solid #1e242d;
   border-radius: 8px;
   background: rgba(16, 21, 28, 0.5);
@@ -892,23 +915,31 @@ button:disabled {
 
 .steamModGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
 }
 
 .steamModCard {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #2c3542;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .steamModCard:hover,
 .steamModCard.selected {
-  border-color: #4f8cff;
-  background: rgba(102, 192, 244, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
 }
 
 .steamModCard.dragging {
@@ -921,14 +952,18 @@ button:disabled {
 
 .modCardCover {
   position: relative;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   aspect-ratio: 16 / 9;
-  background: #10151c;
+  background: rgba(0, 0, 0, 0.25);
   color: #697789;
+  overflow: hidden;
 }
 
 .modCardCover img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1023,7 +1058,7 @@ button:disabled {
 .steamModHeader,
 .steamModRow {
   display: grid;
-  grid-template-columns: 30px 28px minmax(180px, 1fr) 76px 120px 106px 70px 92px 112px;
+  grid-template-columns: 30px 28px 60px minmax(140px, 320px) 90px 76px 92px 1fr 50px 112px;
   align-items: center;
   gap: 10px;
   min-height: 60px;
@@ -1038,6 +1073,10 @@ button:disabled {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+
+.steamModHeader span:last-child {
+  text-align: center;
 }
 
 .steamModRow {
@@ -1088,10 +1127,12 @@ button:disabled {
   align-items: center;
   min-width: 0;
   gap: 12px;
+  overflow: hidden;
 }
 
 .steamModName strong {
   min-width: 0;
+  flex: 0 1 auto;
   overflow: hidden;
   color: #eef2f7;
   font-size: 14px;
@@ -1126,6 +1167,7 @@ button:disabled {
   transition: color 0.15s;
   cursor: pointer;
 }
+
 .steamToggleCell:hover {
   color: #9ea8b3;
 }
@@ -1139,7 +1181,7 @@ button:disabled {
   background: #2a2f38;
   padding: 3px;
   transition: background 0.2s ease;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .steamToggle span {
@@ -1149,7 +1191,7 @@ button:disabled {
   border-radius: 50%;
   background: #8f98a5;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .steamToggleCell.active {
@@ -1198,6 +1240,18 @@ button:disabled {
 .modUpdateBadge:not(:disabled):hover {
   border-color: #66c0f4;
   color: #dbeaf5;
+}
+
+.gridUpdateBadge {
+  margin: 0;
+  padding: 0 10px;
+  font-size: 11px;
+  height: 26px;
+  min-height: 26px;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(20, 27, 36, 0.6);
+  transition: all 0.2s ease;
 }
 
 .modUpdateBadge.available {
@@ -1249,13 +1303,22 @@ button:disabled {
 
 .steamRowActions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
 }
 
-.steamRowActions .secondary {
+.steamRowActions .secondary,
+.steamRowActions .iconButton {
+  height: 32px;
   min-height: 32px;
   padding: 0 12px;
+  line-height: 1;
+}
+
+.steamRowActions .iconButton {
+  width: 32px;
+  padding: 0;
 }
 
 .tagToolsRow {
@@ -1365,6 +1428,18 @@ textarea {
   transition: border-color 0.2s ease;
 }
 
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  min-height: auto;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  cursor: pointer;
+  accent-color: #4f8cff;
+}
+
 textarea {
   min-height: 58px;
   resize: vertical;
@@ -1457,7 +1532,7 @@ select:focus {
   border-radius: 7px;
   background: #10151c;
   margin-bottom: 12px;
-  padding: 10px;
+  padding: 10px 16px;
 }
 
 .batchBar span {
@@ -1486,56 +1561,14 @@ select:focus {
   grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
 }
 
-.packageTools {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 14px;
-  padding: 12px;
-  border: 1px solid #2a3442;
-  border-radius: 7px;
-  background: #111821;
-}
-
-.packageToolsHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.packageToolsTitle {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-}
-
-.packageToolsTitle strong {
-  color: #e6e9ed;
-  font-size: 14px;
-}
-
-.packageToolsTitle span {
-  color: #8f98a5;
-  font-size: 12px;
-}
-
-.packageToolsActions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.packageToolsActions .steamInput {
-  width: 180px;
-  min-height: 32px;
+.packageToolsProgress {
 }
 
 .packageProgress {
   display: grid;
   gap: 6px;
   padding-top: 2px;
+  margin-bottom: 14px;
 }
 
 .packageProgressMeta {
@@ -1571,20 +1604,7 @@ select:focus {
   font-size: 11px;
 }
 
-@media (max-width: 900px) {
-  .packageToolsHeader {
-    align-items: stretch;
-    flex-direction: column;
-  }
 
-  .packageToolsActions {
-    justify-content: flex-start;
-  }
-
-  .packageToolsActions .steamInput {
-    flex: 1 1 180px;
-  }
-}
 
 .statusIcon {
   display: grid;
@@ -2234,7 +2254,7 @@ select:focus {
   padding: 12px;
 }
 
-.logRow > div {
+.logRow>div {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2351,8 +2371,15 @@ code {
 }
 
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Steam Style Modal */
@@ -2411,7 +2438,7 @@ code {
 }
 
 .gameModalHero img,
-.gameModalHero > svg {
+.gameModalHero>svg {
   width: 72px;
   height: 48px;
   border-radius: 6px;
@@ -2609,7 +2636,7 @@ code {
   align-items: flex-start;
 }
 
-.ruleSimulatorHeader > div:first-child {
+.ruleSimulatorHeader>div:first-child {
   display: grid;
   gap: 4px;
 }
@@ -2714,7 +2741,7 @@ code {
   gap: 8px;
 }
 
-.ruleSimulationSummary > div:not(.ruleConflictHint) {
+.ruleSimulationSummary>div:not(.ruleConflictHint) {
   display: grid;
   gap: 4px;
   min-width: 0;
@@ -2744,6 +2771,7 @@ code {
 }
 
 @media (max-width: 760px) {
+
   .ruleSimulatorHeader,
   .ruleSimulationSummary {
     display: grid;
@@ -2796,7 +2824,7 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   position: sticky;
   top: 0;
   z-index: 30;
@@ -2883,7 +2911,8 @@ code {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   padding-bottom: 24px;
-  position: relative; /* for overlay */
+  position: relative;
+  /* for overlay */
 }
 
 .steamCardsGrid.is-loading .steamCard {
@@ -3089,7 +3118,7 @@ code {
 /* Logs & Backup Specific */
 .logDetailBox {
   margin-top: 8px;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 12px;
@@ -3163,7 +3192,7 @@ code {
   text-transform: uppercase;
   letter-spacing: 1px;
   border-bottom: 1px solid #181a21;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .steamSettingRow {
@@ -3265,11 +3294,11 @@ code {
   border-radius: 50%;
 }
 
-.steamToggle input:checked + .slider {
+.steamToggle input:checked+.slider {
   background-color: #4f8cff;
 }
 
-.steamToggle input:checked + .slider:before {
+.steamToggle input:checked+.slider:before {
   transform: translateX(20px);
 }
 
@@ -3627,8 +3656,13 @@ code {
 }
 
 @keyframes indeterminate-progress {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(330%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(330%);
+  }
 }
 
 .taskActionsRight {
@@ -3655,7 +3689,7 @@ code {
   background: #2a2d33;
   border: 1px solid #454f5f;
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   padding: 4px 0;
   z-index: 1000;
   min-width: 168px;
