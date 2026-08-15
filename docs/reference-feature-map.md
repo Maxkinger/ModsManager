@@ -98,11 +98,12 @@
 - [x] 支持打开游戏目录
 - [x] 支持删除游戏配置
 - [x] 生成 144 个游戏预设入口
+- [x] 前台隐藏 `GTA5` / `GTA5 Enhanced`，当前可添加游戏显示为 142 个
 - [x] 预设包含游戏名、GlossGameId、Steam AppID、exe、封面、类型名
 - [x] 预设包含 NexusMods domain 和 Nexus game_id
 - [x] 统计并保留带 Nexus 配置的游戏入口
-- [x] 补充 `GTA5`
-- [x] 补充 `GTA5 Enhanced`
+- [x] 补充 `GTA5`（当前隐藏）
+- [x] 补充 `GTA5 Enhanced`（当前隐藏）
 - [x] 校验所选目录是否包含对应游戏 exe
 - [x] 自动识别 Steam 游戏安装路径
 - [x] 支持选择 exe 后反推游戏根目录
@@ -173,10 +174,19 @@
 - [x] 支持批量删除
 - [x] 支持批量编辑
 - [x] 支持排序/权重
-- [x] 支持前置依赖展示
-- [ ] 支持安装前检查本地前置依赖（暂缓）
+- [x] 支持 Mod 自身前置备注字段
+- [x] 取消 Mod 分组功能，保留“标签 + 配置档案”作为分类和一键切换方案
+- [x] 定义游戏 Mod 配置档案数据结构
+- [x] 保存配置档案中的启用 Mod 列表
+- [x] 保存配置档案中的 Mod 排序
+- [x] 支持新建、重命名、删除配置档案
+- [x] 支持一键应用整套 Mod 配置档案
+- [x] 应用档案时自动卸载多余 Mod
+- [x] 应用档案时按档案顺序安装 Mod
+- [x] 配置档案随数据导入/导出保存
+- [ ] 安装前检查本地前置依赖（按当前需求暂不做）
 - [x] 支持冲突检测
-- [ ] 支持 Mod 更新检查（暂缓）
+- [x] 支持 Nexus 来源 Mod 更新检查、手动更新和批量更新
 - [x] 支持 NXM 深链
 
 ## 7. 安装策略与文件操作
@@ -245,23 +255,28 @@
 - [x] 迁移 `Stardew Valley` 专属规则
 - [x] 迁移 `Tale of Immortal` 专属规则
 - [x] 迁移 `Baldur's Gate 3` 专属规则
-- [x] 迁移 `GTA5` 专属规则
-- [x] 迁移 `GTA5 Enhanced` 专属规则
+- [x] 迁移 `GTA5` 专属规则（当前隐藏）
+- [x] 迁移 `GTA5 Enhanced` 专属规则（当前隐藏）
 - [x] 迁移 RE Engine 通用适配
 - [x] 迁移 GTA5 `dlc.rpf` DLC 包落位规则
-- [ ] 迁移 GTA5 `update.rpf` 内部 XML 写入规则（暂缓）
+- [ ] 迁移 GTA5 `update.rpf` 内部 XML 写入规则（GTA5 当前隐藏，暂不做）
 - [x] 迁移游戏专属排序
 - [x] 支持用户自定义 adapter
+- [x] 自定义 adapter 添加时提供文件夹风格的规则模拟页面
+- [x] 可视化显示识别条件和识别出的 Mod 类型
+- [x] 可视化显示预计安装文件和目标路径
+- [x] 可视化显示模拟模式下的冲突检查提示
+- [x] 明确模拟预览不会修改游戏文件，实际安装前再次检查覆盖风险
 
 ### 8.1 已有落位规则但未完整还原特殊逻辑的游戏
 
-说明：`144 / 144` 表示所有预设游戏都有基础 adapter 和文件落位规则，不表示 Gloss 源码里的每个游戏专属脚本都已经完整还原。下面这些游戏当前可识别/落位，但还有特殊逻辑需要后续补齐。
+说明：`144 / 144` 表示所有预设游戏都有基础 adapter，且不会退回 `common` 通用兜底；前台当前隐藏 `GTA5` / `GTA5 Enhanced`，用户可添加列表显示 142 个。前置检测按当前需求暂不做，不计入 adapter 未完成项。
 
-- [ ] `GTA5` / `GTA5 Enhanced`：`gameconfig.xml` 写入 `update.rpf/common/data/gameconfig.xml`、车辆/人物文件写入 RPF 容器、`oiv` 脚本执行、RPF 工具链接入。（暂缓）
+- [ ] `GTA5` / `GTA5 Enhanced`：已隐藏；`gameconfig.xml` 写入 `update.rpf/common/data/gameconfig.xml`、车辆/人物文件写入 RPF 容器、`oiv` 脚本执行、RPF 工具链接入暂不做。
 - [x] `Baldur's Gate 3`：已按 Gloss 方案还原 `.pak` 安装到用户 AppData，并通过已导入的 `BaldursGate3.dll` 读取 `.pak` 元数据、维护 `modsettings.lsx`。
 - [x] `Dying Light 2`：已还原 `.pak -> dataN.pak` 编号安装，并维护本地 `pakList.txt` 映射。
 - [x] `Watch Dogs 2`：已还原 `.dat/.fat -> patchN.dat/fat` 成对编号安装，并维护本地 `pakList.txt` 映射。
-- [x] `Starfield`：已写 `Starfield.ini`、维护 AppData `plugins.txt`、处理 `sTestFile`；`SFSE` 安装前检查跟随全局前置检测项暂缓。
+- [x] `Starfield`：已写 `Starfield.ini`、维护 AppData `plugins.txt`、处理 `sTestFile`；安装前前置检测当前不做。
 - [x] `Skyrim Special Edition`：已写 `Skyrim.ini` 并维护 AppData `plugins.txt`。
 - [x] `Fallout 4`：已写 `Fallout4.ini` 并维护 AppData `plugins.txt`。
 - [x] `No Man's Sky`：安装前已把 `DISABLEMODS.TXT` 改名备份以启用 Mod。
@@ -269,13 +284,14 @@
 - [x] `Red Dead Redemption 2`：已还原 `install.xml` 读取和 `lml/mods.xml` 写入，支持 `lml` 与带 `install.xml` 的 `asi` 启用/关闭同步。
 - [x] `InZOI`：已修改 `mod_manifest.json` 启用 Mod。
 - [x] `MiChangSheng`：已生成/补齐 `Mod.bin`，并按类型创建目录链接或复制 dll。
-- [ ] `Armored Core 6`：Gloss 安装普通 Mod 前会检查 `ModEngine2`；当前缺安装前本地前置检查。
-- [ ] `Elden Ring`：adapter 已记录 `ModEngine2` 前置名，但全局安装前检查还没启用。
-- [ ] `Monster Hunter World`：Gloss 对部分类型会检查 `Stracker's Loader`；当前缺安装前本地前置检查。
-- [ ] `Resident Evil Village` / `Street Fighter 6`：Gloss 对 `REFramework`、`FirstNatives` 有前置检查；当前缺安装前本地前置检查。
-- [ ] `Sekiro`：Gloss 对 `ModEngine` 有前置检查；当前缺安装前本地前置检查。
-- [ ] `Nioh 2`：Gloss 对 `Nioh 2 Mod Enabler` 有前置检查；当前缺安装前本地前置检查。
-- [ ] `Like A Dragon 8`：Gloss 对 `Shin Ryu Mod Manager` 有前置检查；当前缺安装前本地前置检查。
+- [x] `Armored Core 6`：已迁移 `ArmoredCore6Dictionary.txt` 字典映射，普通 Mod 会按 Gloss 字典落位到 `mods`；安装前前置检测当前不做。
+- [x] `Elden Ring`：已迁移 `EldenRingDictionary.txt` 字典映射；安装前前置检测当前不做。
+- [x] `Monster Hunter World`：专属安装规则已迁移；安装前前置检测当前不做。
+- [x] `Resident Evil Village` / `Street Fighter 6`：RE Engine 安装规则已迁移；安装前前置检测当前不做。
+- [x] `Sekiro`：已迁移 `SekiroDictionary.txt` 字典映射，基础类型会按 Gloss 字典落位到 `mods`；安装前前置检测当前不做。
+- [x] `Legend of Heroes Three Kingdoms`：已迁移 `ThreeKingdomDictionary.txt` Data 字典映射，并支持 Portraits 头像目录软链到 `ThreeKingdom_Data/StreamingAssets/Portraits`。
+- [x] `Nioh 2`：安装规则已迁移；安装前前置检测当前不做。
+- [x] `Like A Dragon 8`：安装规则已迁移；安装前前置检测当前不做。
 
 ## 9. 设置
 
@@ -291,7 +307,23 @@
 - [x] 支持关闭软链安装开关
 - [x] 支持调试模式
 - [x] 支持显示调试信息
-- [x] 支持自动检查应用更新
+- [x] 支持启动时检查应用更新
+- [x] 参考 `deskPluginsVIP` 接入应用更新 JSON 检查
+- [x] 支持设置应用更新地址，地址后续可直接填写
+- [x] 支持比较本地版本与线上 `versionName`
+- [x] 支持显示更新弹窗、更新日志和强制更新提示
+- [x] 支持点击更新后打开线上 `downloadUrl`
+
+应用更新 JSON 示例：
+
+```json
+{
+  "versionName": "1.3.1",
+  "downloadUrl": "https://example.com/download",
+  "updateLog": "这里写更新内容",
+  "forceUpdate": false
+}
+```
 
 ## 10. 备份系统
 
@@ -317,7 +349,9 @@
 - [x] 支持下载完成自动导入
 - [x] 支持重复任务检测
 - [x] 支持代理设置
-- [ ] 接入 aria2（暂缓）
+- [x] 接入可选 aria2 下载引擎
+- [x] 支持设置 aria2c.exe 路径和最大连接数
+- [x] aria2 下载支持进度、暂停、继续和失败提示
 - [ ] 保存 aria2 任务快照（暂缓）
 - [ ] 恢复 aria2 历史任务（暂缓）
 
@@ -325,7 +359,7 @@
 
 - [x] 建立探索页
 - [x] 建立 Mod 详情页
-- [ ] 接入 NexusMods SSO 授权（已改为 API Key，暂缓）
+- [x] 接入 NexusMods 网页 OAuth 登录（API Key 作为备用方式）
 - [x] 接入 NexusMods 列表
 - [x] 接入 NexusMods 详情
 - [x] 接入 NexusMods 文件列表
@@ -339,7 +373,7 @@
 - [x] 支持分页
 - [x] 支持选择资源下载
 - [x] 支持打开源网页
-- [x] 支持 Nexus 页面实验性翻译：列表名称/摘要、详情名称/摘要/说明、分类/标签、文件名/文件分类、Google 免费接口、百度翻译、有道智云、腾讯云机器翻译、火山引擎机器翻译、串行请求、本地缓存、原文/译文切换
+- [x] 支持 Nexus 页面实验性翻译：列表名称/摘要、详情名称/摘要/说明、分类/标签、文件名/文件分类、Google 免费接口、百度翻译、有道智云、腾讯云机器翻译、火山引擎机器翻译、Ollama 本地模型、串行请求、本地缓存、原文/译文切换
 
 排除项：
 
@@ -380,7 +414,8 @@
 
 ## 15. 用户与平台账号
 
-- [ ] NexusMods SSO 授权（已改为 API Key，暂缓）
+- [x] NexusMods 网页 OAuth 登录和 API Key 登录
+- [ ] NexusMods OAuth 长期 Token 刷新和完整稳定性验证
 - [x] NexusMods 用户信息展示
 - [x] 清除 NexusMods 授权
 - [x] 保存 NexusMods API Key
@@ -406,18 +441,27 @@
 
 ## 17. 当前完成摘要
 
-已完成的第一批基础能力：
+当前已经完成：
 
-- Electron 项目骨架已建立。
-- 本地游戏库和本地 Mod 列表已可用。
-- 144 个游戏预设入口已加入。
-- 基础本地导入、扫描、安装、卸载已可用。
-- Gloss 风格的 adapter/`modType`/`checkModType` 架构已建立。
-- 少量代表性 adapter 已接入，用于验证架构。
+- Electron + Vue 3 + Pinia 项目骨架、构建和 Windows 打包配置。
+- 本地游戏库、Mod 导入、扫描、安装、卸载、软链和冲突检测。
+- 144 个游戏预设基础 adapter，当前前台显示 142 个，GTA5 / GTA5 Enhanced 已隐藏。
+- Baldur's Gate 3、星露谷物语、剑星、怪物猎人世界、鬼谷八荒等重点游戏规则。
+- NexusMods 列表、详情、文件选择、NXM 深链、下载和网页 OAuth/API Key 登录。
+- Nexus 来源 Mod 更新检查、手动更新和批量更新。
+- Google、百度、有道、腾讯、火山引擎和 Ollama 翻译。
+- 游戏/存档备份恢复、数据导入导出、Mod 整合包导入。
+- 内置下载和可选 aria2 下载引擎。
+- 应用启动时检查软件更新。
 
-当前不要继续大规模迁移游戏规则，下一步应优先补：
+当前仍暂缓或未完成：
 
-- 拖拽/压缩包导入。
-- 安装策略的安全性，例如跳过元文件、卸载记录、覆盖风险。
-- adapter 识别规则测试。
-- 逐个核对热门游戏规则。
+- 安装前本地前置依赖检测。
+- GTA5 / GTA5 Enhanced 的 RPF 深层写入规则（当前隐藏）。
+- aria2 任务快照和软件重启后的历史任务恢复。
+- `.gmm` 子包选择、单个/多个 Mod 导出和包信息编辑。
+- 非 Nexus 来源 Mod 更新识别。
+- 完全无人值守 Mod 更新。
+- Nexus OAuth 长期 Token 刷新。
+- Playwright 界面冒烟测试。
+- `App.vue` 组件拆分和进一步响应式优化。

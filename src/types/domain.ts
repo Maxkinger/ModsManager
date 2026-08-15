@@ -65,7 +65,7 @@ export type InstallStrategy =
   | {
       kind: "folderParent";
       installPath: string;
-      folderName: string;
+      folderName: string | string[];
       targetScope?: InstallTargetScope;
     }
   | {
@@ -131,6 +131,11 @@ export type InstallStrategy =
   | {
       kind: "michangshengDllPlugins";
       installPath: string;
+    }
+  | {
+      kind: "legendPortraits";
+      installPath: string;
+      portraitFolders: string[];
     }
   | {
       kind: "inzoiModKit";
@@ -216,13 +221,62 @@ export interface LocalMod {
   modTypeName: string;
   installed: boolean;
   deployedFiles: string[];
+  updateSource?: ModUpdateSource;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface ModProfile {
+  id: string;
+  gameId: string;
+  name: string;
+  enabledModIds: string[];
+  modOrder: string[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ModUpdateCheck {
+  status: "unknown" | "latest" | "available" | "unsupported" | "failed";
+  checkedAt: number;
+  message: string;
+  latestFileId: string;
+  latestFileName: string;
+  latestVersion: string;
+  latestUploadedAt: string;
+  detailsUrl: string;
+}
+
+export interface ModUpdateSource {
+  type: "nexus";
+  gameDomain: string;
+  gameName: string;
+  modId: string;
+  fileId: string;
+  fileName: string;
+  fileVersion: string;
+  modVersion: string;
+  categoryName: string;
+  modPageUrl: string;
+  filePageUrl: string;
+  coverImage?: string;
+  downloadedAt: number;
+  check?: ModUpdateCheck;
 }
 
 export interface InstallPlan {
   targetFiles: string[];
   conflicts: string[];
+}
+
+export interface CustomAdapterTestResult {
+  sourcePath: string;
+  files: string[];
+  modTypeId: string;
+  modTypeName: string;
+  strategyKind: InstallStrategy["kind"];
+  plan: InstallPlan;
+  manualReason: string;
 }
 
 export interface NexusUser {
@@ -302,6 +356,9 @@ export interface DownloadTask {
   fileName: string;
   url: string;
   outputPath: string;
+  coverImage?: string;
+  updateSource?: ModUpdateSource;
+  updateTargetModId?: string;
   status: "queued" | "downloading" | "paused" | "completed" | "failed" | "external";
   receivedBytes: number;
   totalBytes: number;
@@ -345,8 +402,11 @@ export interface AppSettings {
   tagColors: Record<string, string>;
   useSymlinkInstall: boolean;
   nexusApiKey: string;
+  nexusAccessToken: string;
+  nexusRefreshToken: string;
+  nexusTokenExpiresAt: number;
   nexusUser: NexusUser | null;
-  translationProvider: "off" | "google-gtx" | "baidu" | "youdao" | "tencent" | "volcengine";
+  translationProvider: "off" | "google-gtx" | "baidu" | "youdao" | "tencent" | "volcengine" | "ollama";
   translationTargetLang: "zh-CN";
   baiduTranslateAppId: string;
   baiduTranslateSecret: string;
@@ -358,10 +418,16 @@ export interface AppSettings {
   volcengineTranslateAccessKeyId: string;
   volcengineTranslateSecretAccessKey: string;
   volcengineTranslateRegion: string;
+  ollamaTranslateBaseUrl: string;
+  ollamaTranslateModel: string;
+  ollamaTranslateTimeoutMs: number;
   theme: "dark" | "light";
   language: "zh-CN" | "en-US";
   defaultTab: "games" | "manager" | "nexus" | "download" | "logs" | "backup" | "settings" | "about";
   autoImportAfterDownload: boolean;
+  downloadEngine: "builtin" | "aria2";
+  aria2ExecutablePath: string;
+  aria2MaxConnections: number;
   proxyEnabled: boolean;
   proxyUrl: string;
   preferDirectoryGamePicker: boolean;
@@ -370,6 +436,23 @@ export interface AppSettings {
   debugMode: boolean;
   showDebugInfo: boolean;
   autoCheckUpdates: boolean;
+  appUpdateUrl: string;
+  lastAppUpdateCheckAt: number;
+  lastAutoUpdateCheckAt: number;
+}
+
+export interface AppUpdateInfo {
+  versionName: string;
+  downloadUrl: string;
+  updateLog: string;
+  forceUpdate: boolean;
+}
+
+export interface AppUpdateCheckResult {
+  hasUpdate: boolean;
+  versionCompare: number;
+  currentVersionName: string;
+  remote: AppUpdateInfo;
 }
 
 export interface AppData {
@@ -377,6 +460,7 @@ export interface AppData {
   settings: AppSettings;
   games: ManagedGame[];
   activeGameId: string;
+  modProfiles: ModProfile[];
   mods: LocalMod[];
   downloads: DownloadTask[];
   logs: AppLogEntry[];

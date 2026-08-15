@@ -8,6 +8,7 @@ import { createGta5Adapter } from "@/adapters/gta5";
 import { glossEngineDefinitions } from "@/adapters/gloss-engine-definitions";
 import { createGlossRuleAdapter, glossRuleDefinitions } from "@/adapters/gloss-rule-definitions";
 import { inzoiAdapter } from "@/adapters/inzoi";
+import { legendOfHerosAdapter } from "@/adapters/legendofheros";
 import { createReEngineAdapter, monsterHunterWorldAdapter } from "@/adapters/monsterhunter";
 import { oblivionRemasteredAdapter } from "@/adapters/oblivionremastered";
 import { skyrimSeAdapter } from "@/adapters/skyrimse";
@@ -27,6 +28,7 @@ const explicitAdapters: GameAdapter[] = [
   monsterHunterWorldAdapter,
   createReEngineAdapter("monsterhunterrise", "MonsterHunterRise"),
   createReEngineAdapter("monsterhunterwilds", "Monster Hunter Wilds"),
+  legendOfHerosAdapter,
   oblivionRemasteredAdapter,
   skyrimSeAdapter,
   stardewValleyAdapter,

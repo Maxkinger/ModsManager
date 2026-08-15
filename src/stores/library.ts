@@ -15,14 +15,34 @@ import type {
   LocalMod,
   ManagedGame,
   AppSettings,
+  AppUpdateInfo,
+  AppUpdateCheckResult,
   NexusModDetail,
   NexusModFile,
   NexusModItem,
-  NexusModListResult
+  NexusModListResult,
+  ModUpdateCheck,
+  ModUpdateSource,
+  ModProfile
 } from "@/types/domain";
 
 const DATA_FILE = "mayfly-library.json";
-const DATA_VERSION = 8;
+const DATA_VERSION = 9;
+const HIDDEN_PRESET_IDS = new Set(["gta5", "gta5enhanced"]);
+type PackageProgress = {
+  visible: boolean;
+  operation: "import" | "export" | "";
+  phase: string;
+  current: number;
+  total: number;
+  message: string;
+};
+type UpdateBatchProgress = {
+  visible: boolean;
+  current: number;
+  total: number;
+  message: string;
+};
 
 function createId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -91,6 +111,20 @@ function sanitizeFileName(name: string) {
   return name.replace(/[<>:"/\\|?*\u0000-\u001F]/gu, "-").trim() || "download.bin";
 }
 
+function nexusModWebsite(gameDomain: string, modId: string, fileId = "") {
+  const domain = gameDomain.trim();
+  const id = modId.trim();
+  if (!domain || !id) return "";
+
+  const url = new URL(`https://www.nexusmods.com/${domain}/mods/${id}`);
+  if (fileId.trim()) {
+    url.searchParams.set("tab", "files");
+    url.searchParams.set("file_id", fileId.trim());
+  }
+
+  return url.toString();
+}
+
 function hashText(value: string) {
   let hash = 2166136261;
 
@@ -155,6 +189,15 @@ function stringList(value: unknown) {
   }
 
   return [];
+}
+
+function groupIdList(value: unknown) {
+  if (Array.isArray(value)) {
+    return [...new Set(value.map(String).map((item) => item.trim()).filter(Boolean))];
+  }
+
+  const single = String(value ?? "").trim();
+  return single ? [single] : [];
 }
 
 const glossTypeIdMap: Record<string, Record<string, string>> = {
@@ -247,6 +290,7 @@ function strategyNeedsManagedUninstall(kind: string) {
     "redDeadLml",
     "michangshengLinkedFolder",
     "michangshengDllPlugins",
+    "legendPortraits",
     "inzoiModKit"
   ].includes(kind);
 }
@@ -300,6 +344,20 @@ function normalizeInstallStrategy(value: unknown): CustomAdapterRule["install"] 
         fileName: String(strategy.fileName || ""),
         isExtname: Boolean(strategy.isExtname),
         targetScope
+      };
+    case "fileMap":
+      return {
+        kind: "fileMap",
+        installPath,
+        dictionaryFile: String(strategy.dictionaryFile || "")
+      };
+    case "legendPortraits":
+      return {
+        kind: "legendPortraits",
+        installPath,
+        portraitFolders: Array.isArray(strategy.portraitFolders)
+          ? strategy.portraitFolders.map(String).filter(Boolean)
+          : []
       };
     case "manual":
       return { kind: "manual", reason: String(strategy.reason || "该自定义类型需要手动安装。") };
@@ -400,6 +458,53 @@ function isExternalUrl(url: string) {
   return /^https?:\/\/www\.nexusmods\.com\//i.test(url);
 }
 
+function isNexusUpdateSource(value: unknown): value is ModUpdateSource {
+  if (!value || typeof value !== "object") return false;
+  const source = value as Partial<ModUpdateSource>;
+
+  return source.type === "nexus" &&
+    typeof source.gameDomain === "string" &&
+    typeof source.modId === "string" &&
+    typeof source.fileId === "string";
+}
+
+function normalizeModUpdateSource(value: unknown): ModUpdateSource | undefined {
+  if (!isNexusUpdateSource(value)) return undefined;
+  const check = value.check && typeof value.check === "object"
+    ? value.check as Partial<ModUpdateCheck>
+    : undefined;
+
+  return {
+    type: "nexus",
+    gameDomain: value.gameDomain,
+    gameName: String(value.gameName || ""),
+    modId: value.modId,
+    fileId: value.fileId,
+    fileName: String(value.fileName || ""),
+    fileVersion: String(value.fileVersion || ""),
+    modVersion: String(value.modVersion || ""),
+    categoryName: String(value.categoryName || ""),
+    modPageUrl: String(value.modPageUrl || nexusModWebsite(value.gameDomain, value.modId)),
+    filePageUrl: String(value.filePageUrl || nexusModWebsite(value.gameDomain, value.modId, value.fileId)),
+    coverImage: String(value.coverImage || "") || undefined,
+    downloadedAt: Number(value.downloadedAt) || Date.now(),
+    check: check
+      ? {
+          status: ["latest", "available", "unsupported", "failed"].includes(String(check.status))
+            ? check.status as ModUpdateCheck["status"]
+            : "unknown",
+          checkedAt: Number(check.checkedAt) || 0,
+          message: String(check.message || ""),
+          latestFileId: String(check.latestFileId || ""),
+          latestFileName: String(check.latestFileName || ""),
+          latestVersion: String(check.latestVersion || ""),
+          latestUploadedAt: String(check.latestUploadedAt || ""),
+          detailsUrl: String(check.detailsUrl || "")
+        }
+      : undefined
+  };
+}
+
 interface NexusDownloadAuthorization {
   key?: string;
   expires?: string;
@@ -429,8 +534,11 @@ const fallbackData: AppData = {
   settings: {
     storagePath: "",
     tagColors: {},
-      useSymlinkInstall: true,
+    useSymlinkInstall: true,
     nexusApiKey: "",
+    nexusAccessToken: "",
+    nexusRefreshToken: "",
+    nexusTokenExpiresAt: 0,
     nexusUser: null,
     translationProvider: "off",
     translationTargetLang: "zh-CN",
@@ -444,10 +552,16 @@ const fallbackData: AppData = {
     volcengineTranslateAccessKeyId: "",
     volcengineTranslateSecretAccessKey: "",
     volcengineTranslateRegion: "cn-north-1",
+    ollamaTranslateBaseUrl: "http://127.0.0.1:11434",
+    ollamaTranslateModel: "",
+    ollamaTranslateTimeoutMs: 120000,
     theme: "dark",
     language: "zh-CN",
     defaultTab: "manager",
     autoImportAfterDownload: true,
+    downloadEngine: "builtin",
+    aria2ExecutablePath: "",
+    aria2MaxConnections: 4,
     proxyEnabled: false,
     proxyUrl: "",
     preferDirectoryGamePicker: true,
@@ -455,10 +569,14 @@ const fallbackData: AppData = {
     allowGameRunningChanges: false,
     debugMode: false,
     showDebugInfo: false,
-    autoCheckUpdates: false
+    autoCheckUpdates: false,
+    appUpdateUrl: "",//更新文件域名
+    lastAppUpdateCheckAt: 0,
+    lastAutoUpdateCheckAt: 0
   },
   games: [],
   activeGameId: "",
+  modProfiles: [],
   mods: [],
   downloads: [],
   logs: [],
@@ -471,6 +589,7 @@ function normalizeAppData(rawData: Partial<AppData> | null | undefined): AppData
   const data = rawData ?? {};
   const settings = (data.settings ?? {}) as Partial<AppSettings>;
   const games = Array.isArray(data.games) ? data.games : [];
+  const rawModProfiles = Array.isArray(data.modProfiles) ? data.modProfiles : [];
   const mods = Array.isArray(data.mods) ? data.mods : [];
   const downloads = Array.isArray(data.downloads) ? data.downloads : [];
   const logs = Array.isArray(data.logs) ? data.logs : [];
@@ -479,6 +598,18 @@ function normalizeAppData(rawData: Partial<AppData> | null | undefined): AppData
   const rawTranslationCache = data.translationCache && typeof data.translationCache === "object"
     ? data.translationCache
     : {};
+  const modProfiles: ModProfile[] = rawModProfiles
+    .filter((profile) => profile && typeof profile === "object")
+    .map((profile, index) => ({
+      id: String(profile.id || `profile_${profile.gameId || "game"}_${index + 1}`),
+      gameId: String(profile.gameId || ""),
+      name: String(profile.name || `配置档案 ${index + 1}`).trim() || `配置档案 ${index + 1}`,
+      enabledModIds: groupIdList(profile.enabledModIds),
+      modOrder: groupIdList(profile.modOrder),
+      createdAt: Number(profile.createdAt) || Date.now(),
+      updatedAt: Number(profile.updatedAt) || Date.now()
+    }))
+    .filter((profile) => profile.gameId);
 
   return {
     dataVersion: Number(data.dataVersion) || DATA_VERSION,
@@ -488,8 +619,11 @@ function normalizeAppData(rawData: Partial<AppData> | null | undefined): AppData
       tagColors: settings.tagColors ?? {},
       useSymlinkInstall: Number(data.dataVersion) < 3 ? true : settings.useSymlinkInstall ?? true,
       nexusApiKey: settings.nexusApiKey ?? "",
+      nexusAccessToken: settings.nexusAccessToken ?? "",
+      nexusRefreshToken: settings.nexusRefreshToken ?? "",
+      nexusTokenExpiresAt: Number(settings.nexusTokenExpiresAt) || 0,
       nexusUser: settings.nexusUser ?? null,
-      translationProvider: ["google-gtx", "baidu", "youdao", "tencent", "volcengine"].includes(String(settings.translationProvider))
+      translationProvider: ["google-gtx", "baidu", "youdao", "tencent", "volcengine", "ollama"].includes(String(settings.translationProvider))
         ? settings.translationProvider as AppSettings["translationProvider"]
         : "off",
       translationTargetLang: "zh-CN",
@@ -503,10 +637,18 @@ function normalizeAppData(rawData: Partial<AppData> | null | undefined): AppData
       volcengineTranslateAccessKeyId: settings.volcengineTranslateAccessKeyId ?? "",
       volcengineTranslateSecretAccessKey: settings.volcengineTranslateSecretAccessKey ?? "",
       volcengineTranslateRegion: settings.volcengineTranslateRegion ?? "cn-north-1",
+      ollamaTranslateBaseUrl: settings.ollamaTranslateBaseUrl ?? "http://127.0.0.1:11434",
+      ollamaTranslateModel: settings.ollamaTranslateModel ?? "",
+      ollamaTranslateTimeoutMs: Number(settings.ollamaTranslateTimeoutMs) || 120000,
       theme: settings.theme ?? "dark",
       language: settings.language ?? "zh-CN",
-      defaultTab: settings.defaultTab ?? "manager",
+      defaultTab: settings.defaultTab === "backup"
+        ? "manager"
+        : settings.defaultTab ?? "manager",
       autoImportAfterDownload: settings.autoImportAfterDownload ?? true,
+      downloadEngine: settings.downloadEngine === "aria2" ? "aria2" : "builtin",
+      aria2ExecutablePath: settings.aria2ExecutablePath ?? "",
+      aria2MaxConnections: Math.max(1, Math.min(16, Number(settings.aria2MaxConnections) || 4)),
       proxyEnabled: settings.proxyEnabled ?? false,
       proxyUrl: settings.proxyUrl ?? "",
       preferDirectoryGamePicker: settings.preferDirectoryGamePicker ?? true,
@@ -514,7 +656,10 @@ function normalizeAppData(rawData: Partial<AppData> | null | undefined): AppData
       allowGameRunningChanges: settings.allowGameRunningChanges ?? false,
       debugMode: settings.debugMode ?? false,
       showDebugInfo: settings.showDebugInfo ?? false,
-      autoCheckUpdates: settings.autoCheckUpdates ?? false
+      autoCheckUpdates: settings.autoCheckUpdates ?? false,
+      appUpdateUrl: settings.appUpdateUrl ?? "",
+      lastAppUpdateCheckAt: Number(settings.lastAppUpdateCheckAt || settings.lastAutoUpdateCheckAt) || 0,
+      lastAutoUpdateCheckAt: Number(settings.lastAutoUpdateCheckAt) || 0
     },
     games: games.map((game) => ({
       ...game,
@@ -524,6 +669,7 @@ function normalizeAppData(rawData: Partial<AppData> | null | undefined): AppData
       customAdapterRules: normalizeCustomAdapterRules((game as Partial<ManagedGame>).customAdapterRules)
     })),
     activeGameId: typeof data.activeGameId === "string" ? data.activeGameId : "",
+    modProfiles,
     mods: mods.map((mod, index) => ({
       ...mod,
       sortIndex: Number.isFinite(Number(mod.sortIndex)) ? Number(mod.sortIndex) : index,
@@ -534,13 +680,17 @@ function normalizeAppData(rawData: Partial<AppData> | null | undefined): AppData
       description: mod.description ?? "",
       coverImage: mod.coverImage ?? "",
       requirements: stringList(mod.requirements),
-      tags: stringList(mod.tags)
+      tags: stringList(mod.tags),
+      updateSource: normalizeModUpdateSource((mod as Partial<LocalMod>).updateSource)
     })),
     downloads: downloads.map((task) => ({
       ...task,
       status: task.status ?? "queued",
       receivedBytes: task.receivedBytes ?? 0,
       totalBytes: task.totalBytes ?? 0,
+      coverImage: task.coverImage ?? "",
+      updateSource: normalizeModUpdateSource((task as Partial<DownloadTask>).updateSource),
+      updateTargetModId: typeof task.updateTargetModId === "string" ? task.updateTargetModId : "",
       error: task.error ?? ""
     })),
     logs: logs
@@ -595,9 +745,29 @@ export const useLibraryStore = defineStore("library", () => {
   const initialized = ref(false);
   const busy = ref(false);
   const error = ref("");
+  const packageProgress = ref<PackageProgress>({
+    visible: false,
+    operation: "",
+    phase: "",
+    current: 0,
+    total: 0,
+    message: ""
+  });
+  const updateBatchProgress = ref<UpdateBatchProgress>({
+    visible: false,
+    current: 0,
+    total: 0,
+    message: ""
+  });
+  const appUpdateChecking = ref(false);
+  const appUpdateDialogVisible = ref(false);
+  const appUpdateInfo = ref<AppUpdateInfo | null>(null);
+  const appUpdateCurrentVersion = ref("");
+  const appUpdateMessage = ref("");
   const settings = ref({ ...fallbackData.settings });
   const games = ref<ManagedGame[]>([]);
   const activeGameId = ref("");
+  const modProfiles = ref<ModProfile[]>([]);
   const nexusPresetId = ref("");
   const mods = ref<LocalMod[]>([]);
   const downloads = ref<DownloadTask[]>([]);
@@ -611,6 +781,8 @@ export const useLibraryStore = defineStore("library", () => {
   const selectedTag = ref("all");
   const sortMode = ref<"custom" | "createdDesc" | "createdAsc" | "nameAsc" | "nameDesc" | "installedFirst">("createdDesc");
   const selectedModIds = ref<string[]>([]);
+  const profileApplying = ref(false);
+  const updateCheckingIds = ref<string[]>([]);
   const presetSearch = ref("");
   const installPlans = ref<Record<string, InstallPlan>>({});
   const nexusSearch = ref("");
@@ -630,6 +802,7 @@ export const useLibraryStore = defineStore("library", () => {
   const nexusTotalPages = ref(0);
   const nexusLoading = ref(false);
   const nexusDetailLoading = ref(false);
+  const nexusLoginLoading = ref(false);
   const nexusTranslationLoading = ref(false);
   const nexusTranslationVisible = ref(false);
   const nexusTranslationError = ref("");
@@ -642,8 +815,12 @@ export const useLibraryStore = defineStore("library", () => {
     games.value.find((game) => game.id === activeGameId.value) ?? null
   );
 
+  const visibleGamePresets = computed(() =>
+    gamePresets.filter((preset) => !HIDDEN_PRESET_IDS.has(preset.id))
+  );
+
   const nexusPresets = computed(() =>
-    gamePresets
+    visibleGamePresets.value
   );
 
   const nexusPreset = computed(() =>
@@ -656,10 +833,10 @@ export const useLibraryStore = defineStore("library", () => {
     const keyword = presetSearch.value.trim().toLowerCase();
 
     if (!keyword) {
-      return gamePresets;
+      return visibleGamePresets.value;
     }
 
-    return gamePresets.filter((preset) =>
+    return visibleGamePresets.value.filter((preset) =>
       [
         preset.name,
         preset.sourceFile,
@@ -676,7 +853,7 @@ export const useLibraryStore = defineStore("library", () => {
     );
   });
 
-  const presetCount = computed(() => gamePresets.length);
+  const presetCount = computed(() => visibleGamePresets.value.length);
 
   const activeMods = computed(() => {
     const keyword = search.value.trim().toLowerCase();
@@ -710,6 +887,12 @@ export const useLibraryStore = defineStore("library", () => {
     return [...new Set(tags)].sort((a, b) => a.localeCompare(b, "zh-Hans-CN"));
   });
 
+  const activeProfiles = computed(() =>
+    modProfiles.value
+      .filter((profile) => profile.gameId === activeGameId.value)
+      .sort((left, right) => left.createdAt - right.createdAt)
+  );
+
   const installedCount = computed(
     () => activeMods.value.filter((mod) => mod.installed).length
   );
@@ -724,6 +907,13 @@ export const useLibraryStore = defineStore("library", () => {
     activeMods.value.filter((mod) => selectedModIds.value.includes(mod.id))
   );
 
+  const activeUpdateAvailableCount = computed(() =>
+    mods.value.filter((mod) =>
+      mod.gameId === activeGameId.value &&
+      mod.updateSource?.check?.status === "available"
+    ).length
+  );
+
   const activeAdapter = computed(() =>
     activeGame.value ? adapterForGame(activeGame.value) : null
   );
@@ -733,7 +923,20 @@ export const useLibraryStore = defineStore("library", () => {
       .sort((a, b) => b.createdAt - a.createdAt)
   );
 
-  const nexusAuthorized = computed(() => Boolean(settings.value.nexusUser?.key?.trim()));
+  const nexusAuthorized = computed(() =>
+    Boolean(
+      settings.value.nexusAccessToken?.trim() ||
+      settings.value.nexusApiKey?.trim() ||
+      settings.value.nexusUser?.key?.trim()
+    )
+  );
+
+  function nexusRequestAuth() {
+    return {
+      apiKey: settings.value.nexusApiKey,
+      accessToken: settings.value.nexusAccessToken
+    };
+  }
 
   function activeProxyUrl() {
     return settings.value.proxyEnabled ? settings.value.proxyUrl.trim() : "";
@@ -762,6 +965,7 @@ export const useLibraryStore = defineStore("library", () => {
       settings: settings.value,
       games: games.value,
       activeGameId: activeGameId.value,
+      modProfiles: modProfiles.value,
       mods: mods.value,
       downloads: downloads.value,
       logs: logs.value,
@@ -794,7 +998,8 @@ export const useLibraryStore = defineStore("library", () => {
       tags: mod.tags,
       modType: mod.modTypeId,
       advanced: {
-        deployedFiles: mod.deployedFiles
+        deployedFiles: mod.deployedFiles,
+        updateSource: mod.updateSource
       }
     };
   }
@@ -961,6 +1166,7 @@ export const useLibraryStore = defineStore("library", () => {
             modTypeName: modType.name,
             installed: Boolean(item.isInstalled),
             deployedFiles: Array.isArray(advanced.deployedFiles) ? advanced.deployedFiles.map(String) : [],
+            updateSource: normalizeModUpdateSource(advanced.updateSource),
             createdAt: Number(item.createdAt) || Date.now(),
             updatedAt: Number(item.updatedAt) || Date.now()
           };
@@ -1026,6 +1232,7 @@ export const useLibraryStore = defineStore("library", () => {
       }
       settings.value = data.settings;
       games.value = data.games;
+      modProfiles.value = data.modProfiles;
       activeGameId.value = data.activeGameId || games.value[0]?.id || "";
       const activePresetId = games.value.find((game) => game.id === activeGameId.value)?.presetId;
       nexusPresetId.value = nexusPresets.value.some((preset) => preset.id === activePresetId)
@@ -1043,7 +1250,15 @@ export const useLibraryStore = defineStore("library", () => {
         await migrateModCachesToGlossLayout();
       }
       await loadModsFromGlossFiles();
+      await migrateLegacyModCoverImages();
       await persist();
+      if (settings.value.appUpdateUrl.trim()) {
+        settings.value.lastAppUpdateCheckAt = Date.now();
+        await persist();
+        window.setTimeout(() => {
+          void checkAppUpdate({ silent: true });
+        }, 1500);
+      }
     } catch (caught) {
       error.value = caught instanceof Error ? caught.message : "读取本地数据失败";
     } finally {
@@ -1362,7 +1577,73 @@ export const useLibraryStore = defineStore("library", () => {
     await importLocalModsFromPaths(sources);
   }
 
-  async function importLocalModsFromPaths(sources: string[]) {
+  async function chooseModCoverImage(modId: string) {
+    const mod = mods.value.find((item) => item.id === modId);
+    if (!mod) return;
+
+    const sourcePath = await window.mayfly.openImage();
+    if (!sourcePath) return;
+
+    try {
+      const result = await window.mayfly.copyModCoverImage({
+        sourcePath,
+        modRoot: mod.rootPath
+      });
+      await updateMod(modId, {
+        coverImage: result.coverImage,
+        updatedAt: Date.now()
+      });
+    } catch (caught) {
+      error.value = caught instanceof Error ? caught.message : "保存 Mod 预览图失败";
+    }
+  }
+
+  async function migrateLegacyModCoverImages() {
+    let changed = false;
+    const migratedMods: LocalMod[] = [];
+
+    for (const mod of mods.value) {
+      if (!/^\.mayfly[\\/]+preview\./iu.test(mod.coverImage)) {
+        migratedMods.push(mod);
+        continue;
+      }
+
+      try {
+        const result = await window.mayfly.migrateModCoverImage({
+          modRoot: mod.rootPath,
+          coverImage: mod.coverImage
+        });
+        if (result.coverImage !== mod.coverImage) {
+          changed = true;
+          migratedMods.push({
+            ...mod,
+            coverImage: result.coverImage,
+            updatedAt: Date.now()
+          });
+        } else {
+          migratedMods.push(mod);
+        }
+      } catch (caught) {
+        await recordLog(
+          "error",
+          "preview",
+          `迁移 Mod 预览图失败：${mod.name}`,
+          caught instanceof Error ? caught.message : String(caught)
+        );
+        migratedMods.push(mod);
+      }
+    }
+
+    if (changed) {
+      mods.value = migratedMods;
+    }
+  }
+
+  async function importLocalModsFromPaths(
+    sources: string[],
+    sourceWebsite = "",
+    updateSources: Record<string, ModUpdateSource> = {}
+  ) {
     if (!settings.value.storagePath) {
       error.value = "请先在设置里选择 Mod 存储路径。";
       return;
@@ -1408,6 +1689,23 @@ export const useLibraryStore = defineStore("library", () => {
 
       for (const sourcePath of uniqueSources) {
         let modName = modNameFromPath(sourcePath);
+        const matchedDownload = downloads.value.find((task) =>
+          task.source === "NexusMods" &&
+          task.modId &&
+          normalizeText(task.outputPath) === normalizeText(sourcePath)
+        );
+        const matchedGame = matchedDownload
+          ? games.value.find((game) => game.presetId === matchedDownload.gameId.replace(/^nexus:/u, ""))
+          : null;
+        const importedCoverImage = matchedDownload?.coverImage ?? "";
+        const importedUpdateSource = updateSources[sourcePath] ??
+          updateSources[normalizeText(sourcePath)] ??
+          matchedDownload?.updateSource;
+        const importedSourceWebsite = sourceWebsite ||
+          importedUpdateSource?.modPageUrl ||
+          (matchedDownload && matchedGame
+            ? nexusModWebsite(matchedGame.nexusDomain, matchedDownload.modId)
+            : "");
         const isDuplicate =
           existingSourcePaths.has(normalizeText(sourcePath)) ||
           existingNames.has(normalizeText(modName));
@@ -1447,9 +1745,9 @@ export const useLibraryStore = defineStore("library", () => {
           rootPath: result.rootPath,
           version: result.manifest?.version ?? "",
           author: result.manifest?.author ?? "",
-          website: result.manifest?.website ?? "",
+          website: result.manifest?.website || importedSourceWebsite,
           description: result.manifest?.description ?? "",
-          coverImage: result.coverImage ?? "",
+          coverImage: importedCoverImage || result.coverImage || "",
           tags: result.manifest?.tags ?? [],
           requirements: result.manifest?.requirements ?? [],
           files: result.files,
@@ -1457,6 +1755,7 @@ export const useLibraryStore = defineStore("library", () => {
           modTypeName: modType.name,
           installed: false,
           deployedFiles: [],
+          updateSource: importedUpdateSource,
           createdAt: now,
           updatedAt: now
         });
@@ -1488,6 +1787,28 @@ export const useLibraryStore = defineStore("library", () => {
     await persist();
   }
 
+  async function loginNexusWithBrowser() {
+    nexusLoginLoading.value = true;
+    error.value = "";
+
+    try {
+      const result = await window.mayfly.startNexusOAuthLogin({
+        proxyUrl: activeProxyUrl()
+      });
+      settings.value.nexusAccessToken = result.accessToken;
+      settings.value.nexusRefreshToken = result.refreshToken;
+      settings.value.nexusTokenExpiresAt = result.expiresAt;
+      settings.value.nexusUser = result.user;
+      await persist();
+      return result.user;
+    } catch (caught) {
+      error.value = caught instanceof Error ? caught.message : "Nexus 网页登录失败";
+      return null;
+    } finally {
+      nexusLoginLoading.value = false;
+    }
+  }
+
   async function validateNexusApiKey(apiKey = settings.value.nexusApiKey) {
     const key = apiKey.trim();
 
@@ -1505,6 +1826,9 @@ export const useLibraryStore = defineStore("library", () => {
         proxyUrl: activeProxyUrl()
       });
       settings.value.nexusApiKey = user.key || key;
+      settings.value.nexusAccessToken = "";
+      settings.value.nexusRefreshToken = "";
+      settings.value.nexusTokenExpiresAt = 0;
       settings.value.nexusUser = user;
       await persist();
       return user;
@@ -1518,6 +1842,9 @@ export const useLibraryStore = defineStore("library", () => {
 
   async function clearNexusAuth() {
     settings.value.nexusApiKey = "";
+    settings.value.nexusAccessToken = "";
+    settings.value.nexusRefreshToken = "";
+    settings.value.nexusTokenExpiresAt = 0;
     settings.value.nexusUser = null;
     await persist();
   }
@@ -1553,6 +1880,78 @@ export const useLibraryStore = defineStore("library", () => {
     await persist();
   }
 
+  async function checkAppUpdate(options: { silent?: boolean } = {}): Promise<AppUpdateCheckResult | null> {
+    const updateUrl = settings.value.appUpdateUrl.trim();
+
+    if (!updateUrl) {
+      if (!options.silent) {
+        appUpdateMessage.value = "";
+        error.value = "请先在设置里填写应用更新地址。";
+      }
+      return null;
+    }
+
+    appUpdateChecking.value = true;
+    appUpdateMessage.value = options.silent ? "" : "正在检查应用更新...";
+    if (!options.silent) {
+      error.value = "";
+    }
+
+    try {
+      const result = await window.mayfly.checkAppUpdate({
+        updateUrl,
+        proxyUrl: activeProxyUrl()
+      });
+
+      settings.value.lastAppUpdateCheckAt = Date.now();
+      await persist();
+      appUpdateCurrentVersion.value = result.currentVersionName;
+
+      if (result.hasUpdate) {
+        appUpdateInfo.value = result.remote;
+        appUpdateDialogVisible.value = true;
+        appUpdateMessage.value = `发现新版本 ${result.remote.versionName}`;
+        await recordLog(
+          "info",
+          "updater",
+          `发现应用新版本：${result.remote.versionName}`,
+          result.remote.updateLog
+        );
+      } else if (!options.silent) {
+        appUpdateMessage.value = `已是最新版本 ${result.currentVersionName || ""}`.trim();
+        await recordLog("info", "updater", "应用已是最新版本", result.currentVersionName);
+      }
+
+      return result;
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : "检查应用更新失败";
+      appUpdateMessage.value = "";
+      if (!options.silent) {
+        error.value = message;
+      }
+      await recordLog("error", "updater", "检查应用更新失败", message);
+      return null;
+    } finally {
+      appUpdateChecking.value = false;
+    }
+  }
+
+  function closeAppUpdateDialog() {
+    if (appUpdateInfo.value?.forceUpdate) return;
+    appUpdateDialogVisible.value = false;
+  }
+
+  async function openAppUpdateDownload() {
+    const downloadUrl = appUpdateInfo.value?.downloadUrl.trim() ?? "";
+
+    if (!downloadUrl) {
+      error.value = "更新下载地址为空。";
+      return;
+    }
+
+    await window.mayfly.openExternal(downloadUrl);
+  }
+
   async function loadNexusMods(page = nexusPage.value, append = false) {
     if (!nexusPreset.value?.nexusDomain) {
       error.value = "没有选择带 Nexus 配置的游戏。";
@@ -1569,7 +1968,7 @@ export const useLibraryStore = defineStore("library", () => {
 
     try {
       const result = await window.mayfly.listNexusMods({
-        apiKey: settings.value.nexusApiKey,
+        ...nexusRequestAuth(),
         gameDomain: nexusPreset.value.nexusDomain,
         page,
         pageSize: nexusPageSize.value,
@@ -1615,7 +2014,7 @@ export const useLibraryStore = defineStore("library", () => {
 
     try {
       const detail = await window.mayfly.getNexusModDetail({
-        apiKey: settings.value.nexusApiKey,
+        ...nexusRequestAuth(),
         gameDomain: nexusPreset.value.nexusDomain,
         modId: item.id,
         proxyUrl: activeProxyUrl()
@@ -1674,7 +2073,10 @@ export const useLibraryStore = defineStore("library", () => {
       tencentRegion: settings.value.tencentTranslateRegion,
       volcengineAccessKeyId: settings.value.volcengineTranslateAccessKeyId,
       volcengineSecretAccessKey: settings.value.volcengineTranslateSecretAccessKey,
-      volcengineRegion: settings.value.volcengineTranslateRegion
+      volcengineRegion: settings.value.volcengineTranslateRegion,
+      ollamaBaseUrl: settings.value.ollamaTranslateBaseUrl,
+      ollamaModel: settings.value.ollamaTranslateModel,
+      ollamaTimeoutMs: settings.value.ollamaTranslateTimeoutMs
     });
 
     cacheTranslation(key, translated);
@@ -1861,6 +2263,329 @@ export const useLibraryStore = defineStore("library", () => {
     await window.mayfly.openExternal(url);
   }
 
+  function comparableNexusFiles(source: ModUpdateSource, detail: NexusModDetail) {
+    const currentFile = detail.files.find((file) => file.id === source.fileId);
+    const categoryName = currentFile?.categoryName || source.categoryName;
+    const sameCategory = categoryName
+      ? detail.files.filter((file) => file.categoryName === categoryName)
+      : [];
+    const mainFiles = detail.files.filter((file) => file.categoryName === "MAIN");
+
+    return sameCategory.length > 0
+      ? sameCategory
+      : mainFiles.length > 0
+        ? mainFiles
+        : detail.primaryFile
+          ? [detail.primaryFile]
+          : detail.files;
+  }
+
+  function buildUpdateCheck(source: ModUpdateSource, detail: NexusModDetail): ModUpdateCheck {
+    const latestFile = comparableNexusFiles(source, detail)[0] ?? null;
+    const checkedAt = Date.now();
+
+    if (!latestFile) {
+      return {
+        status: "unsupported",
+        checkedAt,
+        message: "Nexus 没有返回可比较的文件。",
+        latestFileId: "",
+        latestFileName: "",
+        latestVersion: "",
+        latestUploadedAt: "",
+        detailsUrl: source.modPageUrl
+      };
+    }
+
+    const latestVersion = latestFile.version || detail.version || "";
+    const currentVersion = source.fileVersion || source.modVersion;
+    if (!source.fileId && !currentVersion.trim()) {
+      return {
+        status: "unsupported",
+        checkedAt,
+        message: "缺少当前版本，无法和 Nexus 最新版本比较。",
+        latestFileId: latestFile.id,
+        latestFileName: latestFile.name,
+        latestVersion,
+        latestUploadedAt: latestFile.createdAt,
+        detailsUrl: latestFile.detailsUrl || nexusModWebsite(source.gameDomain, source.modId, latestFile.id)
+      };
+    }
+
+    const hasNewFile = source.fileId
+      ? Boolean(latestFile.id && latestFile.id !== source.fileId)
+      : Boolean(currentVersion && latestVersion && currentVersion.trim() !== latestVersion.trim());
+
+    return {
+      status: hasNewFile ? "available" : "latest",
+      checkedAt,
+      message: hasNewFile
+        ? `发现新版本：${latestVersion || latestFile.name || latestFile.id}`
+        : "已是最新。",
+      latestFileId: latestFile.id,
+      latestFileName: latestFile.name,
+      latestVersion,
+      latestUploadedAt: latestFile.createdAt,
+      detailsUrl: latestFile.detailsUrl || nexusModWebsite(source.gameDomain, source.modId, latestFile.id)
+    };
+  }
+
+  async function checkModUpdate(mod: LocalMod) {
+    const source = mod.updateSource;
+    if (!source || source.type !== "nexus") {
+      await updateMod(mod.id, {
+        updateSource: source
+          ? {
+              ...source,
+              check: {
+                status: "unsupported",
+                checkedAt: Date.now(),
+                message: "这个 Mod 没有可用的 Nexus 来源信息。",
+                latestFileId: "",
+                latestFileName: "",
+                latestVersion: "",
+                latestUploadedAt: "",
+                detailsUrl: ""
+              }
+            }
+          : undefined
+      });
+      return null;
+    }
+
+    if (!nexusAuthorized.value) {
+      error.value = "请先登录 NexusMods。";
+      return null;
+    }
+
+    if (updateCheckingIds.value.includes(mod.id)) return source.check ?? null;
+    updateCheckingIds.value = [...updateCheckingIds.value, mod.id];
+    error.value = "";
+
+    try {
+      const detail = await window.mayfly.getNexusModDetail({
+        ...nexusRequestAuth(),
+        gameDomain: source.gameDomain,
+        modId: source.modId,
+        proxyUrl: activeProxyUrl()
+      });
+      const check = buildUpdateCheck(source, detail);
+      await updateMod(mod.id, {
+        updateSource: {
+          ...source,
+          modVersion: detail.version || source.modVersion,
+          coverImage: detail.cover || source.coverImage,
+          check
+        },
+        updatedAt: Date.now()
+      });
+      return check;
+    } catch (caught) {
+      const check: ModUpdateCheck = {
+        status: "failed",
+        checkedAt: Date.now(),
+        message: caught instanceof Error ? caught.message : "检查更新失败",
+        latestFileId: "",
+        latestFileName: "",
+        latestVersion: "",
+        latestUploadedAt: "",
+        detailsUrl: source.modPageUrl
+      };
+      await updateMod(mod.id, {
+        updateSource: {
+          ...source,
+          check
+        },
+        updatedAt: Date.now()
+      });
+      return check;
+    } finally {
+      updateCheckingIds.value = updateCheckingIds.value.filter((id) => id !== mod.id);
+    }
+  }
+
+  async function checkActiveGameUpdates(options: { silent?: boolean } = {}) {
+    const targets = mods.value.filter((mod) =>
+      mod.gameId === activeGameId.value &&
+      mod.updateSource?.type === "nexus"
+    );
+
+    if (targets.length === 0) {
+      if (!options.silent) {
+        error.value = "当前游戏没有可检查更新的 Nexus 来源 Mod。";
+      }
+      return;
+    }
+
+    if (!nexusAuthorized.value) {
+      if (!options.silent) {
+        error.value = "请先登录 NexusMods。";
+      }
+      return;
+    }
+
+    busy.value = true;
+    error.value = "";
+
+    try {
+      for (const mod of targets) {
+        await checkModUpdate(mod);
+      }
+      await recordLog("info", "updates", `已检查 ${targets.length} 个 Nexus 来源 Mod 更新。`);
+    } finally {
+      busy.value = false;
+    }
+  }
+
+  async function updateNexusMod(mod: LocalMod, options: { skipConfirm?: boolean } = {}) {
+    const source = mod.updateSource;
+    if (!source || source.type !== "nexus") {
+      error.value = "这个 Mod 没有 Nexus 来源信息，无法自动更新。";
+      return;
+    }
+
+    if (!settings.value.storagePath) {
+      error.value = "请先在设置里选择 Mod 存储路径。";
+      return;
+    }
+
+    let check = source.check;
+    if (check?.status !== "available") {
+      check = await checkModUpdate(mod) ?? undefined;
+    }
+
+    const latestSource = mods.value.find((item) => item.id === mod.id)?.updateSource ?? source;
+    check = latestSource.check;
+
+    if (check?.status !== "available" || !check.latestFileId) {
+      error.value = check?.message || "没有可更新的文件。";
+      return;
+    }
+
+    if (!options.skipConfirm) {
+      const confirmed = window.confirm(`确定更新“${mod.name}”吗？\n\n当前文件：${latestSource.fileName || latestSource.fileId}\n新文件：${check.latestFileName || check.latestFileId}`);
+      if (!confirmed) return;
+    }
+
+    const now = Date.now();
+    const outputFile = sanitizeFileName(`${mod.name}-${check.latestFileName || check.latestFileId}`);
+    const extension = /\.[a-z0-9]{2,5}$/i.test(outputFile) ? "" : ".zip";
+    const nextUpdateSource: ModUpdateSource = {
+      ...latestSource,
+      fileId: check.latestFileId,
+      fileName: check.latestFileName,
+      fileVersion: check.latestVersion,
+      filePageUrl: check.detailsUrl || nexusModWebsite(latestSource.gameDomain, latestSource.modId, check.latestFileId),
+      downloadedAt: now,
+      check
+    };
+    const game = games.value.find((item) => item.id === mod.gameId);
+    const task: DownloadTask = {
+      id: createId("download"),
+      gameId: `nexus:${game?.presetId || latestSource.gameDomain}`,
+      gameName: game?.name || latestSource.gameName,
+      source: "NexusMods",
+      modId: latestSource.modId,
+      modName: mod.name,
+      fileId: check.latestFileId,
+      fileName: check.latestFileName || check.latestFileId,
+      url: "",
+      outputPath: `${settings.value.storagePath}\\downloads\\updates\\${outputFile}${extension}`,
+      coverImage: latestSource.coverImage || mod.coverImage,
+      updateSource: nextUpdateSource,
+      updateTargetModId: mod.id,
+      status: "queued",
+      receivedBytes: 0,
+      totalBytes: 0,
+      error: "",
+      createdAt: now,
+      updatedAt: now
+    };
+
+    downloads.value = [task, ...downloads.value];
+    await persist();
+
+    try {
+      const url = await window.mayfly.getNexusDownloadUrl({
+        ...nexusRequestAuth(),
+        gameDomain: latestSource.gameDomain,
+        modId: latestSource.modId,
+        fileId: check.latestFileId,
+        proxyUrl: activeProxyUrl()
+      });
+
+      updateDownloadTask(task.id, { url });
+      await persist();
+
+      if (isExternalUrl(url)) {
+        updateDownloadTask(task.id, {
+          status: "external",
+          error: ""
+        });
+        await persist();
+        await window.mayfly.openExternal(url);
+        return;
+      }
+
+      await runDownloadTask(task.id);
+    } catch (caught) {
+      updateDownloadTask(task.id, {
+        status: "failed",
+        error: caught instanceof Error ? caught.message : "下载更新失败"
+      });
+      await persist();
+    }
+  }
+
+  async function updateAllAvailableMods() {
+    const targets = activeMods.value.filter((mod) =>
+      mod.updateSource?.check?.status === "available"
+    );
+
+    if (targets.length === 0) {
+      error.value = "当前游戏没有已检查出的可更新 Mod。";
+      return;
+    }
+
+    const confirmed = window.confirm(`确定更新当前游戏的 ${targets.length} 个 Mod 吗？会逐个下载并替换。`);
+    if (!confirmed) return;
+
+    updateBatchProgress.value = {
+      visible: true,
+      current: 0,
+      total: targets.length,
+      message: "准备批量更新..."
+    };
+
+    for (let index = 0; index < targets.length; index += 1) {
+      const mod = targets[index];
+      updateBatchProgress.value = {
+        visible: true,
+        current: index + 1,
+        total: targets.length,
+        message: `正在更新：${mod.name}`
+      };
+
+      try {
+        await updateNexusMod(mod, { skipConfirm: true });
+      } catch (caught) {
+        await recordLog(
+          "error",
+          "updates",
+          `批量更新失败：${mod.name}`,
+          caught instanceof Error ? caught.message : String(caught)
+        );
+      }
+    }
+
+    updateBatchProgress.value = {
+      visible: false,
+      current: 0,
+      total: 0,
+      message: ""
+    };
+  }
+
   function parseNxmUrl(url: string) {
     const normalized = url.trim();
     if (!/^nxm:\/\//i.test(normalized)) return null;
@@ -1976,6 +2701,47 @@ export const useLibraryStore = defineStore("library", () => {
     });
   });
 
+  let packageOperationId = "";
+  window.mayfly.onGmmProgress((data) => {
+    if (!packageOperationId || data.operationId !== packageOperationId) return;
+
+    packageProgress.value = {
+      visible: true,
+      operation: data.operation,
+      phase: data.phase,
+      current: data.current,
+      total: data.total,
+      message: data.message
+    };
+  });
+
+  function beginPackageOperation(operation: "import" | "export", message: string) {
+    packageOperationId = `${operation}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    packageProgress.value = {
+      visible: true,
+      operation,
+      phase: "准备中",
+      current: 0,
+      total: 0,
+      message
+    };
+    return packageOperationId;
+  }
+
+  function endPackageOperation(operationId: string) {
+    if (packageOperationId !== operationId) return;
+
+    packageOperationId = "";
+    packageProgress.value = {
+      visible: false,
+      operation: "",
+      phase: "",
+      current: 0,
+      total: 0,
+      message: ""
+    };
+  }
+
   function isAbortError(caught: unknown) {
     return caught instanceof Error && (
       caught.name === "AbortError" ||
@@ -1993,8 +2759,127 @@ export const useLibraryStore = defineStore("library", () => {
     });
   }
 
+  async function replaceModFromDownloadedUpdate(task: DownloadTask, outputPath: string) {
+    const targetMod = mods.value.find((mod) => mod.id === task.updateTargetModId);
+    if (!targetMod || !task.updateSource) return false;
+
+    const targetGame = games.value.find((game) => game.id === targetMod.gameId);
+    if (!targetGame) return false;
+
+    const previousActiveGameId = activeGameId.value;
+    const wasInstalled = targetMod.installed;
+    const backupPath = `${settings.value.storagePath}\\mod-update-backups\\${sanitizeFileName(targetGame.name)}\\${sanitizeFileName(targetMod.name)}-${Date.now()}.zip`;
+    let backupCreated = false;
+
+    try {
+      activeGameId.value = targetGame.id;
+
+      if (targetMod.rootPath && await window.mayfly.exists(targetMod.rootPath)) {
+        await window.mayfly.createBackupZip({
+          sourcePath: targetMod.rootPath,
+          outputPath: backupPath
+        });
+        backupCreated = true;
+      }
+
+      if (wasInstalled) {
+        const uninstalled = await uninstallMod(targetMod);
+        if (!uninstalled) {
+          throw new Error(error.value || "更新前卸载旧 Mod 失败。");
+        }
+      }
+
+      if (targetMod.rootPath && await window.mayfly.exists(targetMod.rootPath)) {
+        await window.mayfly.remove(targetMod.rootPath);
+      }
+
+      const result = await window.mayfly.importModFolder({
+        sourcePath: outputPath,
+        storagePath: settings.value.storagePath,
+        gameId: targetGame.id,
+        gameName: targetGame.name,
+        modId: modFolderName(targetMod.rootPath, baseName(targetMod.rootPath))
+      });
+      const nextUpdateSource: ModUpdateSource = {
+        ...task.updateSource,
+        downloadedAt: Date.now(),
+        check: {
+          status: "latest",
+          checkedAt: Date.now(),
+          message: "已更新到当前文件。",
+          latestFileId: task.updateSource.fileId,
+          latestFileName: task.updateSource.fileName,
+          latestVersion: task.updateSource.fileVersion,
+          latestUploadedAt: task.updateSource.check?.latestUploadedAt || "",
+          detailsUrl: task.updateSource.filePageUrl
+        }
+      };
+      const updatedMod: LocalMod = {
+        ...targetMod,
+        sourcePath: outputPath,
+        rootPath: result.rootPath,
+        version: result.manifest?.version || task.updateSource.fileVersion || targetMod.version,
+        website: result.manifest?.website || task.updateSource.modPageUrl || targetMod.website,
+        description: targetMod.description || result.manifest?.description || "",
+        coverImage: targetMod.coverImage || task.updateSource.coverImage || result.coverImage || "",
+        requirements: targetMod.requirements.length > 0 ? targetMod.requirements : result.manifest?.requirements ?? [],
+        files: result.files,
+        installed: false,
+        deployedFiles: [],
+        updateSource: nextUpdateSource,
+        updatedAt: Date.now()
+      };
+
+      mods.value = mods.value.map((mod) => mod.id === targetMod.id ? updatedMod : mod);
+      await persist();
+
+      if (wasInstalled) {
+        await installMod(updatedMod);
+      }
+
+      await recordLog("info", "updates", `已更新 Mod：${targetMod.name}`);
+      return true;
+    } catch (caught) {
+      if (backupCreated) {
+        try {
+          if (targetMod.rootPath && await window.mayfly.exists(targetMod.rootPath)) {
+            await window.mayfly.remove(targetMod.rootPath);
+          }
+          await window.mayfly.restoreBackupZip({
+            backupPath,
+            targetPath: targetMod.rootPath
+          });
+          mods.value = mods.value.map((mod) => mod.id === targetMod.id ? targetMod : mod);
+          await persist();
+
+          if (wasInstalled && !targetMod.installed) {
+            await installMod(targetMod);
+          }
+        } catch (rollbackCaught) {
+          await recordLog(
+            "error",
+            "updates",
+            `更新失败且回滚失败：${targetMod.name}`,
+            rollbackCaught instanceof Error ? rollbackCaught.message : String(rollbackCaught)
+          );
+        }
+      }
+
+      error.value = caught instanceof Error ? caught.message : "更新 Mod 失败";
+      await recordLog("error", "updates", `更新 Mod 失败：${targetMod.name}`, error.value);
+      return false;
+    } finally {
+      activeGameId.value = previousActiveGameId;
+    }
+  }
+
   async function importCompletedDownload(task: DownloadTask, outputPath: string) {
     if (!settings.value.autoImportAfterDownload) return;
+
+    if (task.updateTargetModId) {
+      await replaceModFromDownloadedUpdate(task, outputPath);
+      return;
+    }
 
     if (task.source === "NexusMods") {
       const presetId = task.gameId.replace(/^nexus:/u, "");
@@ -2003,7 +2888,12 @@ export const useLibraryStore = defineStore("library", () => {
 
       const previousActiveGameId = activeGameId.value;
       activeGameId.value = localGame.id;
-      await importLocalModsFromPaths([outputPath]);
+      await importLocalModsFromPaths([outputPath], "", task.updateSource
+        ? {
+            [outputPath]: task.updateSource,
+            [normalizeText(outputPath)]: task.updateSource
+          }
+        : {});
       activeGameId.value = previousActiveGameId;
       return;
     }
@@ -2033,7 +2923,10 @@ export const useLibraryStore = defineStore("library", () => {
         url: task.url,
         outputPath: task.outputPath,
         resume,
-        proxyUrl: activeProxyUrl()
+        proxyUrl: activeProxyUrl(),
+        engine: settings.value.downloadEngine,
+        aria2ExecutablePath: settings.value.aria2ExecutablePath,
+        aria2MaxConnections: settings.value.aria2MaxConnections
       });
 
       updateDownloadTask(task.id, {
@@ -2087,10 +2980,10 @@ export const useLibraryStore = defineStore("library", () => {
       task.gameId === `nexus:${nexusPreset.value?.id}` &&
       task.modId === mod.id &&
       task.fileId === file.id &&
-      ["queued", "downloading", "completed"].includes(task.status)
+      ["queued", "downloading", "completed", "external"].includes(task.status)
     );
 
-    if (existingTask) {
+    if (existingTask && existingTask.status !== "external") {
       error.value = `下载队列里已经有“${file.name}”。`;
       return;
     }
@@ -2098,7 +2991,22 @@ export const useLibraryStore = defineStore("library", () => {
     const now = Date.now();
     const outputFile = sanitizeFileName(`${mod.title || mod.id}-${file.name || file.id}`);
     const extension = /\.[a-z0-9]{2,5}$/i.test(outputFile) ? "" : ".zip";
-    const task: DownloadTask = {
+    const updateSource: ModUpdateSource = {
+      type: "nexus",
+      gameDomain: nexusPreset.value.nexusDomain,
+      gameName: nexusPreset.value.name,
+      modId: mod.id,
+      fileId: file.id,
+      fileName: file.name,
+      fileVersion: file.version,
+      modVersion: mod.version,
+      categoryName: file.categoryName,
+      modPageUrl: mod.website || nexusModWebsite(nexusPreset.value.nexusDomain, mod.id),
+      filePageUrl: file.detailsUrl || nexusModWebsite(nexusPreset.value.nexusDomain, mod.id, file.id),
+      coverImage: mod.cover || "",
+      downloadedAt: now
+    };
+    const task: DownloadTask = existingTask ?? {
       id: createId("download"),
       gameId: `nexus:${nexusPreset.value.id}`,
       gameName: nexusPreset.value.name,
@@ -2109,6 +3017,8 @@ export const useLibraryStore = defineStore("library", () => {
       fileName: file.name,
       url: "",
       outputPath: `${settings.value.storagePath}\\downloads\\nexus-${nexusPreset.value.id}\\${outputFile}${extension}`,
+      coverImage: mod.cover || "",
+      updateSource,
       status: "queued",
       receivedBytes: 0,
       totalBytes: file.size,
@@ -2117,12 +3027,23 @@ export const useLibraryStore = defineStore("library", () => {
       updatedAt: now
     };
 
-    downloads.value = [task, ...downloads.value];
+    if (existingTask) {
+      updateDownloadTask(task.id, {
+        url: "",
+        status: "queued",
+        error: "",
+        coverImage: mod.cover || "",
+        updateSource,
+        totalBytes: Math.max(task.totalBytes, file.size)
+      });
+    } else {
+      downloads.value = [task, ...downloads.value];
+    }
     await persist();
 
     try {
       const url = await window.mayfly.getNexusDownloadUrl({
-        apiKey: settings.value.nexusApiKey,
+        ...nexusRequestAuth(),
         gameDomain: nexusPreset.value.nexusDomain,
         modId: mod.id,
         fileId: file.id,
@@ -2137,7 +3058,7 @@ export const useLibraryStore = defineStore("library", () => {
       if (isExternalUrl(url)) {
         updateDownloadTask(task.id, {
           status: "external",
-          error: "NexusMods 没有给管理器直链，已打开网页下载页。"
+          error: ""
         });
         await persist();
         await window.mayfly.openExternal(url);
@@ -2222,11 +3143,35 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   async function removeDownloadTask(taskId: string) {
-    const task = downloads.value.find((item) => item.id === taskId);
-    if (task?.status === "downloading") {
-      await window.mayfly.cancelDownload(taskId);
+    await removeDownloadTasks([taskId], false);
+  }
+
+  async function removeDownloadTasks(taskIds: string[], removeFiles = false) {
+    const ids = new Set(taskIds.filter(Boolean));
+    const targets = downloads.value.filter((task) => ids.has(task.id));
+
+    for (const task of targets) {
+      if (task.status === "downloading") {
+        await window.mayfly.cancelDownload(task.id);
+      }
+
+      if (removeFiles && task.outputPath) {
+        try {
+          if (await window.mayfly.exists(task.outputPath)) {
+            await window.mayfly.remove(task.outputPath);
+          }
+        } catch (caught) {
+          await recordLog(
+            "error",
+            "downloads",
+            `删除下载文件失败：${task.fileName}`,
+            caught instanceof Error ? caught.message : String(caught)
+          );
+        }
+      }
     }
-    downloads.value = downloads.value.filter((task) => task.id !== taskId);
+
+    downloads.value = downloads.value.filter((task) => !ids.has(task.id));
     await persist();
   }
 
@@ -2258,6 +3203,18 @@ export const useLibraryStore = defineStore("library", () => {
     }
 
     await runDownloadTask(task.id, true);
+  }
+
+  async function pauseDownloadTasks(taskIds: string[]) {
+    for (const taskId of [...new Set(taskIds)]) {
+      await pauseDownloadTask(taskId);
+    }
+  }
+
+  async function resumeDownloadTasks(taskIds: string[]) {
+    for (const taskId of [...new Set(taskIds)]) {
+      await resumeDownloadTask(taskId);
+    }
   }
 
   async function createActiveGameBackup(nameInput = "") {
@@ -2475,6 +3432,7 @@ export const useLibraryStore = defineStore("library", () => {
     try {
       const imported = normalizeAppData(await window.mayfly.readJsonFile<Partial<AppData>>(inputPath));
       const gameIds = new Set(games.value.map((game) => game.id));
+      const profileIds = new Set(modProfiles.value.map((profile) => profile.id));
       const modIds = new Set(mods.value.map((mod) => mod.id));
       const downloadIds = new Set(downloads.value.map((task) => task.id));
       const backupIds = new Set(backups.value.map((backup) => backup.id));
@@ -2483,6 +3441,10 @@ export const useLibraryStore = defineStore("library", () => {
       games.value = [
         ...games.value,
         ...imported.games.filter((game) => !gameIds.has(game.id))
+      ];
+      modProfiles.value = [
+        ...modProfiles.value,
+        ...imported.modProfiles.filter((profile) => !profileIds.has(profile.id))
       ];
       mods.value = [
         ...mods.value,
@@ -2553,9 +3515,14 @@ export const useLibraryStore = defineStore("library", () => {
         description: mod.description,
         tags: mod.tags,
         requirements: mod.requirements,
+        updateSource: mod.updateSource,
         folder: sanitizeFileName(mod.name || mod.id)
       }))
     };
+
+    const operationId = beginPackageOperation("export", "正在导出 Mod 包...");
+    busy.value = true;
+    error.value = "";
 
     try {
       const finalPath = outputPath.toLowerCase().endsWith(".gmm")
@@ -2563,6 +3530,7 @@ export const useLibraryStore = defineStore("library", () => {
         : `${outputPath}.gmm`;
       await window.mayfly.exportGmm({
         outputPath: finalPath,
+        operationId,
         manifest: toPlain(manifest),
         mods: toPlain(targetMods.map((mod) => ({
           rootPath: mod.rootPath,
@@ -2572,6 +3540,9 @@ export const useLibraryStore = defineStore("library", () => {
       await recordLog("info", "gmm", `已导出 .gmm：${finalPath}`);
     } catch (caught) {
       error.value = caught instanceof Error ? caught.message : "导出 .gmm 失败";
+    } finally {
+      busy.value = false;
+      endPackageOperation(operationId);
     }
   }
 
@@ -2633,6 +3604,7 @@ export const useLibraryStore = defineStore("library", () => {
         coverImage: mod.coverImage,
         tags: mod.tags,
         requirements: mod.requirements,
+        updateSource: mod.updateSource,
         modTypeId: mod.modTypeId,
         modTypeName: mod.modTypeName,
         sortIndex: index,
@@ -2640,10 +3612,14 @@ export const useLibraryStore = defineStore("library", () => {
       }))
     };
     const finalPath = /\.(zip|gmm)$/i.test(outputPath) ? outputPath : `${outputPath}.zip`;
+    const operationId = beginPackageOperation("export", "正在导出游戏整合包...");
+    busy.value = true;
+    error.value = "";
 
     try {
       await window.mayfly.exportGmm({
         outputPath: finalPath,
+        operationId,
         manifest: toPlain(manifest),
         mods: toPlain(orderedMods.map((mod, index) => ({
           rootPath: mod.rootPath,
@@ -2653,6 +3629,9 @@ export const useLibraryStore = defineStore("library", () => {
       await recordLog("info", "gmm", `已导出游戏整合包：${finalPath}`);
     } catch (caught) {
       error.value = caught instanceof Error ? caught.message : "导出游戏整合包失败";
+    } finally {
+      busy.value = false;
+      endPackageOperation(operationId);
     }
   }
 
@@ -2681,6 +3660,7 @@ export const useLibraryStore = defineStore("library", () => {
 
     busy.value = true;
     error.value = "";
+    const operationId = beginPackageOperation("import", "正在准备导入整合包...");
 
     try {
       let targetGame = games.value.find((game) =>
@@ -2750,7 +3730,8 @@ export const useLibraryStore = defineStore("library", () => {
         packagePath,
         storagePath: settings.value.storagePath,
         gameName: targetGame.name,
-        overwrite: true
+        overwrite: true,
+        operationId
       });
       const adapter = adapterForGame(targetGame);
       const packedMods = Array.isArray(result.manifest.mods) ? result.manifest.mods as Array<Record<string, unknown>> : [];
@@ -2784,6 +3765,7 @@ export const useLibraryStore = defineStore("library", () => {
           modTypeName: modType.name,
           installed: false,
           deployedFiles: [],
+          updateSource: normalizeModUpdateSource(meta.updateSource),
           createdAt: now,
           updatedAt: now
         };
@@ -2800,6 +3782,7 @@ export const useLibraryStore = defineStore("library", () => {
       error.value = caught instanceof Error ? caught.message : "恢复游戏整合包失败";
     } finally {
       busy.value = false;
+      endPackageOperation(operationId);
     }
   }
 
@@ -2992,6 +3975,152 @@ export const useLibraryStore = defineStore("library", () => {
     await persist();
   }
 
+  function currentProfileSnapshot(gameId: string) {
+    const gameMods = mods.value
+      .filter((mod) => mod.gameId === gameId)
+      .sort((left, right) => left.sortIndex - right.sortIndex || left.createdAt - right.createdAt);
+
+    return {
+      enabledModIds: gameMods.filter((mod) => mod.installed).map((mod) => mod.id),
+      modOrder: gameMods.map((mod) => mod.id)
+    };
+  }
+
+  async function createModProfile(nameInput: string) {
+    if (!activeGame.value) {
+      error.value = "请先选择一个游戏。";
+      return null;
+    }
+
+    const name = nameInput.trim();
+    if (!name) {
+      error.value = "请输入配置档案名称。";
+      return null;
+    }
+
+    if (activeProfiles.value.some((profile) => profile.name.toLowerCase() === name.toLowerCase())) {
+      error.value = "当前游戏已经有同名配置档案。";
+      return null;
+    }
+
+    const snapshot = currentProfileSnapshot(activeGame.value.id);
+    const now = Date.now();
+    const profile: ModProfile = {
+      id: createId("profile"),
+      gameId: activeGame.value.id,
+      name,
+      ...snapshot,
+      createdAt: now,
+      updatedAt: now
+    };
+    modProfiles.value = [...modProfiles.value, profile];
+    await persist();
+    return profile;
+  }
+
+  async function saveModProfile(profileId: string) {
+    if (!activeGame.value) return false;
+    const profile = activeProfiles.value.find((item) => item.id === profileId);
+    if (!profile) return false;
+
+    modProfiles.value = modProfiles.value.map((item) =>
+      item.id === profileId
+        ? { ...item, ...currentProfileSnapshot(activeGame.value!.id), updatedAt: Date.now() }
+        : item
+    );
+    await persist();
+    return true;
+  }
+
+  async function renameModProfile(profileId: string, nameInput: string) {
+    const profile = activeProfiles.value.find((item) => item.id === profileId);
+    const name = nameInput.trim();
+    if (!profile || !name) return false;
+
+    if (activeProfiles.value.some((item) =>
+      item.id !== profileId && item.name.toLowerCase() === name.toLowerCase()
+    )) {
+      error.value = "当前游戏已经有同名配置档案。";
+      return false;
+    }
+
+    modProfiles.value = modProfiles.value.map((item) =>
+      item.id === profileId ? { ...item, name, updatedAt: Date.now() } : item
+    );
+    await persist();
+    return true;
+  }
+
+  async function removeModProfile(profileId: string) {
+    if (!activeProfiles.value.some((profile) => profile.id === profileId)) return false;
+
+    modProfiles.value = modProfiles.value.filter((profile) => profile.id !== profileId);
+    await persist();
+    return true;
+  }
+
+  async function applyModProfile(profileId: string) {
+    if (!activeGame.value) {
+      error.value = "请先选择一个游戏。";
+      return false;
+    }
+
+    const profile = activeProfiles.value.find((item) => item.id === profileId);
+    if (!profile) return false;
+    if (profileApplying.value) return false;
+
+    const gameMods = mods.value.filter((mod) => mod.gameId === activeGame.value?.id);
+    const modMap = new Map(gameMods.map((mod) => [mod.id, mod]));
+    const desiredIds = new Set(profile.enabledModIds.filter((id) => modMap.has(id)));
+    const orderIndex = new Map(profile.modOrder.map((id, index) => [id, index]));
+    const desiredOrder = gameMods
+      .filter((mod) => desiredIds.has(mod.id))
+      .sort((left, right) =>
+        (orderIndex.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
+        (orderIndex.get(right.id) ?? Number.MAX_SAFE_INTEGER)
+      );
+    const toUninstall = gameMods.filter((mod) => mod.installed && !desiredIds.has(mod.id));
+    const toInstall = desiredOrder.filter((mod) => !mod.installed);
+
+    profileApplying.value = true;
+    error.value = "";
+
+    try {
+      for (const mod of [...toUninstall].sort((left, right) => right.sortIndex - left.sortIndex)) {
+        const success = await uninstallMod(mod);
+        if (!success) {
+          throw new Error(error.value || `卸载 Mod 失败：${mod.name}`);
+        }
+      }
+
+      for (const mod of toInstall) {
+        await installMod(mod);
+        const latest = mods.value.find((item) => item.id === mod.id);
+        if (!latest?.installed) {
+          throw new Error(error.value || `安装 Mod 失败：${mod.name}`);
+        }
+      }
+
+      const orderedIds = [
+        ...profile.modOrder.filter((id) => modMap.has(id)),
+        ...gameMods.map((mod) => mod.id).filter((id) => !profile.modOrder.includes(id))
+      ];
+      const sortMap = new Map(orderedIds.map((id, index) => [id, index]));
+      mods.value = mods.value.map((mod) =>
+        mod.gameId === activeGame.value?.id && sortMap.has(mod.id)
+          ? { ...mod, sortIndex: sortMap.get(mod.id) ?? mod.sortIndex, updatedAt: Date.now() }
+          : mod
+      );
+      await persist();
+      return true;
+    } catch (caught) {
+      error.value = caught instanceof Error ? caught.message : "应用配置档案失败";
+      return false;
+    } finally {
+      profileApplying.value = false;
+    }
+  }
+
   async function setTagColor(tag: string, color: string) {
     settings.value.tagColors = {
       ...settings.value.tagColors,
@@ -3132,6 +4261,7 @@ export const useLibraryStore = defineStore("library", () => {
     selectedTag,
     sortMode,
     selectedModIds,
+    profileApplying,
     installPlans,
     nexusSearch,
     nexusPage,
@@ -3146,6 +4276,7 @@ export const useLibraryStore = defineStore("library", () => {
     nexusTotalPages,
     nexusLoading,
     nexusDetailLoading,
+    nexusLoginLoading,
     nexusTranslationLoading,
     nexusTranslationVisible,
     nexusTranslationError,
@@ -3156,10 +4287,20 @@ export const useLibraryStore = defineStore("library", () => {
     tagPalette,
     activeMods,
     activeTags,
+    activeProfiles,
     installedCount,
     canReorderMods,
     selectedMods,
+    activeUpdateAvailableCount,
     activeDownloads,
+    packageProgress,
+    updateBatchProgress,
+    updateCheckingIds,
+    appUpdateChecking,
+    appUpdateDialogVisible,
+    appUpdateInfo,
+    appUpdateCurrentVersion,
+    appUpdateMessage,
     initialize,
     chooseStoragePath,
     addGame,
@@ -3176,12 +4317,17 @@ export const useLibraryStore = defineStore("library", () => {
     launchActiveGame,
     removeGame,
     importLocalMods,
+    chooseModCoverImage,
     importLocalModsFromPaths,
     saveNexusApiKey,
+    loginNexusWithBrowser,
     validateNexusApiKey,
     clearNexusAuth,
     recordLog,
     clearLogs,
+    checkAppUpdate,
+    closeAppUpdateDialog,
+    openAppUpdateDownload,
     loadNexusMods,
     openNexusModDetail,
     openNexusUrl,
@@ -3189,12 +4335,19 @@ export const useLibraryStore = defineStore("library", () => {
     showOriginalNexusText,
     handleNxmUrl,
     downloadNexusFile,
+    checkModUpdate,
+    checkActiveGameUpdates,
+    updateNexusMod,
+    updateAllAvailableMods,
     downloadCustomUrl,
     openDownloadFile,
     openDownloadFolder,
     removeDownloadTask,
+    removeDownloadTasks,
     pauseDownloadTask,
     resumeDownloadTask,
+    pauseDownloadTasks,
+    resumeDownloadTasks,
     createActiveGameBackup,
     createActiveSaveBackup,
     restoreBackup,
@@ -3215,6 +4368,11 @@ export const useLibraryStore = defineStore("library", () => {
     uninstallSelectedMods,
     updateMod,
     updateSelectedMods,
+    createModProfile,
+    saveModProfile,
+    renameModProfile,
+    removeModProfile,
+    applyModProfile,
     setTagColor,
     updateSettings,
     removeMod,

@@ -1023,7 +1023,7 @@ button:disabled {
 .steamModHeader,
 .steamModRow {
   display: grid;
-  grid-template-columns: 30px 28px minmax(220px, 1fr) 82px 130px 116px 76px 112px;
+  grid-template-columns: 30px 28px minmax(180px, 1fr) 76px 120px 106px 70px 92px 112px;
   align-items: center;
   gap: 10px;
   min-height: 60px;
@@ -1171,6 +1171,65 @@ button:disabled {
   justify-content: flex-start;
 }
 
+.modUpdateCell {
+  min-width: 0;
+}
+
+.modUpdateBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  max-width: 100%;
+  min-height: 28px;
+  border: 1px solid #2d3744;
+  border-radius: 4px;
+  background: rgba(20, 27, 36, 0.82);
+  color: #8f98a5;
+  padding: 0 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.modUpdateBadge:not(:disabled) {
+  cursor: pointer;
+}
+
+.modUpdateBadge:not(:disabled):hover {
+  border-color: #66c0f4;
+  color: #dbeaf5;
+}
+
+.modUpdateBadge.available {
+  border-color: rgba(245, 184, 92, 0.5);
+  background: rgba(245, 184, 92, 0.1);
+  color: #f5b85c;
+}
+
+.modUpdateBadge.latest {
+  border-color: rgba(101, 214, 173, 0.42);
+  background: rgba(101, 214, 173, 0.09);
+  color: #65d6ad;
+}
+
+.modUpdateBadge.failed,
+.modUpdateBadge.unsupported {
+  border-color: rgba(255, 94, 94, 0.36);
+  background: rgba(255, 94, 94, 0.08);
+  color: #ff8a8a;
+}
+
+.modUpdateBadge.checking {
+  border-color: rgba(103, 193, 245, 0.45);
+  background: rgba(103, 193, 245, 0.1);
+  color: #67c1f5;
+}
+
+.cardUpdateBadge {
+  justify-self: start;
+  margin-top: 2px;
+}
+
 .modThumbButton {
   width: 54px;
   height: 34px;
@@ -1209,6 +1268,30 @@ button:disabled {
   background: rgba(8, 12, 18, 0.24);
   margin: 0 0 12px;
   padding: 10px 12px;
+}
+
+.profileToolsRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 1px solid #34445a;
+  background: #141c26;
+  margin: 0 0 8px;
+  padding: 10px 12px;
+}
+
+.profileToolsTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #c9ddf5;
+  font-size: 13px;
+}
+
+.profileSelect {
+  width: min(280px, 100%);
+  min-height: 32px;
 }
 
 .tagToolsTitle {
@@ -1403,6 +1486,106 @@ select:focus {
   grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
 }
 
+.packageTools {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid #2a3442;
+  border-radius: 7px;
+  background: #111821;
+}
+
+.packageToolsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.packageToolsTitle {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.packageToolsTitle strong {
+  color: #e6e9ed;
+  font-size: 14px;
+}
+
+.packageToolsTitle span {
+  color: #8f98a5;
+  font-size: 12px;
+}
+
+.packageToolsActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.packageToolsActions .steamInput {
+  width: 180px;
+  min-height: 32px;
+}
+
+.packageProgress {
+  display: grid;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.packageProgressMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #c7ccd3;
+  font-size: 12px;
+}
+
+.packageProgressMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.packageProgressMeta span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.packageProgressMeta strong {
+  flex: 0 0 auto;
+  color: #67c1f5;
+  font-size: 12px;
+}
+
+.packageProgress small {
+  color: #7d8794;
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .packageToolsHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .packageToolsActions {
+    justify-content: flex-start;
+  }
+
+  .packageToolsActions .steamInput {
+    flex: 1 1 180px;
+  }
+}
+
 .statusIcon {
   display: grid;
   width: 34px;
@@ -1590,6 +1773,23 @@ select:focus {
 .modEmpty,
 .loadingLine {
   margin-top: 12px;
+}
+
+.updateBatchLine {
+  justify-content: flex-start;
+}
+
+.updateBatchLine span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.updateBatchLine strong {
+  margin-left: auto;
+  color: #67c1f5;
+  font-size: 12px;
 }
 
 .spin {
@@ -2255,6 +2455,70 @@ code {
   width: 620px;
 }
 
+.appUpdateModal {
+  width: 560px;
+}
+
+.appUpdateVersion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: #111820;
+  border: 1px solid #343b46;
+  border-radius: 4px;
+}
+
+.appUpdateVersion span {
+  color: #8f9bab;
+  font-size: 13px;
+}
+
+.appUpdateVersion strong {
+  color: #66c0f4;
+  font-size: 16px;
+}
+
+.appUpdateForce {
+  padding: 10px 12px;
+  color: #ffd28a;
+  background: rgba(245, 184, 92, 0.12);
+  border: 1px solid rgba(245, 184, 92, 0.28);
+  border-radius: 4px;
+}
+
+.appUpdateLog {
+  display: grid;
+  gap: 8px;
+}
+
+.appUpdateLog label {
+  color: #c8d2df;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.appUpdateLog p {
+  min-height: 80px;
+  max-height: 220px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  color: #b8c2cf;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #111820;
+  border: 1px solid #343b46;
+  border-radius: 4px;
+}
+
+.modalHint {
+  color: #8f98a0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .customAdapterPanel {
   display: grid;
   gap: 12px;
@@ -2321,6 +2585,181 @@ code {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.ruleSimulator {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #3a4656;
+  background: #111820;
+  padding: 12px;
+}
+
+.ruleSimulatorHeader,
+.rulePaneTitle,
+.ruleSimulationSummary,
+.ruleSimulatorFlow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ruleSimulatorHeader {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.ruleSimulatorHeader > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.ruleSimulatorHeader strong {
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.ruleSimulatorHeader span,
+.ruleFolderPane small {
+  color: #8f9bab;
+  font-size: 11px;
+}
+
+.ruleSimulatorFlow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 82px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 10px;
+}
+
+.ruleFolderPane {
+  min-width: 0;
+  min-height: 180px;
+  border: 1px solid #2d3948;
+  background: #0d131a;
+  padding: 10px;
+}
+
+.ruleTargetPane {
+  border-color: #36526e;
+  background: #0f1822;
+}
+
+.rulePaneTitle {
+  color: #a9c8ed;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ruleFolderName {
+  display: block;
+  overflow: hidden;
+  color: #e7edf5;
+  font-size: 12px;
+  margin: 12px 0 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ruleFileTree {
+  display: grid;
+  gap: 5px;
+  max-height: 145px;
+  overflow: auto;
+  border-top: 1px solid #202b38;
+  padding-top: 8px;
+}
+
+.ruleFileRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #c8d2df;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+}
+
+.ruleFileRow span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ruleFileRow svg {
+  flex: 0 0 auto;
+  color: #7fa7d5;
+}
+
+.ruleSimulatorArrow {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 6px;
+  color: #67c1f5;
+  font-size: 11px;
+  text-align: center;
+}
+
+.ruleManualState {
+  color: #f5b85c;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ruleSimulationSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 8px;
+}
+
+.ruleSimulationSummary > div:not(.ruleConflictHint) {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid #293544;
+  background: #151d26;
+  padding: 8px;
+}
+
+.ruleSimulationSummary span {
+  color: #8f9bab;
+  font-size: 11px;
+}
+
+.ruleSimulationSummary strong {
+  overflow-wrap: anywhere;
+  color: #e7edf5;
+  font-size: 12px;
+}
+
+.ruleConflictHint {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #f5b85c;
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .ruleSimulatorHeader,
+  .ruleSimulationSummary {
+    display: grid;
+  }
+
+  .ruleSimulatorFlow {
+    grid-template-columns: 1fr;
+  }
+
+  .ruleSimulatorArrow {
+    grid-auto-flow: column;
+  }
+
+  .ruleSimulationSummary {
+    grid-template-columns: 1fr;
+  }
 }
 
 .inlineCheck {
@@ -2838,6 +3277,7 @@ code {
 .steamDownloadsPage {
   padding: 0 !important;
   height: 100%;
+  background: #181a21;
 }
 
 .steamDownloadsWrapper {
@@ -2845,6 +3285,8 @@ code {
   flex-direction: column;
   height: 100%;
   background: #181a21;
+  width: min(100%, 1280px);
+  margin: 0 auto;
 }
 
 .steamDownloadsHeader {
@@ -2853,6 +3295,12 @@ code {
   align-items: center;
   padding: 24px 32px 16px;
   border-bottom: 1px solid #2a2d33;
+}
+
+.steamDownloadsTitle {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
 }
 
 .steamDownloadsHeader h2 {
@@ -2887,15 +3335,57 @@ code {
 .steamDownloadsList {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 32px;
+  padding: 20px 28px 28px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+}
+
+.downloadBulkToolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 28px;
+  border-bottom: 1px solid #2a2d33;
+  background: #1c1f26;
+}
+
+.downloadSelectAll,
+.downloadTaskSelect {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #b7c0cc;
+  cursor: pointer;
+}
+
+.downloadSelectAll {
+  gap: 8px;
+  font-size: 12px;
+}
+
+.downloadSelectAll input,
+.downloadTaskSelect input {
+  width: 16px;
+  height: 16px;
+  accent-color: #4f8cff;
+}
+
+.downloadSelectionCount {
+  flex: 1;
+  color: #7f8b99;
+  font-size: 12px;
+}
+
+.steamDownloadsTitle small {
+  color: #7f8b99;
+  font-size: 12px;
 }
 
 .steamDownloadTask {
   display: flex;
-  gap: 20px;
+  gap: 14px;
   background: #2a2d33;
   border-radius: 4px;
   padding: 16px;
@@ -2904,6 +3394,114 @@ code {
 
 .steamDownloadTask:hover {
   background: #32363d;
+}
+
+.steamDownloadTask.selected {
+  background: #2b3649;
+  box-shadow: inset 3px 0 0 #4f8cff;
+}
+
+.downloadTaskSelect {
+  flex: 0 0 20px;
+}
+
+.dangerAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 94, 94, 0.5);
+  border-radius: 3px;
+  background: rgba(255, 94, 94, 0.12);
+  color: #ff8a8a;
+  cursor: pointer;
+}
+
+.dangerAction:hover {
+  background: rgba(255, 94, 94, 0.2);
+  color: #ffd1d1;
+}
+
+.downloadDeleteModal {
+  width: 520px;
+}
+
+.downloadSettingsModal {
+  width: 560px;
+}
+
+.downloadSettingsButton {
+  flex: 0 0 auto;
+}
+
+.downloadSettingsNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  color: #8f9bab;
+  background: #111820;
+  border: 1px solid #343b46;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.downloadSettingsNote svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #67c1f5;
+}
+
+.downloadDeleteSummary {
+  margin: 0;
+  color: #b7c0cc;
+}
+
+.downloadDeleteSummary strong {
+  color: #66c0f4;
+}
+
+.downloadDeleteOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .steamDownloadsHeader {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 20px 14px;
+  }
+
+  .steamCustomDownloadRow {
+    flex-wrap: wrap;
+  }
+
+  .steamCustomDownloadRow input {
+    flex: 1 1 220px;
+  }
+
+  .downloadBulkToolbar,
+  .steamDownloadsList {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .steamDownloadTask {
+    flex-wrap: wrap;
+  }
+
+  .taskActionsRight {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 4px;
+    border-top: 1px solid #3a414b;
+  }
 }
 
 .taskIconWrapper {

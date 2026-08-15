@@ -29,6 +29,7 @@ function getExplicitAdapterIds() {
     blackWukongAdapter: "blackwukong",
     cyberpunk2077Adapter: "cyberpunk2077",
     eldenRingAdapter: "eldenring",
+    legendOfHerosAdapter: "legendofheros",
     monsterHunterWorldAdapter: "monsterhunterworld",
     skyrimSeAdapter: "skyrimse",
     stardewValleyAdapter: "stardewvalley",

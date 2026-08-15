@@ -3,12 +3,15 @@ import AdmZip from "adm-zip";
 import { ProxyAgent } from "undici";
 import { spawn } from "node:child_process";
 import { createHash, createHmac, randomUUID } from "node:crypto";
+import * as http from "node:http";
+import * as net from "node:net";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { existsSync, readFileSync } from "node:fs";
 import { path7za } from "7zip-bin";
 import {
   cp,
+  copyFile,
   mkdir,
   open,
   readdir,
@@ -42,15 +45,46 @@ const COVER_FILE_NAMES = new Set([
   "thumbnail.jpg",
   "thumbnail.webp"
 ]);
+const MOD_PREVIEW_FOLDER = "mod-preview";
 const STEAM_LIBRARY_KEY = "HKEY_CURRENT_USER\\Software\\Valve\\Steam";
 const NEXUS_GRAPHQL_URL = "https://api-router.nexusmods.com/graphql";
 const NEXUS_API_URL = "https://api.nexusmods.com";
+const NEXUS_OAUTH_URL = "https://users.nexusmods.com/oauth";
+const NEXUS_OAUTH_CLIENT_ID = "vortex_loopback";
 const NXM_PROTOCOL = "nxm";
 let mainWindow: electron.BrowserWindow | null = null;
 const pendingNxmUrls: string[] = [];
 const downloadControllers = new Map<string, AbortController>();
 const proxyAgents = new Map<string, ProxyAgent>();
+const aria2Tasks = new Map<string, {
+  gid: string;
+  cancelled: boolean;
+}>();
+let aria2Runtime: {
+  process: ReturnType<typeof spawn>;
+  port: number;
+  secret: string;
+  executablePath: string;
+} | null = null;
 let translationQueue = Promise.resolve();
+let activeNexusOAuth:
+  | {
+      finish: (error?: Error, result?: {
+        accessToken: string;
+        refreshToken: string;
+        expiresAt: number;
+        user: {
+          key: string;
+          name: string;
+          email: string;
+          profileUrl: string;
+          avatar?: string;
+          isPremium: boolean;
+          isSupporter: boolean;
+        };
+      }) => void;
+    }
+  | null = null;
 
 function normalizeProxyUrl(proxyUrl = "") {
   const value = proxyUrl.trim();
@@ -83,6 +117,232 @@ function fetchWithProxy(input: Parameters<typeof fetch>[0], init: RequestInit & 
     ...requestInit,
     ...(dispatcher ? { dispatcher } : {})
   } as RequestInit & { dispatcher?: ProxyAgent });
+}
+
+function findAria2Executable(configuredPath = "") {
+  const configured = configuredPath.trim();
+  if (configured) {
+    if (!existsSync(configured)) {
+      throw new Error(`aria2c.exe 不存在：${configured}`);
+    }
+    return configured;
+  }
+
+  const bundledPath = getResourcePath("aria2/aria2c.exe");
+  if (existsSync(bundledPath)) return bundledPath;
+
+  return "aria2c";
+}
+
+async function findFreePort() {
+  const server = net.createServer();
+
+  await new Promise<void>((resolveListen, rejectListen) => {
+    server.once("error", rejectListen);
+    server.listen(0, "127.0.0.1", () => resolveListen());
+  });
+
+  const address = server.address();
+  const port = address && typeof address !== "string" ? address.port : 0;
+  await new Promise<void>((resolveClose) => server.close(() => resolveClose()));
+
+  if (!port) {
+    throw new Error("无法为 aria2 分配本地 RPC 端口。");
+  }
+
+  return port;
+}
+
+async function aria2Rpc<T>(runtime: {
+  port: number;
+  secret: string;
+}, method: string, parameters: unknown[] = []) {
+  const response = await fetch(`http://127.0.0.1:${runtime.port}/jsonrpc`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: randomUUID(),
+      method,
+      params: [`token:${runtime.secret}`, ...parameters]
+    })
+  });
+  const payload = await response.json().catch(() => ({})) as {
+    result?: T;
+    error?: {
+      code?: number;
+      message?: string;
+    };
+  };
+
+  if (!response.ok || payload.error) {
+    throw new Error(payload.error?.message || `aria2 请求失败：HTTP ${response.status}`);
+  }
+
+  return payload.result as T;
+}
+
+async function ensureAria2Runtime(configuredPath = "", maxConnections = 4) {
+  const executablePath = findAria2Executable(configuredPath);
+  if (
+    aria2Runtime &&
+    aria2Runtime.executablePath === executablePath &&
+    !aria2Runtime.process.killed
+  ) {
+    return aria2Runtime;
+  }
+
+  aria2Runtime?.process.kill();
+  const port = await findFreePort();
+  const secret = randomUUID().replace(/-/gu, "");
+  const child = spawn(executablePath, [
+    "--enable-rpc=true",
+    "--rpc-listen-all=false",
+    "--rpc-listen-port", String(port),
+    "--rpc-secret", secret,
+    "--console-log-level=warn",
+    "--auto-file-renaming=false",
+    "--allow-overwrite=true",
+    "--max-concurrent-downloads", String(Math.max(1, Math.min(16, Number(maxConnections) || 4)))
+  ], {
+    windowsHide: true,
+    stdio: "ignore"
+  });
+
+  const runtime = {
+    process: child,
+    port,
+    secret,
+    executablePath
+  };
+  aria2Runtime = runtime;
+
+  child.once("exit", () => {
+    if (aria2Runtime?.process === child) {
+      aria2Runtime = null;
+    }
+  });
+
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    try {
+      await aria2Rpc(runtime, "aria2.getVersion");
+      return runtime;
+    } catch (caught) {
+      lastError = caught;
+      await sleep(100);
+    }
+  }
+
+  child.kill();
+  aria2Runtime = null;
+  throw new Error(
+    `无法启动 aria2，请确认 aria2c.exe 可执行。${lastError instanceof Error ? ` ${lastError.message}` : ""}`
+  );
+}
+
+function abortDownloadError() {
+  const error = new Error("下载已暂停");
+  error.name = "AbortError";
+  return error;
+}
+
+async function downloadWithAria2(options: {
+  taskId?: string;
+  url: string;
+  outputPath: string;
+  resume?: boolean;
+  aria2ExecutablePath?: string;
+  aria2MaxConnections?: number;
+}) {
+  const taskId = options.taskId?.trim();
+  const runtime = await ensureAria2Runtime(
+    options.aria2ExecutablePath,
+    options.aria2MaxConnections
+  );
+
+  await mkdir(dirname(options.outputPath), { recursive: true });
+  const gid = await aria2Rpc<string>(runtime, "aria2.addUri", [[options.url], {
+    dir: dirname(options.outputPath),
+    out: basename(options.outputPath),
+    continue: options.resume ? "true" : "false",
+    "allow-overwrite": "true",
+    "auto-file-renaming": "false",
+    "file-allocation": "none",
+    split: String(Math.max(1, Math.min(16, Number(options.aria2MaxConnections) || 4))),
+    "max-connection-per-server": String(Math.max(1, Math.min(16, Number(options.aria2MaxConnections) || 4))),
+    "user-agent": "Mayfly Mod Manager",
+    "summary-interval": "1"
+  }]);
+  const taskState = { gid, cancelled: false };
+
+  if (taskId) {
+    aria2Tasks.set(taskId, taskState);
+  }
+
+  try {
+    while (true) {
+      if (taskState.cancelled) {
+        throw abortDownloadError();
+      }
+
+      const status = await aria2Rpc<{
+        status?: string;
+        completedLength?: string;
+        totalLength?: string;
+        downloadSpeed?: string;
+        errorCode?: string;
+        errorMessage?: string;
+      }>(runtime, "aria2.tellStatus", [gid, [
+        "status",
+        "completedLength",
+        "totalLength",
+        "downloadSpeed",
+        "errorCode",
+        "errorMessage"
+      ]]);
+      const receivedBytes = Number(status.completedLength) || 0;
+      const totalBytes = Number(status.totalLength) || receivedBytes;
+
+      if (taskId && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("downloads:progress", {
+          taskId,
+          receivedBytes,
+          totalBytes
+        });
+      }
+
+      if (status.status === "complete") {
+        await aria2Rpc(runtime, "aria2.removeDownloadResult", [gid]).catch(() => undefined);
+        return {
+          outputPath: options.outputPath,
+          receivedBytes,
+          totalBytes
+        };
+      }
+
+      if (status.status === "error" || status.status === "removed") {
+        throw new Error(
+          status.errorMessage ||
+          `aria2 下载失败${status.errorCode ? `（错误码 ${status.errorCode}）` : ""}`
+        );
+      }
+
+      await sleep(500);
+    }
+  } catch (caught) {
+    if (taskState.cancelled) {
+      throw abortDownloadError();
+    }
+    throw caught;
+  } finally {
+    if (taskId && aria2Tasks.get(taskId) === taskState) {
+      aria2Tasks.delete(taskId);
+    }
+  }
 }
 
 function getResourcePath(fileName: string) {
@@ -223,6 +483,27 @@ async function listFiles(rootPath: string, currentPath = rootPath): Promise<stri
   );
 
   return files.flat();
+}
+
+type GmmProgressPayload = {
+  operationId: string;
+  operation: "import" | "export";
+  phase: string;
+  current: number;
+  total: number;
+  message: string;
+};
+
+function sendGmmProgress(sender: electron.WebContents, payload: GmmProgressPayload) {
+  if (!sender.isDestroyed()) {
+    sender.send("gmm:progress", payload);
+  }
+}
+
+function yieldToRenderer() {
+  return new Promise<void>((resolveNext) => {
+    setImmediate(resolveNext);
+  });
 }
 
 function isPathInside(rootPath: string, targetPath: string) {
@@ -475,16 +756,26 @@ function normalizeNexusText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function nexusHeaders(apiKey = "", requireAuthorization = false) {
+function nexusHeaders(options: {
+  apiKey?: string;
+  accessToken?: string;
+}, requireAuthorization = false) {
   const headers: Record<string, string> = {
     Accept: "application/json"
   };
-  const normalizedApiKey = apiKey.trim();
+  const normalizedApiKey = options.apiKey?.trim() ?? "";
+  const normalizedAccessToken = options.accessToken?.trim() ?? "";
 
   if (normalizedApiKey) {
     headers.apikey = normalizedApiKey;
-  } else if (requireAuthorization) {
-    throw new Error("请先配置 NexusMods API Key。");
+  }
+
+  if (normalizedAccessToken) {
+    headers.Authorization = `Bearer ${normalizedAccessToken}`;
+  }
+
+  if (requireAuthorization && !normalizedApiKey && !normalizedAccessToken) {
+    throw new Error("请先登录 NexusMods。");
   }
 
   return headers;
@@ -514,6 +805,291 @@ async function readJsonResponse<T>(response: Response, fallbackMessage: string) 
   }
 
   return payload as T;
+}
+
+function parseVersion(version: string) {
+  return String(version || "")
+    .trim()
+    .split(".")
+    .map((item) => Number.parseInt(item, 10))
+    .map((item) => (Number.isFinite(item) ? item : 0));
+}
+
+function compareVersions(left: string, right: string) {
+  const leftParts = parseVersion(left);
+  const rightParts = parseVersion(right);
+  const length = Math.max(leftParts.length, rightParts.length, 3);
+
+  for (let index = 0; index < length; index += 1) {
+    const leftValue = leftParts[index] || 0;
+    const rightValue = rightParts[index] || 0;
+
+    if (leftValue > rightValue) return 1;
+    if (leftValue < rightValue) return -1;
+  }
+
+  return 0;
+}
+
+function normalizeUpdatePayload(payload: Record<string, unknown> = {}) {
+  return {
+    versionName: String(payload.versionName || payload.version || ""),
+    downloadUrl: String(payload.downloadUrl || ""),
+    updateLog: String(payload.updateLog || ""),
+    forceUpdate:
+      payload.forceUpdate === true ||
+      payload.forceUpdate === 1 ||
+      String(payload.forceUpdate || "").toLowerCase() === "true"
+  };
+}
+
+function withCacheBuster(updateUrl: string) {
+  const url = new URL(updateUrl);
+  url.searchParams.set("t", String(Date.now()));
+  return url.toString();
+}
+
+async function checkAppUpdate(options: {
+  updateUrl: string;
+  currentVersion?: string;
+  proxyUrl?: string;
+}) {
+  const updateUrl = String(options.updateUrl || "").trim();
+
+  if (!updateUrl) {
+    throw new Error("请先填写应用更新地址。");
+  }
+
+  const response = await fetchWithProxy(withCacheBuster(updateUrl), {
+    proxyUrl: options.proxyUrl,
+    cache: "no-store",
+    headers: {
+      Accept: "application/json"
+    }
+  });
+  const payload = await readJsonResponse<Record<string, unknown>>(response, "检查应用更新失败。");
+  const remote = normalizeUpdatePayload(payload);
+  const currentVersionName = String(options.currentVersion || electron.app.getVersion() || "");
+  const versionCompare = remote.versionName
+    ? compareVersions(remote.versionName, currentVersionName)
+    : 0;
+
+  return {
+    hasUpdate: versionCompare > 0,
+    versionCompare,
+    currentVersionName,
+    remote
+  };
+}
+
+function nexusOAuthPage(success: boolean, message: string) {
+  const title = success ? "Mayfly Mod Manager 登录成功" : "Mayfly Mod Manager 登录失败";
+  const color = success ? "#65d6ad" : "#ff7b86";
+
+  return `<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>${title}</title>
+  </head>
+  <body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#10151c;color:#e8edf3;font-family:Segoe UI,sans-serif">
+    <main style="max-width:520px;padding:32px;text-align:center">
+      <h1 style="color:${color};font-size:24px">${title}</h1>
+      <p style="color:#b7c0cc">${message}</p>
+      <p style="color:#7f8b99;font-size:13px">可以关闭此页面并返回 Mayfly Mod Manager。</p>
+    </main>
+  </body>
+</html>`;
+}
+
+async function startNexusOAuthLogin(proxyUrl = "") {
+  activeNexusOAuth?.finish(new Error("网页登录已重新开始。"));
+
+  const verifier = `${randomUUID()}${randomUUID()}`.replace(/-/gu, "");
+  const challenge = createHash("sha256").update(verifier).digest("base64url");
+  const state = randomUUID();
+
+  const server = http.createServer((request, response) => {
+    void (async () => {
+      const requestUrl = new URL(
+        request.url ?? "/",
+        `http://${request.headers.host ?? "127.0.0.1"}`
+      );
+
+      if (requestUrl.pathname !== "/") {
+        response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        response.end("Not found");
+        return;
+      }
+
+      const returnedState = requestUrl.searchParams.get("state") ?? "";
+      const code = requestUrl.searchParams.get("code") ?? "";
+      const oauthError = requestUrl.searchParams.get("error") ?? "";
+      const oauthErrorDescription = requestUrl.searchParams.get("error_description") ?? "";
+
+      if (returnedState !== state) {
+        response.writeHead(400, { "Content-Type": "text/html; charset=utf-8" });
+        response.end(nexusOAuthPage(false, "登录状态已失效，请重新开始网页登录。"));
+        activeNexusOAuth?.finish(new Error("Nexus 登录状态校验失败。"));
+        return;
+      }
+
+      if (oauthError || !code) {
+        const message = oauthErrorDescription || "Nexus 没有返回授权结果。";
+        response.writeHead(400, { "Content-Type": "text/html; charset=utf-8" });
+        response.end(nexusOAuthPage(false, message));
+        activeNexusOAuth?.finish(new Error(message));
+        return;
+      }
+
+      try {
+        const tokenResponse = await fetchWithProxy(`${NEXUS_OAUTH_URL}/token`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            client_id: NEXUS_OAUTH_CLIENT_ID,
+            redirect_uri: `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+            code,
+            code_verifier: verifier
+          }).toString(),
+          proxyUrl
+        });
+        const token = await readJsonResponse<{
+          access_token?: string;
+          refresh_token?: string;
+          expires_in?: number;
+        }>(tokenResponse, "Nexus OAuth 令牌交换失败。");
+
+        const accessToken = String(token.access_token ?? "").trim();
+        const refreshToken = String(token.refresh_token ?? "").trim();
+        if (!accessToken) {
+          throw new Error("Nexus 没有返回访问令牌。");
+        }
+
+        let userPayload: Record<string, unknown> = {};
+
+        try {
+          const userResponse = await fetchWithProxy(`${NEXUS_API_URL}/v1/users/validate.json`, {
+            method: "GET",
+            headers: nexusHeaders({ accessToken }, true),
+            proxyUrl
+          });
+          userPayload = await readJsonResponse<Record<string, unknown>>(
+            userResponse,
+            "获取 Nexus 用户信息失败。"
+          );
+        } catch {
+          const userResponse = await fetchWithProxy(`${NEXUS_OAUTH_URL}/userinfo`, {
+            method: "GET",
+            headers: nexusHeaders({ accessToken }, true),
+            proxyUrl
+          });
+          userPayload = await readJsonResponse<Record<string, unknown>>(
+            userResponse,
+            "获取 Nexus 用户信息失败。"
+          );
+        }
+
+        const result = {
+          accessToken,
+          refreshToken,
+          expiresAt: Date.now() + Math.max(60, Number(token.expires_in) || 3600) * 1000,
+          user: {
+            key: "",
+            name: firstString(
+              userPayload.name,
+              userPayload.username,
+              userPayload.preferred_username,
+              "Nexus 用户"
+            ),
+            email: firstString(userPayload.email),
+            profileUrl: firstString(userPayload.profile_url, userPayload.profileUrl),
+            avatar: firstString(userPayload.avatar_url, userPayload.avatar, userPayload.picture) || undefined,
+            isPremium: Boolean(userPayload.is_premium ?? userPayload.isPremium),
+            isSupporter: Boolean(userPayload.is_supporter ?? userPayload.isSupporter)
+          }
+        };
+
+        response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        response.end(nexusOAuthPage(true, "Nexus 账户已经连接。"));
+        activeNexusOAuth?.finish(undefined, result);
+      } catch (caught) {
+        const message = caught instanceof Error ? caught.message : "Nexus 登录失败。";
+        response.writeHead(500, { "Content-Type": "text/html; charset=utf-8" });
+        response.end(nexusOAuthPage(false, message));
+        activeNexusOAuth?.finish(new Error(message));
+      }
+    })();
+  });
+
+  await new Promise<void>((resolveListen, rejectListen) => {
+    server.once("error", rejectListen);
+    server.listen(0, "127.0.0.1", () => resolveListen());
+  });
+
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    server.close();
+    throw new Error("无法启动 Nexus 登录回调服务。");
+  }
+
+  const redirectUri = `http://127.0.0.1:${address.port}`;
+  const authorizeUrl = new URL(`${NEXUS_OAUTH_URL}/authorize`);
+  authorizeUrl.search = new URLSearchParams({
+    response_type: "code",
+    scope: "openid profile email",
+    code_challenge_method: "S256",
+    client_id: NEXUS_OAUTH_CLIENT_ID,
+    redirect_uri: redirectUri,
+    state,
+    code_challenge: challenge
+  }).toString();
+
+  return new Promise((resolveLogin, rejectLogin) => {
+    let settled = false;
+    const timeout = setTimeout(() => {
+      finish(new Error("网页登录等待超时，请重试。"));
+    }, 5 * 60 * 1000);
+
+    const finish = (error?: Error, result?: {
+      accessToken: string;
+      refreshToken: string;
+      expiresAt: number;
+      user: {
+        key: string;
+        name: string;
+        email: string;
+        profileUrl: string;
+        avatar?: string;
+        isPremium: boolean;
+        isSupporter: boolean;
+      };
+    }) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      if (activeNexusOAuth?.finish === finish) {
+        activeNexusOAuth = null;
+      }
+      server.close();
+      if (error) {
+        rejectLogin(error);
+      } else if (result) {
+        resolveLogin(result);
+      } else {
+        rejectLogin(new Error("Nexus 登录没有返回结果。"));
+      }
+    };
+
+    activeNexusOAuth = { finish };
+    void electron.shell.openExternal(authorizeUrl.toString()).catch((caught) => {
+      finish(caught instanceof Error ? caught : new Error("无法打开 Nexus 登录页面。"));
+    });
+  });
 }
 
 function sleep(ms: number) {
@@ -1007,6 +1583,86 @@ async function translateVolcengineText(options: {
   return translated.join("\n\n");
 }
 
+function normalizeOllamaBaseUrl(baseUrl?: string) {
+  const normalized = String(baseUrl || "").trim().replace(/\/+$/u, "");
+  return normalized || "http://127.0.0.1:11434";
+}
+
+function ollamaPrompt(text: string) {
+  return [
+    "你是游戏 Mod 内容翻译助手。",
+    "请把下面内容翻译成简体中文。",
+    "保留 Mod 名称、文件名、路径、代码、版本号、工具名和专有名词。",
+    "只输出译文，不要解释，不要添加额外说明。",
+    "",
+    "内容：",
+    text
+  ].join("\n");
+}
+
+async function translateOllamaText(options: {
+  text: string;
+  baseUrl?: string;
+  model?: string;
+  timeoutMs?: number;
+  proxyUrl?: string;
+}) {
+  const model = requireTranslationSecret(options.model, "Ollama 模型名");
+  const chunks = splitTextForTranslation(options.text, 2400);
+  const translated: string[] = [];
+  const endpoint = `${normalizeOllamaBaseUrl(options.baseUrl)}/api/generate`;
+  const timeoutMs = Math.max(10000, Number(options.timeoutMs) || 120000);
+
+  for (const chunk of chunks) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetchWithProxy(endpoint, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model,
+          prompt: ollamaPrompt(chunk),
+          stream: false,
+          options: {
+            temperature: 0.1
+          }
+        }),
+        proxyUrl: options.proxyUrl,
+        signal: controller.signal
+      });
+      const payload = await response.json().catch(() => ({})) as {
+        response?: string;
+        error?: string;
+      };
+
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error || `Ollama 翻译请求失败：HTTP ${response.status}`);
+      }
+
+      const text = String(payload.response || "").trim();
+      if (!text) {
+        throw new Error("Ollama 没有返回有效译文。");
+      }
+
+      translated.push(text);
+    } catch (caught) {
+      if (caught instanceof Error && caught.name === "AbortError") {
+        throw new Error("Ollama 翻译超时，请检查模型是否已启动或调大超时时间。");
+      }
+      throw caught;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  return translated.join("\n\n");
+}
+
 async function translateTextByProvider(options: {
   text: string;
   provider?: string;
@@ -1023,6 +1679,9 @@ async function translateTextByProvider(options: {
   volcengineAccessKeyId?: string;
   volcengineSecretAccessKey?: string;
   volcengineRegion?: string;
+  ollamaBaseUrl?: string;
+  ollamaModel?: string;
+  ollamaTimeoutMs?: number;
 }) {
   switch (options.provider) {
     case "baidu":
@@ -1053,6 +1712,14 @@ async function translateTextByProvider(options: {
         accessKeyId: options.volcengineAccessKeyId,
         secretAccessKey: options.volcengineSecretAccessKey,
         region: options.volcengineRegion,
+        proxyUrl: options.proxyUrl
+      });
+    case "ollama":
+      return translateOllamaText({
+        text: options.text,
+        baseUrl: options.ollamaBaseUrl,
+        model: options.ollamaModel,
+        timeoutMs: options.ollamaTimeoutMs,
         proxyUrl: options.proxyUrl
       });
     case "google-gtx":
@@ -1355,7 +2022,9 @@ async function deleteRelativeFiles(gamePath: string, files: string[]) {
 }
 
 function isPassFile(filePath: string) {
-  return PASS_FILE_NAMES.has(basename(filePath).toLowerCase());
+  const parts = normalizePathParts(filePath);
+  return PASS_FILE_NAMES.has(basename(filePath).toLowerCase()) ||
+    parts.some((part) => [".mayfly", MOD_PREVIEW_FOLDER].includes(part.toLowerCase()));
 }
 
 function normalizePathParts(filePath: string) {
@@ -1510,6 +2179,7 @@ async function planFileStrategy(options: {
   installPath: string;
   fileName: string;
   isExtname?: boolean;
+  useSymlink?: boolean;
 }) {
   const files = await listFiles(options.modRoot);
   const matched = files.filter((file) =>
@@ -1523,6 +2193,11 @@ async function planFileStrategy(options: {
 
   for (const folder of folders) {
     const target = join(targetRoot, basename(folder));
+    if (options.useSymlink) {
+      targets.push(target);
+      continue;
+    }
+
     targets.push(
       ...(await listFiles(folder))
         .filter((file) => !isPassFile(file))
@@ -1590,20 +2265,28 @@ async function planFolderParentStrategy(options: {
   modRoot: string;
   gamePath: string;
   installPath: string;
-  folderName: string;
+  folderName: string | string[];
+  useSymlink?: boolean;
 }) {
+  const folderNames = (Array.isArray(options.folderName) ? options.folderName : [options.folderName])
+    .map((folder) => folder.toLowerCase())
+    .filter(Boolean);
   const files = await listFiles(options.modRoot);
   const matched = files.find((file) =>
-    normalizePathParts(file).some((part) => part.toLowerCase() === options.folderName.toLowerCase())
+    normalizePathParts(file).some((part) => folderNames.includes(part.toLowerCase()))
   );
 
   if (!matched) return [];
 
   const parts = normalizePathParts(matched);
-  const index = parts.findIndex((part) => part.toLowerCase() === options.folderName.toLowerCase());
+  const index = parts.findIndex((part) => folderNames.includes(part.toLowerCase()));
   const parent = parts.slice(0, Math.max(index, 0)).join("/");
   const sourceFolder = join(options.modRoot, parent);
   const target = safeJoin(options.gamePath, options.installPath || ".", basename(sourceFolder));
+
+  if (options.useSymlink) {
+    return uniqueRelativeTargets(options.gamePath, [target]);
+  }
 
   return uniqueRelativeTargets(
     options.gamePath,
@@ -1818,6 +2501,7 @@ async function applyFileStrategy(options: {
   isExtname?: boolean;
   commonParent?: boolean;
   isInstall: boolean;
+  useSymlink?: boolean;
 }): Promise<string[]> {
   const files = await listFiles(options.modRoot);
   const matched = files.filter((file) =>
@@ -1837,16 +2521,23 @@ async function applyFileStrategy(options: {
         throw new Error(`目标目录已存在，已阻止覆盖：${relative(options.gamePath, target).replace(/\\/g, "/")}`);
       }
 
-      await cp(folder, target, {
-        recursive: true,
-        force: true,
-        errorOnExist: false
-      });
-      deployedFiles.push(
-        ...(await listFiles(folder)).filter((file) => !isPassFile(file)).map((file) =>
-          relative(options.gamePath, join(target, file)).replace(/\\/g, "/")
-        )
-      );
+      await mkdir(dirname(target), { recursive: true });
+
+      if (options.useSymlink) {
+        await symlink(folder, target, process.platform === "win32" ? "junction" : "dir");
+        deployedFiles.push(relative(options.gamePath, target).replace(/\\/g, "/"));
+      } else {
+        await cp(folder, target, {
+          recursive: true,
+          force: true,
+          errorOnExist: false
+        });
+        deployedFiles.push(
+          ...(await listFiles(folder)).filter((file) => !isPassFile(file)).map((file) =>
+            relative(options.gamePath, join(target, file)).replace(/\\/g, "/")
+          )
+        );
+      }
     } else {
       await rm(target, { recursive: true, force: true });
       await deleteEmptyParents(options.gamePath, dirname(target));
@@ -1932,18 +2623,22 @@ async function applyFolderParentStrategy(options: {
   modRoot: string;
   gamePath: string;
   installPath: string;
-  folderName: string;
+  folderName: string | string[];
   isInstall: boolean;
+  useSymlink?: boolean;
 }): Promise<string[]> {
+  const folderNames = (Array.isArray(options.folderName) ? options.folderName : [options.folderName])
+    .map((folder) => folder.toLowerCase())
+    .filter(Boolean);
   const files = await listFiles(options.modRoot);
   const matched = files.find((file) =>
-    normalizePathParts(file).some((part) => part.toLowerCase() === options.folderName.toLowerCase())
+    normalizePathParts(file).some((part) => folderNames.includes(part.toLowerCase()))
   );
 
   if (!matched) return [];
 
   const parts = normalizePathParts(matched);
-  const index = parts.findIndex((part) => part.toLowerCase() === options.folderName.toLowerCase());
+  const index = parts.findIndex((part) => folderNames.includes(part.toLowerCase()));
   const parent = parts.slice(0, Math.max(index, 0)).join("/");
   const sourceFolder = join(options.modRoot, parent);
   const target = safeJoin(options.gamePath, options.installPath || ".", basename(sourceFolder));
@@ -1951,6 +2646,13 @@ async function applyFolderParentStrategy(options: {
   if (options.isInstall) {
     if (existsSync(target)) {
       throw new Error(`目标目录已存在，已阻止覆盖：${relative(options.gamePath, target).replace(/\\/g, "/")}`);
+    }
+
+    await mkdir(dirname(target), { recursive: true });
+
+    if (options.useSymlink) {
+      await symlink(sourceFolder, target, process.platform === "win32" ? "junction" : "dir");
+      return [relative(options.gamePath, target).replace(/\\/g, "/")];
     }
 
     await cp(sourceFolder, target, {
@@ -2715,6 +3417,70 @@ async function applyMiChangShengLinkedFolderStrategy(options: {
   return deployed;
 }
 
+function findLegendPortraitSourceFolders(files: string[], portraitFolders: string[]) {
+  const portraitFolderSet = new Set(portraitFolders.map((folder) => folder.toLowerCase()));
+  const folders = new Set<string>();
+
+  for (const file of files) {
+    const parts = normalizePathParts(file);
+    const index = parts.findIndex((part) => portraitFolderSet.has(part.toLowerCase()));
+
+    if (index === -1) continue;
+
+    folders.add(parts.slice(0, index).join("/"));
+  }
+
+  return [...folders].filter(Boolean);
+}
+
+async function planLegendPortraitsStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  portraitFolders: string[];
+}) {
+  const files = await listFiles(options.modRoot);
+  const folders = findLegendPortraitSourceFolders(files, options.portraitFolders);
+
+  return uniqueRelativeTargets(
+    options.gamePath,
+    folders.map((folder) => safeJoin(options.gamePath, options.installPath, basename(folder)))
+  );
+}
+
+async function applyLegendPortraitsStrategy(options: {
+  modRoot: string;
+  gamePath: string;
+  installPath: string;
+  portraitFolders: string[];
+  isInstall: boolean;
+}) {
+  const files = await listFiles(options.modRoot);
+  const folders = findLegendPortraitSourceFolders(files, options.portraitFolders);
+  const deployed: string[] = [];
+
+  for (const folder of folders) {
+    const source = join(options.modRoot, folder);
+    const target = safeJoin(options.gamePath, options.installPath, basename(folder));
+    const deployedFolder = relative(options.gamePath, target).replace(/\\/g, "/");
+
+    if (options.isInstall) {
+      if (existsSync(target)) {
+        throw new Error(`目标目录已存在，已阻止覆盖：${deployedFolder}`);
+      }
+
+      await mkdir(dirname(target), { recursive: true });
+      await symlink(source, target, process.platform === "win32" ? "junction" : "dir");
+      deployed.push(deployedFolder);
+    } else {
+      await rm(target, { recursive: true, force: true });
+      await deleteEmptyParents(options.gamePath, dirname(target));
+    }
+  }
+
+  return deployed;
+}
+
 async function applyInzoiModKitStrategy(options: {
   modRoot: string;
   gamePath: string;
@@ -3256,7 +4022,23 @@ electron.ipcMain.handle("shell:openExternal", async (_event, targetUrl: string) 
 
 electron.ipcMain.handle("shell:fileUrl", async (_event, targetPath: string) => {
   if (!targetPath) return "";
-  return pathToFileURL(resolve(targetPath)).toString();
+  const resolvedPath = resolve(targetPath);
+  const mimeTypes: Record<string, string> = {
+    bmp: "image/bmp",
+    gif: "image/gif",
+    jpeg: "image/jpeg",
+    jpg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp"
+  };
+  const mimeType = mimeTypes[getPathExtension(resolvedPath)];
+
+  if (mimeType && existsSync(resolvedPath)) {
+    const imageData = await readFile(resolvedPath);
+    return `data:${mimeType};base64,${imageData.toString("base64")}`;
+  }
+
+  return pathToFileURL(resolvedPath).toString();
 });
 
 electron.ipcMain.handle("app:openDevTools", async () => {
@@ -3290,6 +4072,12 @@ electron.ipcMain.handle("app:setLaunchAtStartup", async (_event, enabled: boolea
   });
   return electron.app.getLoginItemSettings().openAtLogin;
 });
+
+electron.ipcMain.handle("app:checkUpdate", async (_event, options: {
+  updateUrl: string;
+  currentVersion?: string;
+  proxyUrl?: string;
+}) => checkAppUpdate(options));
 
 electron.ipcMain.handle("store:read", async (_event, fileName: string, fallback: unknown) => {
   const filePath = await ensureJsonFile(fileName, fallback);
@@ -3358,6 +4146,9 @@ electron.ipcMain.handle("translate:text", async (_event, options: {
   volcengineAccessKeyId?: string;
   volcengineSecretAccessKey?: string;
   volcengineRegion?: string;
+  ollamaBaseUrl?: string;
+  ollamaModel?: string;
+  ollamaTimeoutMs?: number;
 }) => enqueueTranslation(() =>
   translateTextByProvider({
     ...options,
@@ -3367,6 +4158,17 @@ electron.ipcMain.handle("translate:text", async (_event, options: {
   })
 ));
 
+electron.ipcMain.handle("nexus:startOAuthLogin", async (_event, options?: {
+  proxyUrl?: string;
+}) => startNexusOAuthLogin(options?.proxyUrl ?? ""));
+
+electron.ipcMain.handle("nexus:cancelOAuthLogin", async () => {
+  if (!activeNexusOAuth) return false;
+
+  activeNexusOAuth.finish(new Error("已取消 Nexus 网页登录。"));
+  return true;
+});
+
 electron.ipcMain.handle("nexus:validateApiKey", async (_event, options: string | {
   apiKey: string;
   proxyUrl?: string;
@@ -3375,7 +4177,7 @@ electron.ipcMain.handle("nexus:validateApiKey", async (_event, options: string |
   const proxyUrl = typeof options === "string" ? "" : options.proxyUrl;
   const response = await fetchWithProxy(`${NEXUS_API_URL}/v1/users/validate.json`, {
     method: "GET",
-    headers: nexusHeaders(apiKey, true),
+    headers: nexusHeaders({ apiKey }, true),
     proxyUrl
   });
   const payload = await readJsonResponse<Record<string, unknown>>(response, "校验 NexusMods API Key 失败。");
@@ -3392,6 +4194,7 @@ electron.ipcMain.handle("nexus:validateApiKey", async (_event, options: string |
 
 electron.ipcMain.handle("nexus:listMods", async (_event, options: {
   apiKey: string;
+  accessToken?: string;
   gameDomain: string;
   page: number;
   pageSize: number;
@@ -3463,7 +4266,10 @@ electron.ipcMain.handle("nexus:listMods", async (_event, options: {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...nexusHeaders(options.apiKey)
+      ...nexusHeaders({
+        apiKey: options.apiKey,
+        accessToken: options.accessToken
+      }, true)
     },
     body: JSON.stringify({ query: gql, variables }),
     proxyUrl: options.proxyUrl
@@ -3525,13 +4331,17 @@ electron.ipcMain.handle("nexus:listMods", async (_event, options: {
 
 electron.ipcMain.handle("nexus:getModDetail", async (_event, options: {
   apiKey: string;
+  accessToken?: string;
   gameDomain: string;
   modId: string;
   proxyUrl?: string;
 }) => {
   const gameDomain = options.gameDomain.trim();
   const modId = options.modId.trim();
-  const headers = nexusHeaders(options.apiKey);
+  const headers = nexusHeaders({
+    apiKey: options.apiKey,
+    accessToken: options.accessToken
+  }, true);
   const detailResponse = await fetchWithProxy(`${NEXUS_API_URL}/v1/games/${gameDomain}/mods/${modId}.json`, {
     method: "GET",
     headers,
@@ -3563,6 +4373,7 @@ electron.ipcMain.handle("nexus:getModDetail", async (_event, options: {
 
 electron.ipcMain.handle("nexus:getDownloadUrl", async (_event, options: {
   apiKey: string;
+  accessToken?: string;
   gameDomain: string;
   modId: string;
   fileId: string;
@@ -3589,7 +4400,10 @@ electron.ipcMain.handle("nexus:getDownloadUrl", async (_event, options: {
 
   const response = await fetchWithProxy(downloadLinkUrl, {
     method: "GET",
-    headers: nexusHeaders(options.apiKey, true),
+    headers: nexusHeaders({
+      apiKey: options.apiKey,
+      accessToken: options.accessToken
+    }, true),
     proxyUrl: options.proxyUrl
   });
   const payload = await response.json().catch(() => ({})) as Array<{ URI?: string }> | { message?: string };
@@ -3624,7 +4438,21 @@ electron.ipcMain.handle("downloads:downloadFile", async (_event, options: {
   outputPath: string;
   resume?: boolean;
   proxyUrl?: string;
+  engine?: "builtin" | "aria2";
+  aria2ExecutablePath?: string;
+  aria2MaxConnections?: number;
 }) => {
+  if (options.engine === "aria2") {
+    return downloadWithAria2({
+      taskId: options.taskId,
+      url: options.url,
+      outputPath: options.outputPath,
+      resume: options.resume,
+      aria2ExecutablePath: options.aria2ExecutablePath,
+      aria2MaxConnections: options.aria2MaxConnections
+    });
+  }
+
   const taskId = options.taskId?.trim();
   const controller = new AbortController();
   let startingBytes = 0;
@@ -3709,6 +4537,13 @@ electron.ipcMain.handle("downloads:downloadFile", async (_event, options: {
 });
 
 electron.ipcMain.handle("downloads:cancel", async (_event, taskId: string) => {
+  const aria2Task = aria2Tasks.get(taskId);
+  if (aria2Task && aria2Runtime) {
+    aria2Task.cancelled = true;
+    await aria2Rpc(aria2Runtime, "aria2.forceRemove", [aria2Task.gid]).catch(() => undefined);
+    return true;
+  }
+
   const controller = downloadControllers.get(taskId);
   if (!controller) return false;
 
@@ -3786,15 +4621,17 @@ electron.ipcMain.handle("backups:listZip", async (_event, backupPath: string) =>
   }));
 });
 
-electron.ipcMain.handle("gmm:exportMods", async (_event, options: {
+electron.ipcMain.handle("gmm:exportMods", async (event, options: {
   mods: Array<{
     rootPath: string;
     folderName: string;
   }>;
   manifest: Record<string, unknown>;
   outputPath: string;
+  operationId?: string;
 }) => {
   const output = resolve(options.outputPath);
+  const operationId = options.operationId || randomUUID();
   await mkdir(dirname(output), { recursive: true });
 
   if (existsSync(output)) {
@@ -3803,18 +4640,93 @@ electron.ipcMain.handle("gmm:exportMods", async (_event, options: {
 
   const zip = new AdmZip();
   zip.addFile("manifest.json", Buffer.from(JSON.stringify(options.manifest, null, 2), "utf-8"));
+  const report = (payload: Omit<GmmProgressPayload, "operationId" | "operation">) => {
+    sendGmmProgress(event.sender, {
+      operationId,
+      operation: "export",
+      ...payload
+    });
+  };
 
-  for (const mod of options.mods) {
+  report({
+    phase: "准备中",
+    current: 0,
+    total: options.mods.length,
+    message: "正在扫描 Mod 文件..."
+  });
+  await yieldToRenderer();
+
+  const scannedMods: Array<{
+    rootPath: string;
+    folderName: string;
+    files: string[];
+  }> = [];
+
+  for (let index = 0; index < options.mods.length; index += 1) {
+    const mod = options.mods[index];
     const rootPath = resolve(mod.rootPath);
     const folderName = sanitizeFileName(mod.folderName);
 
-    if (!existsSync(rootPath)) continue;
-
-    zip.addLocalFolder(rootPath, folderName);
+    const files = existsSync(rootPath) ? await listFiles(rootPath) : [];
+    scannedMods.push({ rootPath, folderName, files });
+    report({
+      phase: "扫描文件",
+      current: index + 1,
+      total: Math.max(options.mods.length, 1),
+      message: `正在扫描 Mod ${index + 1} / ${options.mods.length}`
+    });
+    await yieldToRenderer();
   }
 
+  const totalFiles = scannedMods.reduce((total, mod) => total + mod.files.length, 0);
+  const progressTotal = Math.max(totalFiles, 1);
+  let processedFiles = 0;
+  let lastReportAt = 0;
+
+  report({
+    phase: "写入文件",
+    current: 0,
+    total: progressTotal,
+    message: "正在写入整合包..."
+  });
+  await yieldToRenderer();
+
+  for (const mod of scannedMods) {
+    for (const file of mod.files) {
+      const sourcePath = resolve(mod.rootPath, file);
+      const entryPath = join(mod.folderName, file).replace(/\\/g, "/");
+      zip.addFile(entryPath, await readFile(sourcePath));
+      processedFiles += 1;
+
+      const now = Date.now();
+      if (processedFiles === totalFiles || now - lastReportAt >= 100) {
+        report({
+          phase: "写入文件",
+          current: processedFiles,
+          total: progressTotal,
+          message: `已写入 ${processedFiles} / ${totalFiles || 0} 个文件`
+        });
+        lastReportAt = now;
+        await yieldToRenderer();
+      }
+    }
+  }
+
+  report({
+    phase: "压缩中",
+    current: progressTotal,
+    total: progressTotal,
+    message: "正在生成压缩文件..."
+  });
+  await yieldToRenderer();
   zip.writeZip(output);
   const outputStat = await stat(output);
+  report({
+    phase: "完成",
+    current: progressTotal,
+    total: progressTotal,
+    message: "整合包导出完成"
+  });
 
   return {
     outputPath: output,
@@ -3833,14 +4745,16 @@ electron.ipcMain.handle("gmm:readManifest", async (_event, packagePath: string) 
   return JSON.parse(manifestEntry.getData().toString("utf-8")) as Record<string, unknown>;
 });
 
-electron.ipcMain.handle("gmm:importGamePack", async (_event, options: {
+electron.ipcMain.handle("gmm:importGamePack", async (event, options: {
   packagePath: string;
   storagePath: string;
   gameName: string;
   overwrite?: boolean;
+  operationId?: string;
 }) => {
   const packagePath = resolve(options.packagePath);
   const gameRoot = join(resolve(options.storagePath), "mods", sanitizeFileName(options.gameName));
+  const operationId = options.operationId || randomUUID();
   const zip = new AdmZip(packagePath);
   const manifestEntry = zip.getEntry("manifest.json");
 
@@ -3857,6 +4771,45 @@ electron.ipcMain.handle("gmm:importGamePack", async (_event, options: {
     throw new Error("这不是 Mayfly 游戏整合包。");
   }
 
+  const report = (payload: Omit<GmmProgressPayload, "operationId" | "operation">) => {
+    sendGmmProgress(event.sender, {
+      operationId,
+      operation: "import",
+      ...payload
+    });
+  };
+
+  const fileEntries = zip.getEntries().filter((entry) => !entry.isDirectory);
+  const entriesByFolder = new Map<string, typeof fileEntries>();
+  for (const entry of fileEntries) {
+    const separatorIndex = entry.entryName.indexOf("/");
+    if (separatorIndex <= 0) continue;
+
+    const folder = sanitizeFileName(entry.entryName.slice(0, separatorIndex));
+    const folderEntries = entriesByFolder.get(folder) ?? [];
+    folderEntries.push(entry);
+    entriesByFolder.set(folder, folderEntries);
+  }
+
+  const validMods = manifest.mods
+    .map((mod) => sanitizeFileName(String(mod.folder || mod.id || mod.name || "")))
+    .filter((folder) => Boolean(folder) && (entriesByFolder.get(folder)?.length ?? 0) > 0);
+  const totalFiles = validMods.reduce(
+    (total, folder) => total + (entriesByFolder.get(folder)?.length ?? 0),
+    0
+  );
+  const progressTotal = Math.max(totalFiles, 1);
+  let processedFiles = 0;
+  let lastReportAt = 0;
+
+  report({
+    phase: "准备中",
+    current: 0,
+    total: progressTotal,
+    message: `准备导入 ${validMods.length} 个 Mod...`
+  });
+  await yieldToRenderer();
+
   await mkdir(gameRoot, { recursive: true });
   const importedMods: Array<{ folder: string; rootPath: string; files: string[]; coverImage?: string }> = [];
 
@@ -3866,10 +4819,8 @@ electron.ipcMain.handle("gmm:importGamePack", async (_event, options: {
 
     const prefix = `${folder}/`;
     const rootPath = safeJoin(gameRoot, folder);
-    const entries = zip.getEntries().filter((entry) =>
-      !entry.isDirectory &&
-      entry.entryName.startsWith(prefix) &&
-      !entry.entryName.includes("..")
+    const entries = (entriesByFolder.get(folder) ?? []).filter((entry) =>
+      entry.entryName.startsWith(prefix) && !entry.entryName.includes("..")
     );
 
     if (entries.length === 0) continue;
@@ -3888,6 +4839,19 @@ electron.ipcMain.handle("gmm:importGamePack", async (_event, options: {
       const target = safeJoin(rootPath, relativeEntry);
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, entry.getData());
+      processedFiles += 1;
+
+      const now = Date.now();
+      if (processedFiles === totalFiles || now - lastReportAt >= 100) {
+        report({
+          phase: "写入文件",
+          current: processedFiles,
+          total: progressTotal,
+          message: `已导入 ${processedFiles} / ${totalFiles || 0} 个文件`
+        });
+        lastReportAt = now;
+        await yieldToRenderer();
+      }
     }
 
     const files = await listFiles(rootPath);
@@ -3898,6 +4862,13 @@ electron.ipcMain.handle("gmm:importGamePack", async (_event, options: {
       coverImage: findCoverImage(files)
     });
   }
+
+  report({
+    phase: "完成",
+    current: progressTotal,
+    total: progressTotal,
+    message: `已导入 ${importedMods.length} 个 Mod`
+  });
 
   return {
     manifest,
@@ -3951,6 +4922,66 @@ electron.ipcMain.handle("mods:importFolder", async (_event, options: {
     files,
     manifest: await readManifest(modRoot, files),
     coverImage: findCoverImage(files)
+  };
+});
+
+electron.ipcMain.handle("mods:copyCoverImage", async (_event, options: {
+  sourcePath: string;
+  modRoot: string;
+}) => {
+  const sourcePath = resolve(options.sourcePath);
+  const modRoot = resolve(options.modRoot);
+  const sourceStat = await stat(sourcePath);
+
+  if (!sourceStat.isFile()) {
+    throw new Error("预览图必须是图片文件。");
+  }
+
+  const extension = getPathExtension(sourcePath);
+  if (!["jpg", "jpeg", "png", "webp", "gif", "bmp"].includes(extension)) {
+    throw new Error("预览图只支持 JPG、PNG、WEBP、GIF 或 BMP 图片。");
+  }
+
+  const metadataRoot = safeJoin(modRoot, MOD_PREVIEW_FOLDER);
+  await mkdir(metadataRoot, { recursive: true });
+
+  for (const entry of await readdir(metadataRoot, { withFileTypes: true })) {
+    if (entry.isFile() && /^cover\./iu.test(entry.name)) {
+      await rm(join(metadataRoot, entry.name), { force: true });
+    }
+  }
+
+  const targetPath = safeJoin(metadataRoot, `cover.${extension}`);
+  await copyFile(sourcePath, targetPath);
+
+  return {
+    coverImage: `${MOD_PREVIEW_FOLDER}/cover.${extension}`
+  };
+});
+
+electron.ipcMain.handle("mods:migrateCoverImage", async (_event, options: {
+  modRoot: string;
+  coverImage: string;
+}) => {
+  const currentCover = options.coverImage.replace(/\\/gu, "/").replace(/^\/+/u, "");
+  if (!/^\.mayfly\/preview\./iu.test(currentCover)) {
+    return { coverImage: options.coverImage };
+  }
+
+  const sourcePath = safeJoin(resolve(options.modRoot), currentCover);
+  if (!existsSync(sourcePath)) {
+    return { coverImage: options.coverImage };
+  }
+
+  const extension = getPathExtension(sourcePath);
+  const targetRoot = safeJoin(resolve(options.modRoot), MOD_PREVIEW_FOLDER);
+  const targetPath = safeJoin(targetRoot, `cover.${extension}`);
+  await mkdir(targetRoot, { recursive: true });
+  await copyFile(sourcePath, targetPath);
+  await rm(safeJoin(resolve(options.modRoot), ".mayfly"), { recursive: true, force: true });
+
+  return {
+    coverImage: `${MOD_PREVIEW_FOLDER}/cover.${extension}`
   };
 });
 
@@ -4055,6 +5086,7 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
     startIndex?: number;
     listFileName?: string;
     rootFile?: string;
+    portraitFolders?: string[];
     managedToolFileName?: string;
     reason?: string;
   };
@@ -4098,7 +5130,8 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
         gamePath: targetRoot,
         installPath,
         fileName: options.strategy.fileName ?? "",
-        isExtname: options.strategy.isExtname
+        isExtname: options.strategy.isExtname,
+        useSymlink: options.useSymlink
       });
       break;
     case "fileSibling":
@@ -4121,14 +5154,12 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
       });
       break;
     case "folderParent":
-      if (Array.isArray(options.strategy.folderName)) {
-        throw new Error("folderParent 策略只支持单个 folderName。");
-      }
       targetFiles = await planFolderParentStrategy({
         modRoot: options.modRoot,
         gamePath: targetRoot,
         installPath,
-        folderName: options.strategy.folderName ?? ""
+        folderName: options.strategy.folderName ?? "",
+        useSymlink: options.useSymlink
       });
       break;
     case "fileMap":
@@ -4215,6 +5246,14 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
         isExtname: true
       });
       break;
+    case "legendPortraits":
+      targetFiles = await planLegendPortraitsStrategy({
+        modRoot: options.modRoot,
+        gamePath: targetRoot,
+        installPath,
+        portraitFolders: options.strategy.portraitFolders ?? []
+      });
+      break;
     case "inzoiModKit":
       targetFiles = await planFileStrategy({
         modRoot: options.modRoot,
@@ -4292,6 +5331,7 @@ electron.ipcMain.handle("mods:applyStrategy", async (_event, options: {
     startIndex?: number;
     listFileName?: string;
     rootFile?: string;
+    portraitFolders?: string[];
     managedToolFileName?: string;
     reason?: string;
   };
@@ -4348,7 +5388,8 @@ electron.ipcMain.handle("mods:applyStrategy", async (_event, options: {
           fileName: options.strategy.fileName ?? "",
           isExtname: options.strategy.isExtname,
           commonParent: options.strategy.commonParent,
-          isInstall: options.isInstall
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
         });
         break;
       case "fileSibling":
@@ -4375,15 +5416,13 @@ electron.ipcMain.handle("mods:applyStrategy", async (_event, options: {
         });
         break;
       case "folderParent":
-        if (Array.isArray(options.strategy.folderName)) {
-          throw new Error("folderParent 策略只支持单个 folderName。");
-        }
         deployedFiles = await applyFolderParentStrategy({
           modRoot: options.modRoot,
           gamePath: targetRoot,
           installPath,
           folderName: options.strategy.folderName ?? "",
-          isInstall: options.isInstall
+          isInstall: options.isInstall,
+          useSymlink: options.useSymlink
         });
         break;
       case "fileMap":
@@ -4503,6 +5542,15 @@ electron.ipcMain.handle("mods:applyStrategy", async (_event, options: {
           useSymlink: options.useSymlink
         });
         break;
+      case "legendPortraits":
+        deployedFiles = await applyLegendPortraitsStrategy({
+          modRoot: options.modRoot,
+          gamePath: targetRoot,
+          installPath,
+          portraitFolders: options.strategy.portraitFolders ?? [],
+          isInstall: options.isInstall
+        });
+        break;
       case "inzoiModKit":
         deployedFiles = await applyInzoiModKitStrategy({
           modRoot: options.modRoot,
@@ -4605,4 +5653,13 @@ electron.app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     electron.app.quit();
   }
+});
+
+electron.app.on("will-quit", () => {
+  aria2Tasks.forEach((task) => {
+    task.cancelled = true;
+  });
+  aria2Tasks.clear();
+  aria2Runtime?.process.kill();
+  aria2Runtime = null;
 });

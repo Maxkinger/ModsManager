@@ -25,6 +25,11 @@ declare global {
       }) => Promise<boolean>;
       openDevTools: () => Promise<void>;
       setLaunchAtStartup: (enabled: boolean) => Promise<boolean>;
+      checkAppUpdate: (options: {
+        updateUrl: string;
+        currentVersion?: string;
+        proxyUrl?: string;
+      }) => Promise<import("./domain").AppUpdateCheckResult>;
       readStore: <T>(fileName: string, fallback: T) => Promise<T>;
       writeStore: (fileName: string, value: unknown) => Promise<boolean>;
       exists: (targetPath: string) => Promise<boolean>;
@@ -47,8 +52,16 @@ declare global {
         apiKey: string;
         proxyUrl?: string;
       }) => Promise<import("./domain").NexusUser>;
+      startNexusOAuthLogin: (options?: { proxyUrl?: string }) => Promise<{
+        accessToken: string;
+        refreshToken: string;
+        expiresAt: number;
+        user: import("./domain").NexusUser;
+      }>;
+      cancelNexusOAuthLogin: () => Promise<boolean>;
       listNexusMods: (options: {
         apiKey: string;
+        accessToken?: string;
         gameDomain: string;
         page: number;
         pageSize: number;
@@ -63,12 +76,14 @@ declare global {
       }) => Promise<import("./domain").NexusModListResult>;
       getNexusModDetail: (options: {
         apiKey: string;
+        accessToken?: string;
         gameDomain: string;
         modId: string;
         proxyUrl?: string;
       }) => Promise<import("./domain").NexusModDetail>;
       getNexusDownloadUrl: (options: {
         apiKey: string;
+        accessToken?: string;
         gameDomain: string;
         modId: string;
         fileId: string;
@@ -92,6 +107,9 @@ declare global {
         volcengineAccessKeyId?: string;
         volcengineSecretAccessKey?: string;
         volcengineRegion?: string;
+        ollamaBaseUrl?: string;
+        ollamaModel?: string;
+        ollamaTimeoutMs?: number;
       }) => Promise<string>;
       downloadFile: (options: {
         taskId?: string;
@@ -99,6 +117,9 @@ declare global {
         outputPath: string;
         resume?: boolean;
         proxyUrl?: string;
+        engine?: import("./domain").AppSettings["downloadEngine"];
+        aria2ExecutablePath?: string;
+        aria2MaxConnections?: number;
       }) => Promise<{
         outputPath: string;
         receivedBytes: number;
@@ -130,16 +151,26 @@ declare global {
         }>;
         manifest: Record<string, unknown>;
         outputPath: string;
+        operationId?: string;
       }) => Promise<{
         outputPath: string;
         size: number;
       }>;
+      onGmmProgress: (callback: (data: {
+        operationId: string;
+        operation: "import" | "export";
+        phase: string;
+        current: number;
+        total: number;
+        message: string;
+      }) => void) => void;
       readGmmManifest: (packagePath: string) => Promise<Record<string, unknown>>;
       importGamePack: (options: {
         packagePath: string;
         storagePath: string;
         gameName: string;
         overwrite?: boolean;
+        operationId?: string;
       }) => Promise<{
         manifest: Record<string, unknown>;
         mods: Array<{ folder: string; rootPath: string; files: string[]; coverImage?: string }>;
@@ -163,6 +194,18 @@ declare global {
         tags?: string[];
           requirements?: string[];
         };
+      }>;
+      copyModCoverImage: (options: {
+        sourcePath: string;
+        modRoot: string;
+      }) => Promise<{
+        coverImage: string;
+      }>;
+      migrateModCoverImage: (options: {
+        modRoot: string;
+        coverImage: string;
+      }) => Promise<{
+        coverImage: string;
       }>;
       migrateModCacheFolder: (options: {
         sourcePath: string;

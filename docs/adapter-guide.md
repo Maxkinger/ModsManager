@@ -35,7 +35,7 @@ export const exampleAdapter: GameAdapter = {
 - `checkModType(files)` 只做轻量判断，不访问文件系统。
 - 安装路径必须是游戏目录下的相对路径。
 - 不确定的 Mod 类型返回 `manual`，不要猜测写入位置。
-- 有前置依赖时，在 `requiredModNames` 写常见名称，例如 `SMAPI`、`BepInEx`。
+- 前置依赖检测当前暂不启用；不要在 adapter 里新增 `requiredModNames`，需要时只把前置写进 Mod 备注/说明。
 
 ## 常见策略
 

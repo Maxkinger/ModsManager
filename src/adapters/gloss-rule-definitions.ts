@@ -1,6 +1,9 @@
 import type { GameAdapter, InstallStrategy, InstallTargetScope, ModTypeRule } from "@/types/domain";
 import { hasExtension, hasFile, hasPathPart } from "@/adapters/utils";
 
+const ARMORED_CORE_6_DICTIONARY = "resources/ArmoredCore6Dictionary.txt";
+const SEKIRO_DICTIONARY = "resources/SekiroDictionary.txt";
+
 type DetectKind = "extension" | "fileName" | "pathPart";
 
 interface DetectRule {
@@ -42,7 +45,7 @@ function folderRoot(id: string, name: string, installPath: string, targetScope?:
   return { id, name, install: withScope({ kind: "folderRoot", installPath }, targetScope) };
 }
 
-function folderParent(id: string, name: string, installPath: string, folderName: string, targetScope?: InstallTargetScope): ModTypeRule {
+function folderParent(id: string, name: string, installPath: string, folderName: string | string[], targetScope?: InstallTargetScope): ModTypeRule {
   return { id, name, install: withScope({ kind: "folderParent", installPath, folderName }, targetScope) };
 }
 
@@ -101,7 +104,15 @@ export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
   armoredcore6: {
     name: "Armored Core 6",
     modTypes: [
-      general("1", "通用类型", "mods", true),
+      {
+        id: "1",
+        name: "通用类型",
+        install: {
+          kind: "fileMap",
+          installPath: "mods",
+          dictionaryFile: ARMORED_CORE_6_DICTIONARY
+        }
+      },
       general("2", "Engine 2", "", true)
     ],
     detect: [{ typeId: "2", kind: "fileName", value: "launchmod_armoredcore6.bat" }]
@@ -259,8 +270,12 @@ export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
   },
   grimdawn: {
     name: "Grim Dawn",
-    modTypes: [file("1", "mods", "mods", "database.arz"), general("2", "游戏根目录", "", false), manual()],
-    detect: [{ typeId: "1", kind: "fileName", value: "database.arz" }]
+    modTypes: [folderParent("1", "mods", "mods", ["resources", "database", "localization"]), general("2", "游戏根目录", "", false), manual()],
+    detect: [
+      { typeId: "1", kind: "pathPart", value: "resources" },
+      { typeId: "1", kind: "pathPart", value: "database" },
+      { typeId: "1", kind: "pathPart", value: "localization" }
+    ]
   },
   hades2: {
     name: "Hades2",
@@ -276,8 +291,8 @@ export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
   },
   humankind: {
     name: "Humankind",
-    modTypes: [fileOnly("1", "mods", "Humankind/Community/Scenarios", "hmap", true, documents), manual()],
-    detect: [{ typeId: "1", kind: "extension", value: "hmap" }]
+    modTypes: [folderRoot("1", "mods", "Humankind/Community/Scenarios", documents), manual()],
+    detect: []
   },
   jaggedalliance3: {
     name: "Jagged Alliance 3",
@@ -374,8 +389,9 @@ export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
     name: "Nioh 2",
     modTypes: [general("1", "Mod Enabler", "", true), folderRoot("2", "mods", "mods"), general("3", "游戏根目录", "", true), manual()],
     detect: [
-      { typeId: "2", kind: "pathPart", value: "mods" },
-      { typeId: "1", kind: "fileName", value: "Nioh2ModEnabler.exe" }
+      { typeId: "1", kind: "fileName", value: "d3dcompiler_46.dll" },
+      { typeId: "2", kind: "extension", value: "ini" },
+      { typeId: "2", kind: "pathPart", value: "mods" }
     ]
   },
   nioh3: {
@@ -488,7 +504,19 @@ export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
   },
   sekiro: {
     name: "Sekiro",
-    modTypes: [folderRoot("1", "基础类型", "mods"), sibling("2", "ModEngine", "", "dinput8.dll"), manual()],
+    modTypes: [
+      {
+        id: "1",
+        name: "基础类型",
+        install: {
+          kind: "fileMap",
+          installPath: "mods",
+          dictionaryFile: SEKIRO_DICTIONARY
+        }
+      },
+      sibling("2", "ModEngine", "", "dinput8.dll"),
+      manual()
+    ],
     detect: [
       { typeId: "2", kind: "fileName", value: "dinput8.dll" },
       { typeId: "1", kind: "pathPart", value: "parts" },
@@ -605,8 +633,8 @@ export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
   },
   thescrolloftaiwu: {
     name: "The Scroll Of Taiwu",
-    modTypes: [folder("1", "通用", "Mod", "plugins"), manual("2", "未知")],
-    detect: [{ typeId: "1", kind: "pathPart", value: "plugins" }]
+    modTypes: [file("1", "通用", "Mod", "config.lua"), manual("2", "未知")],
+    detect: [{ typeId: "1", kind: "fileName", value: "config.lua" }]
   },
   thesims4: {
     name: "The Sims 4",

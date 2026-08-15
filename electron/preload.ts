@@ -28,6 +28,11 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
   openDevTools: () => electron.ipcRenderer.invoke("app:openDevTools") as Promise<void>,
   setLaunchAtStartup: (enabled: boolean) =>
     electron.ipcRenderer.invoke("app:setLaunchAtStartup", enabled) as Promise<boolean>,
+  checkAppUpdate: (options: {
+    updateUrl: string;
+    currentVersion?: string;
+    proxyUrl?: string;
+  }) => electron.ipcRenderer.invoke("app:checkUpdate", options) as Promise<unknown>,
   readStore: <T>(fileName: string, fallback: T) =>
     electron.ipcRenderer.invoke("store:read", fileName, fallback) as Promise<T>,
   writeStore: (fileName: string, value: unknown) =>
@@ -55,6 +60,23 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
   }) => electron.ipcRenderer.invoke("fs:findFileByName", options) as Promise<string>,
   findSteamGamePath: (steamAppId: number) =>
     electron.ipcRenderer.invoke("steam:findGamePath", steamAppId) as Promise<string>,
+  startNexusOAuthLogin: (options?: { proxyUrl?: string }) =>
+    electron.ipcRenderer.invoke("nexus:startOAuthLogin", options) as Promise<{
+      accessToken: string;
+      refreshToken: string;
+      expiresAt: number;
+      user: {
+        key: string;
+        name: string;
+        email: string;
+        profileUrl: string;
+        avatar?: string;
+        isPremium: boolean;
+        isSupporter: boolean;
+      };
+    }>,
+  cancelNexusOAuthLogin: () =>
+    electron.ipcRenderer.invoke("nexus:cancelOAuthLogin") as Promise<boolean>,
   validateNexusApiKey: (options: string | { apiKey: string; proxyUrl?: string }) =>
     electron.ipcRenderer.invoke("nexus:validateApiKey", options) as Promise<unknown>,
   listNexusMods: (options: unknown) =>
@@ -79,6 +101,9 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
     volcengineAccessKeyId?: string;
     volcengineSecretAccessKey?: string;
     volcengineRegion?: string;
+    ollamaBaseUrl?: string;
+    ollamaModel?: string;
+    ollamaTimeoutMs?: number;
   }) => electron.ipcRenderer.invoke("translate:text", options) as Promise<string>,
   downloadFile: (options: {
     taskId?: string;
@@ -86,6 +111,9 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
     outputPath: string;
     resume?: boolean;
     proxyUrl?: string;
+    engine?: "builtin" | "aria2";
+    aria2ExecutablePath?: string;
+    aria2MaxConnections?: number;
   }) => electron.ipcRenderer.invoke("downloads:downloadFile", options) as Promise<{
     outputPath: string;
     receivedBytes: number;
@@ -121,10 +149,28 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
     }>;
     manifest: Record<string, unknown>;
     outputPath: string;
+    operationId?: string;
   }) => electron.ipcRenderer.invoke("gmm:exportMods", options) as Promise<{
     outputPath: string;
     size: number;
   }>,
+  onGmmProgress: (callback: (data: {
+    operationId: string;
+    operation: "import" | "export";
+    phase: string;
+    current: number;
+    total: number;
+    message: string;
+  }) => void) => {
+    electron.ipcRenderer.on("gmm:progress", (_event, data) => callback(data as {
+      operationId: string;
+      operation: "import" | "export";
+      phase: string;
+      current: number;
+      total: number;
+      message: string;
+    }));
+  },
   readGmmManifest: (packagePath: string) =>
     electron.ipcRenderer.invoke("gmm:readManifest", packagePath) as Promise<Record<string, unknown>>,
   importGamePack: (options: {
@@ -132,6 +178,7 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
     storagePath: string;
     gameName: string;
     overwrite?: boolean;
+    operationId?: string;
   }) => electron.ipcRenderer.invoke("gmm:importGamePack", options) as Promise<{
     manifest: Record<string, unknown>;
     mods: Array<{ folder: string; rootPath: string; files: string[]; coverImage?: string }>;
@@ -157,6 +204,18 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
         requirements?: string[];
       };
     }>,
+  copyModCoverImage: (options: {
+    sourcePath: string;
+    modRoot: string;
+  }) => electron.ipcRenderer.invoke("mods:copyCoverImage", options) as Promise<{
+    coverImage: string;
+  }>,
+  migrateModCoverImage: (options: {
+    modRoot: string;
+    coverImage: string;
+  }) => electron.ipcRenderer.invoke("mods:migrateCoverImage", options) as Promise<{
+    coverImage: string;
+  }>,
   migrateModCacheFolder: (options: {
     sourcePath: string;
     storagePath: string;

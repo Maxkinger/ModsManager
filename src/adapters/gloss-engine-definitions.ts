@@ -39,7 +39,6 @@ export const glossEngineDefinitions: Record<string, GlossEngineDefinition> = {
   homeworld3: { kind: "unreal", basePath: "Homeworld3" },
   inzoi: { kind: "unreal", basePath: "BlueClient" },
   jumpforce: { kind: "unreal", basePath: "JUMP_FORCE" },
-  legendofheros: { kind: "melon", basePath: "" },
   legendofmortal: { kind: "unity", basePath: "" },
   lethalcompany: { kind: "unity", basePath: "" },
   liesofp: { kind: "unreal", basePath: "LiesofP" },

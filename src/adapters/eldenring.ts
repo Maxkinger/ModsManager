@@ -50,7 +50,6 @@ export const eldenRingAdapter: GameAdapter = {
     {
       id: "modengine2-mods",
       name: "通用类型",
-      requiredModNames: ["ModEngine2"],
       install: {
         kind: "fileMap",
         installPath: "mods",
