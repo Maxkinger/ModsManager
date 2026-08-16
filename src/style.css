@@ -1058,7 +1058,7 @@ button:disabled {
 .steamModHeader,
 .steamModRow {
   display: grid;
-  grid-template-columns: 30px 28px 60px minmax(140px, 320px) 90px 76px 92px 1fr 50px 112px;
+  grid-template-columns: 30px 28px 60px minmax(140px, 1fr) 60px 100px 110px 50px 112px;
   align-items: center;
   gap: 10px;
   min-height: 60px;
@@ -1147,9 +1147,17 @@ button:disabled {
   color: #4f5a69;
 }
 
-.steamModVersion {
+.steamModVersion,
+.steamModType {
   color: #c7d5e0;
   font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.steamModType {
+  color: #8f98a5;
 }
 
 .steamToggleCell {
@@ -1277,6 +1285,37 @@ button:disabled {
   border-color: rgba(103, 193, 245, 0.45);
   background: rgba(103, 193, 245, 0.1);
   color: #67c1f5;
+}
+
+.updateIcon {
+  opacity: 0.7;
+  transition: all 0.2s;
+}
+
+.updateIcon:not(:disabled):hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.updateIcon.available {
+  color: #f5b85c;
+}
+
+.updateIcon.latest {
+  color: #65d6ad;
+}
+
+.updateIcon.failed,
+.updateIcon.unsupported {
+  color: #ff8a8a;
+}
+
+.updateIcon.checking {
+  color: #67c1f5;
+}
+
+.updateIcon.unknown {
+  color: #8f98a5;
 }
 
 .cardUpdateBadge {
@@ -1561,8 +1600,7 @@ select:focus {
   grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
 }
 
-.packageToolsProgress {
-}
+.packageToolsProgress {}
 
 .packageProgress {
   display: grid;
@@ -1788,6 +1826,66 @@ select:focus {
   border: 1px solid #5d2a32;
   background: #24151a;
   color: #ffb4b4;
+}
+
+.steamEmptyStateMain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #8f98a0;
+  text-align: center;
+  gap: 8px;
+  margin: 24px 0;
+}
+
+.steamEmptyStateMain svg {
+  color: #3b4553;
+  margin-bottom: 16px;
+}
+
+.steamEmptyStateMain h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #dcdedf;
+}
+
+.steamEmptyStateMain p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 420px;
+  color: #6c7d91;
+}
+
+.steamEmptyStateSide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  margin: 16px;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  text-align: center;
+  gap: 12px;
+}
+
+.steamEmptyStateSide svg {
+  color: #3b4553;
+}
+
+.steamEmptyStateSide p {
+  margin: 0;
+  font-size: 12px;
+  color: #6c7d91;
+  line-height: 1.6;
 }
 
 .modEmpty,
@@ -2400,6 +2498,7 @@ code {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  max-height: 90vh;
 }
 
 .steam-modal-header {
@@ -2416,6 +2515,20 @@ code {
 .steam-modal-header .close-btn {
   margin-left: auto;
   color: #8f9bab;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.steam-modal-header .close-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .steam-modal-content {
@@ -2423,6 +2536,7 @@ code {
   color: #8b929a;
   font-size: 14px;
   line-height: 1.5;
+  overflow-y: auto;
 }
 
 .gameModalContent {
@@ -2454,10 +2568,33 @@ code {
 .gameInfoGrid label,
 .modalField {
   display: grid;
-  gap: 6px;
-  color: #c8d2df;
+  gap: 8px;
+  color: #8f98a0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.modalField input {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #dcdedf;
+  padding: 8px 12px;
+  border-radius: 4px;
   font-size: 13px;
-  font-weight: 700;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.2s;
+}
+
+.modalField input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.modalField input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .gameInfoGrid span {
@@ -2819,7 +2956,7 @@ code {
 .steamFilterBar {
   background: #1e2126;
   border-bottom: 1px solid #3d4450;
-  padding: 12px 24px;
+  padding: 20px 24px 16px 24px;
   margin: -24px -24px 8px -24px;
   display: flex;
   justify-content: space-between;
@@ -3228,6 +3365,55 @@ code {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.steamSearchBox {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0 4px 0 12px;
+  height: 36px;
+  min-width: 240px;
+  transition: border-color 0.2s, background 0.2s;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.steamSearchBox:focus-within {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.steamSearchBox input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #dcdedf;
+  font-size: 13px;
+}
+
+.steamSearchBox input::placeholder {
+  color: #6c7d91;
+}
+
+.steamSearchBox .searchBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #8f98a0;
+  cursor: pointer;
+}
+
+.steamSearchBox .searchBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
 .steamInput {

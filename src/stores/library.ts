@@ -1,7 +1,8 @@
 import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { getGameAdapter, getModType } from "@/adapters";
-import { gamePresets } from "@/data/game-presets";
+import gamePresetsFromJson from "@/data/game-presets.json";
+const gamePresets = gamePresetsFromJson as GamePreset[];
 import type {
   AppData,
   AppLogEntry,
@@ -839,19 +840,7 @@ export const useLibraryStore = defineStore("library", () => {
     }
 
     return visibleGamePresets.value.filter((preset) =>
-      [
-        preset.name,
-        preset.sourceFile,
-        preset.glossGameId,
-        preset.steamAppId,
-        preset.nexusDomain,
-        preset.nexusGameId,
-        preset.exeNames.join(" "),
-        preset.typeNames.join(" ")
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(keyword)
+      JSON.stringify(preset).toLowerCase().includes(keyword)
     );
   });
 
@@ -4474,7 +4463,6 @@ export const useLibraryStore = defineStore("library", () => {
     showOriginalNexusText,
     handleNxmUrl,
     downloadNexusFile,
-    checkModUpdate,
     checkActiveGameUpdates,
     updateNexusMod,
     updateAllAvailableMods,

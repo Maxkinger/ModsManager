@@ -1,8 +1,4 @@
-import type { GamePreset } from "@/types/domain";
-
-// Generated from Gloss Mod Manager game metadata.
-// Online source scope is NexusMods-only. 3DM/Gloss, Thunderstore, mod.io, CurseForge and GameBanana are intentionally excluded.
-export const gamePresets: GamePreset[] = [
+[
   {
     "id": "7daystodie",
     "name": "7 Days to Die",
@@ -20,7 +16,8 @@ export const gamePresets: GamePreset[] = [
       "Avatars",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "七日杀"
   },
   {
     "id": "ace7game",
@@ -37,7 +34,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "皇牌空战 7：未知空域"
   },
   {
     "id": "americantrucksimulator",
@@ -58,7 +56,8 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "美国卡车模拟"
   },
   {
     "id": "anno117",
@@ -76,7 +75,8 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "纪元 117：罗马治下"
   },
   {
     "id": "anno1800",
@@ -94,7 +94,8 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "纪元 1800"
   },
   {
     "id": "armoredcore6",
@@ -112,7 +113,8 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "Engine 2"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "装甲核心 6：境界天火"
   },
   {
     "id": "acodyssey",
@@ -131,7 +133,8 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "刺客信条：奥德赛"
   },
   {
     "id": "atomicheart",
@@ -148,7 +151,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "原子之心"
   },
   {
     "id": "baldursgate3",
@@ -172,7 +176,8 @@ export const gamePresets: GamePreset[] = [
       "bg3se",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "博德之门 3"
   },
   {
     "id": "blackwukong",
@@ -189,7 +194,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "黑神话：悟空"
   },
   {
     "id": "borderlands3",
@@ -206,7 +212,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "无主之地 3"
   },
   {
     "id": "borderlands4",
@@ -224,7 +231,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "无主之地 4"
   },
   {
     "id": "citiesskylines2",
@@ -241,7 +249,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "Map"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "城市：天际线 2"
   },
   {
     "id": "expedition33",
@@ -259,7 +268,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "明暗交界：33 号探险队"
   },
   {
     "id": "codevein",
@@ -276,7 +286,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "噬血代码"
   },
   {
     "id": "redalert2",
@@ -296,7 +307,8 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "命令与征服：红色警戒 2"
   },
   {
     "id": "contrabandpolice",
@@ -313,7 +325,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "缉私警察"
   },
   {
     "id": "crusaderkings3",
@@ -331,7 +344,8 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "十字军之王 3"
   },
   {
     "id": "cultofthelamb",
@@ -348,7 +362,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "咩咩启示录"
   },
   {
     "id": "cyberpunk2077",
@@ -370,7 +385,8 @@ export const gamePresets: GamePreset[] = [
       "主目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "赛博朋克 2077"
   },
   {
     "id": "daoyanjue",
@@ -387,7 +403,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "道衍诀"
   },
   {
     "id": "darkestdungeon",
@@ -405,7 +422,8 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "暗黑地牢"
   },
   {
     "id": "darkestdungeon2",
@@ -422,7 +440,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "StreamingAssets"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "暗黑地牢 2"
   },
   {
     "id": "deadoralive6",
@@ -442,7 +461,8 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "死或生 6"
   },
   {
     "id": "deadrisingdeluxeremaster",
@@ -459,7 +479,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "丧尸围城：豪华复刻版"
   },
   {
     "id": "devilmaycry5",
@@ -476,7 +497,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "鬼泣 5"
   },
   {
     "id": "divinityos2",
@@ -494,7 +516,8 @@ export const gamePresets: GamePreset[] = [
       "pak",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "神界：原罪 2"
   },
   {
     "id": "dontstarve",
@@ -513,7 +536,8 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "饥荒：联机版"
   },
   {
     "id": "dqiiihd2dremake",
@@ -530,7 +554,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "勇者斗恶龙 III HD-2D 重制版"
   },
   {
     "id": "dbfighterz",
@@ -547,7 +572,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "龙珠斗士 Z"
   },
   {
     "id": "dragoncliff",
@@ -564,7 +590,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "龙崖"
   },
   {
     "id": "dragonsdogma2",
@@ -581,7 +608,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "龙之信条 2"
   },
   {
     "id": "dyinglight2",
@@ -599,7 +627,8 @@ export const gamePresets: GamePreset[] = [
       "dat",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "消逝的光芒 2"
   },
   {
     "id": "dysonsphereprogram",
@@ -616,7 +645,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "戴森球计划"
   },
   {
     "id": "eldenring",
@@ -636,7 +666,8 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "艾尔登法环"
   },
   {
     "id": "duckov",
@@ -654,7 +685,8 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "逃离塔科夫"
   },
   {
     "id": "eurotrucksimulator2",
@@ -675,7 +707,8 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "欧洲卡车模拟 2"
   },
   {
     "id": "expeditions",
@@ -693,7 +726,8 @@ export const gamePresets: GamePreset[] = [
       "pak",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "远征：泥泞奔驰游戏"
   },
   {
     "id": "fallout4",
@@ -715,7 +749,8 @@ export const gamePresets: GamePreset[] = [
       "f4se",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "辐射 4"
   },
   {
     "id": "fs22",
@@ -733,7 +768,8 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "模拟农场 22"
   },
   {
     "id": "ff7rebirth",
@@ -750,7 +786,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "最终幻想 VII 重生"
   },
   {
     "id": "ff7re",
@@ -767,7 +804,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "最终幻想 VII 重制版"
   },
   {
     "id": "flintlock",
@@ -784,7 +822,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "燧石枪：黎明之围"
   },
   {
     "id": "frostpunk2",
@@ -801,7 +840,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "冰汽时代 2"
   },
   {
     "id": "genshin-impact",
@@ -821,7 +861,8 @@ export const gamePresets: GamePreset[] = [
       "GIMI",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "原神"
   },
   {
     "id": "ghostoftsushima",
@@ -839,7 +880,8 @@ export const gamePresets: GamePreset[] = [
       "psarc",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "对马岛之魂"
   },
   {
     "id": "granbluefantasyrelink",
@@ -856,7 +898,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "碧蓝幻想：Relink"
   },
   {
     "id": "gta5",
@@ -877,7 +920,8 @@ export const gamePresets: GamePreset[] = [
       "载具",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "侠盗猎车手 5"
   },
   {
     "id": "gta5enhanced",
@@ -898,7 +942,8 @@ export const gamePresets: GamePreset[] = [
       "载具",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "侠盗猎车手 5 增强版"
   },
   {
     "id": "grimdawn",
@@ -917,7 +962,8 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "恐怖黎明"
   },
   {
     "id": "gtasade",
@@ -934,7 +980,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "侠盗猎车手：圣安地列斯 最终版"
   },
   {
     "id": "gulong",
@@ -951,7 +998,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "Mods"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "古龙风云录"
   },
   {
     "id": "gb4",
@@ -968,7 +1016,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "高达破坏者 4"
   },
   {
     "id": "hades2",
@@ -987,7 +1036,8 @@ export const gamePresets: GamePreset[] = [
       "ModImporter",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "哈迪斯 2"
   },
   {
     "id": "haishan",
@@ -1004,7 +1054,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "海山"
   },
   {
     "id": "hogwartslegacy",
@@ -1021,7 +1072,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "霍格沃茨之遗"
   },
   {
     "id": "hollowknight",
@@ -1038,7 +1090,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "空洞骑士"
   },
   {
     "id": "silksong",
@@ -1055,7 +1108,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "空洞骑士：丝之歌"
   },
   {
     "id": "homeworld3",
@@ -1072,7 +1126,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "家园 3"
   },
   {
     "id": "humankind",
@@ -1090,7 +1145,8 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "人类"
   },
   {
     "id": "inzoi",
@@ -1107,7 +1163,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "MODkit"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "inZOI"
   },
   {
     "id": "jaggedalliance3",
@@ -1125,7 +1182,8 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "铁血联盟 3"
   },
   {
     "id": "jumpforce",
@@ -1142,7 +1200,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "JUMP大乱斗"
   },
   {
     "id": "just-cause-3",
@@ -1161,7 +1220,8 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "正当防卫 3"
   },
   {
     "id": "kenshi",
@@ -1179,7 +1239,8 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "剑士"
   },
   {
     "id": "kerbalspaceprogram",
@@ -1198,7 +1259,8 @@ export const gamePresets: GamePreset[] = [
       "craft",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "坎巴拉太空计划"
   },
   {
     "id": "kingdomcomedeliverance",
@@ -1216,7 +1278,8 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "天国：拯救"
   },
   {
     "id": "kingdomcomedeliverance2",
@@ -1234,7 +1297,8 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "天国：拯救 2"
   },
   {
     "id": "l4d2",
@@ -1251,7 +1315,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "求生之路 2"
   },
   {
     "id": "legendofheros",
@@ -1269,7 +1334,8 @@ export const gamePresets: GamePreset[] = [
       "Data",
       "Portraits"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "三国群英传 8"
   },
   {
     "id": "legendofmortal",
@@ -1286,7 +1352,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "活侠传"
   },
   {
     "id": "lethalcompany",
@@ -1303,7 +1370,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "致命公司"
   },
   {
     "id": "liesofp",
@@ -1320,7 +1388,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "匹诺曹的谎言"
   },
   {
     "id": "likeadragon8",
@@ -1339,7 +1408,8 @@ export const gamePresets: GamePreset[] = [
       "RyuModManager",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "如龙 8"
   },
   {
     "id": "lordsofthefallen",
@@ -1356,7 +1426,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "堕落之主"
   },
   {
     "id": "manorlords",
@@ -1373,7 +1444,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "庄园领主"
   },
   {
     "id": "michangsheng",
@@ -1393,7 +1465,8 @@ export const gamePresets: GamePreset[] = [
       "Next类",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "觅长生"
   },
   {
     "id": "monsterhunterwilds",
@@ -1410,7 +1483,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "怪物猎人：荒野"
   },
   {
     "id": "monsterhunterworld",
@@ -1430,7 +1504,8 @@ export const gamePresets: GamePreset[] = [
       "插件",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "怪物猎人：世界"
   },
   {
     "id": "monsterhunterrise",
@@ -1447,7 +1522,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "怪物猎人：崛起"
   },
   {
     "id": "mountblade2",
@@ -1466,7 +1542,8 @@ export const gamePresets: GamePreset[] = [
       "Modules",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "骑马与砍杀 2：霸主"
   },
   {
     "id": "nextjianghu2",
@@ -1483,7 +1560,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "下一站江湖Ⅱ"
   },
   {
     "id": "nioh2",
@@ -1503,7 +1581,8 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "仁王 2"
   },
   {
     "id": "nioh3",
@@ -1523,7 +1602,8 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "仁王 3"
   },
   {
     "id": "nomanssky",
@@ -1541,7 +1621,8 @@ export const gamePresets: GamePreset[] = [
       "pak/lua",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "无人深空"
   },
   {
     "id": "oblivionremastered",
@@ -1562,7 +1643,8 @@ export const gamePresets: GamePreset[] = [
       "Data",
       "esp"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "上古卷轴 IV：湮没"
   },
   {
     "id": "pal7",
@@ -1579,7 +1661,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "仙剑奇侠传七"
   },
   {
     "id": "palworld",
@@ -1597,7 +1680,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "幻兽帕鲁"
   },
   {
     "id": "planetzoo",
@@ -1615,7 +1699,8 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "动物园之星"
   },
   {
     "id": "re4remake",
@@ -1632,7 +1717,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "生化危机 4：重制版"
   },
   {
     "id": "reddeadredemption",
@@ -1653,7 +1739,8 @@ export const gamePresets: GamePreset[] = [
       "red",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "荒野大镖客：救赎"
   },
   {
     "id": "reddead2",
@@ -1675,7 +1762,8 @@ export const gamePresets: GamePreset[] = [
       "script",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "荒野大镖客：救赎 2"
   },
   {
     "id": "re2remake",
@@ -1692,7 +1780,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "生化危机 2：重制版"
   },
   {
     "id": "re3remake",
@@ -1709,7 +1798,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "生化危机 3：重制版"
   },
   {
     "id": "residentevilrequiem",
@@ -1726,7 +1816,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "生化危机：安魂曲"
   },
   {
     "id": "residentevilvillage",
@@ -1748,7 +1839,8 @@ export const gamePresets: GamePreset[] = [
       "主目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "生化危机 8：村庄"
   },
   {
     "id": "rimworld",
@@ -1766,7 +1858,8 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "边缘世界"
   },
   {
     "id": "riskofrain2",
@@ -1783,7 +1876,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "雨中冒险 2"
   },
   {
     "id": "sekiro",
@@ -1802,7 +1896,8 @@ export const gamePresets: GamePreset[] = [
       "ModEngine",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "只狼：影逝二度"
   },
   {
     "id": "hellblade2",
@@ -1819,7 +1914,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "地狱之刃 2：塞娜的史诗"
   },
   {
     "id": "sottr",
@@ -1838,7 +1934,8 @@ export const gamePresets: GamePreset[] = [
       "游戏根目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "古墓丽影：暗影"
   },
   {
     "id": "shapez2",
@@ -1855,7 +1952,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "异形工厂 2"
   },
   {
     "id": "civilizationvi",
@@ -1873,7 +1971,8 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "文明 6"
   },
   {
     "id": "civilizationvii",
@@ -1893,7 +1992,8 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "文明 7"
   },
   {
     "id": "sifu",
@@ -1910,7 +2010,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "师父"
   },
   {
     "id": "silenthillf",
@@ -1927,7 +2028,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "寂静岭 f"
   },
   {
     "id": "skyrimse",
@@ -1948,7 +2050,8 @@ export const gamePresets: GamePreset[] = [
       "Plugins",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "上古卷轴 5：天际 特别版"
   },
   {
     "id": "sonsoftheforest",
@@ -1965,7 +2068,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "森林之子"
   },
   {
     "id": "sparkingzero",
@@ -1982,7 +2086,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "龙珠：电光炸裂！ZERO"
   },
   {
     "id": "stalker2",
@@ -1999,7 +2104,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "潜行者 2"
   },
   {
     "id": "stardewvalley",
@@ -2019,7 +2125,8 @@ export const gamePresets: GamePreset[] = [
       "通用",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "星露谷物语"
   },
   {
     "id": "starfield",
@@ -2042,7 +2149,8 @@ export const gamePresets: GamePreset[] = [
       "esp",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "星空"
   },
   {
     "id": "stateofdecay2",
@@ -2059,7 +2167,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "腐烂国度 2"
   },
   {
     "id": "stellarblade",
@@ -2076,7 +2185,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "剑星"
   },
   {
     "id": "stellaris",
@@ -2094,7 +2204,8 @@ export const gamePresets: GamePreset[] = [
       "Mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "群星"
   },
   {
     "id": "streetfighter6",
@@ -2116,7 +2227,8 @@ export const gamePresets: GamePreset[] = [
       "主目录",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "街头霸王 6"
   },
   {
     "id": "subnautica",
@@ -2133,7 +2245,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "深海迷航"
   },
   {
     "id": "taleofimmortal",
@@ -2151,7 +2264,8 @@ export const gamePresets: GamePreset[] = [
       "通用",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "鬼谷八荒"
   },
   {
     "id": "tekken8",
@@ -2168,7 +2282,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "铁拳 8"
   },
   {
     "id": "terraria",
@@ -2187,7 +2302,8 @@ export const gamePresets: GamePreset[] = [
       "tmod",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "泰拉瑞亚"
   },
   {
     "id": "thecallistoprotocol",
@@ -2204,7 +2320,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "木卫四协议"
   },
   {
     "id": "thehuntercotw",
@@ -2222,7 +2339,8 @@ export const gamePresets: GamePreset[] = [
       "dropzone",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "猎人：荒野的召唤"
   },
   {
     "id": "lastus2",
@@ -2241,7 +2359,8 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "最后生还者 第二部"
   },
   {
     "id": "thelongdark",
@@ -2258,7 +2377,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "漫漫长夜"
   },
   {
     "id": "thelostvillage",
@@ -2275,7 +2395,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "山门与幻境"
   },
   {
     "id": "theroadofjianghu",
@@ -2292,7 +2413,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "江湖路"
   },
   {
     "id": "thescrolloftaiwu",
@@ -2310,7 +2432,8 @@ export const gamePresets: GamePreset[] = [
       "通用",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "太吾绘卷"
   },
   {
     "id": "thesims4",
@@ -2327,7 +2450,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "模拟人生 4"
   },
   {
     "id": "thewitcher3",
@@ -2346,7 +2470,8 @@ export const gamePresets: GamePreset[] = [
       "dlc",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "巫师 3：狂猎"
   },
   {
     "id": "titanfall2",
@@ -2366,7 +2491,8 @@ export const gamePresets: GamePreset[] = [
       "Northstar",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "泰坦陨落 2"
   },
   {
     "id": "totalwartk",
@@ -2385,7 +2511,8 @@ export const gamePresets: GamePreset[] = [
       "UI",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "全面战争：三国"
   },
   {
     "id": "tww3",
@@ -2404,7 +2531,8 @@ export const gamePresets: GamePreset[] = [
       "UI",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "全面战争：战锤 3"
   },
   {
     "id": "twopointcampus",
@@ -2422,7 +2550,8 @@ export const gamePresets: GamePreset[] = [
       "mods",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "双点校园"
   },
   {
     "id": "valheim",
@@ -2439,7 +2568,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "英灵神殿"
   },
   {
     "id": "vrising",
@@ -2456,7 +2586,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "夜族崛起"
   },
   {
     "id": "wanderingsword",
@@ -2473,7 +2604,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "逸剑风云决"
   },
   {
     "id": "spacemarine2",
@@ -2491,7 +2623,8 @@ export const gamePresets: GamePreset[] = [
       "pak",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "战锤 40K：星际战士 2"
   },
   {
     "id": "warmsnow",
@@ -2508,7 +2641,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "暖雪"
   },
   {
     "id": "warriorsorochi4",
@@ -2526,7 +2660,8 @@ export const gamePresets: GamePreset[] = [
       "bin",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "无双大蛇 3"
   },
   {
     "id": "watchdogs2",
@@ -2544,7 +2679,8 @@ export const gamePresets: GamePreset[] = [
       "dat",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "看门狗 2"
   },
   {
     "id": "wuchangfallenfeathers",
@@ -2561,7 +2697,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "通用类型"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "明末：渊虚之羽"
   },
   {
     "id": "wulinsh",
@@ -2578,7 +2715,8 @@ export const gamePresets: GamePreset[] = [
     "typeNames": [
       "mods"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "武林志"
   },
   {
     "id": "x4foundations",
@@ -2596,7 +2734,8 @@ export const gamePresets: GamePreset[] = [
       "extensions",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "X4：基石"
   },
   {
     "id": "xcom2",
@@ -2614,6 +2753,7 @@ export const gamePresets: GamePreset[] = [
       "通用类型",
       "未知"
     ],
-    "adapterStatus": "implemented"
+    "adapterStatus": "implemented",
+    "zhName": "幽浮 2"
   }
-];
+]

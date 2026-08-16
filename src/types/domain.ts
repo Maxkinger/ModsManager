@@ -6,6 +6,7 @@ export interface ManagedGame {
   nexusDomain: string;
   nexusGameId: number;
   name: string;
+  zhName?: string;
   path: string;
   installPath: string;
   launchArgs: string;
@@ -191,6 +192,7 @@ export interface GameAdapter {
 export interface GamePreset {
   id: string;
   name: string;
+  zhName?: string;
   sourceFile: string;
   glossGameId: number;
   steamAppId: number;

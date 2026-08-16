@@ -1,4 +1,4 @@
-import { gamePresets } from "@/data/game-presets";
+import gamePresetsFromJson from "@/data/game-presets.json";
 import { baldursGate3Adapter } from "@/adapters/baldursgate3";
 import { blackWukongAdapter } from "@/adapters/blackwukong";
 import { commonAdapter } from "@/adapters/common";
@@ -17,7 +17,9 @@ import { taleOfImmortalAdapter } from "@/adapters/taleofimmortal";
 import { createCatalogAdapter } from "@/adapters/utils";
 import { createMelonLoaderAdapter, createUnityAdapter } from "@/adapters/unity";
 import { createUnrealAdapter } from "@/adapters/unreal";
-import type { GameAdapter } from "@/types/domain";
+import type { GameAdapter, GamePreset } from "@/types/domain";
+
+const gamePresets = gamePresetsFromJson as GamePreset[];
 
 const explicitAdapters: GameAdapter[] = [
   baldursGate3Adapter,
