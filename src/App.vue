@@ -1643,13 +1643,16 @@ async function resumeDownloadBatch() {
             <button class="secondary" :disabled="library.busy" @click="library.chooseActiveGamePath">
               <SquarePen :size="16" />
               游戏目录
+              <small style="display: block; font-weight: 400; opacity: 0.6; font-size: 11px; margin-top: 2px;">手动指定游戏安装路径</small>
             </button>
             <button class="secondary" :disabled="library.busy" @click="library.chooseActiveGameExecutable">
               选择 exe
+              <small style="display: block; font-weight: 400; opacity: 0.6; font-size: 11px; margin-top: 2px;">指定游戏主程序文件</small>
             </button>
           </div>
           <label class="modalField">
-            封面图片 (支持输入网址或选择本地图片)
+            封面图片
+            <small style="font-weight: 400; opacity: 0.6; margin-left: 6px;">粘贴网址或选择本地图片</small>
             <div style="display: flex; gap: 8px;">
               <input
                 :value="library.activeGame.coverUrl"
@@ -1664,6 +1667,7 @@ async function resumeDownloadBatch() {
           </label>
           <label class="modalField">
             启动参数
+            <small style="font-weight: 400; opacity: 0.6; margin-left: 6px;">启动游戏时附加的命令行参数</small>
             <input
               :value="library.activeGame.launchArgs"
               placeholder="例如 -windowed 或 --skip-launcher"
