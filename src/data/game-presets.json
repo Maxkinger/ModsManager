@@ -10,7 +10,7 @@
     "exeNames": [
       "7DaysToDie.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/40.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/251570/header.jpg",
     "typeNames": [
       "Mods",
       "Avatars",
@@ -30,7 +30,7 @@
     "exeNames": [
       "Ace7Game.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65f174af429dd.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/502500/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -48,7 +48,7 @@
     "exeNames": [
       "amtrucks.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/52.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/270880/header.jpg",
     "typeNames": [
       "scs",
       "manifest",
@@ -70,7 +70,7 @@
     "exeNames": [
       "Anno117.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_690ab14576ba4.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/3274580/header.jpg",
     "typeNames": [
       "mods",
       "未知"
@@ -89,7 +89,7 @@
     "exeNames": [
       "Anno1800.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/189.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/916440/header.jpg",
     "typeNames": [
       "mods",
       "未知"
@@ -108,7 +108,7 @@
     "exeNames": [
       "armoredcore6.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64e5a555a4360.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1888160/header.jpg",
     "typeNames": [
       "通用类型",
       "Engine 2"
@@ -127,7 +127,7 @@
     "exeNames": [
       "ACOdyssey.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202502/MOD67a5c94a7b758.webp@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/812140/header.jpg",
     "typeNames": [
       "forger2",
       "游戏根目录",
@@ -147,7 +147,7 @@
     "exeNames": [
       "AtomicHeart.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/63f5846644d4e.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/668580/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -166,7 +166,7 @@
       "bg3.exe",
       "bg3_dx11.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/5f9fc80ea912c.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1086940/header.jpg",
     "typeNames": [
       "pak",
       "Data",
@@ -190,7 +190,7 @@
     "exeNames": [
       "b1.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202408/MOD66b5c72696594.webp@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2358720/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -208,7 +208,7 @@
     "exeNames": [
       "Borderlands3.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/188_1.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/397540/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -227,7 +227,7 @@
       "Borderlands4.exe",
       "OakGame-Win64-Shipping.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68c3711a6f87b.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1285190/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -245,7 +245,7 @@
     "exeNames": [
       "Cities2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6535dbba96ba3.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/949230/header.jpg",
     "typeNames": [
       "Map"
     ],
@@ -264,7 +264,7 @@
       "Expedition33_Steam.exe",
       "SandFall-Win64-Shipping.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_6809e94cd72e9.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1903340/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -282,7 +282,7 @@
     "exeNames": [
       "CodeVein.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/207.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/678960/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -302,7 +302,7 @@
       "gamemd.exe",
       "cnc-ddraw config.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_6a2242d3d562a.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2229850/header.jpg",
     "typeNames": [
       "游戏根目录",
       "未知"
@@ -321,7 +321,7 @@
     "exeNames": [
       "ContrabandPolice.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65f1169237040.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/756800/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -339,7 +339,7 @@
     "exeNames": [
       "ck3.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/236.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1158310/header.jpg",
     "typeNames": [
       "Mods",
       "未知"
@@ -358,7 +358,7 @@
     "exeNames": [
       "Cult Of The Lamb.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65f2c99bb3e08.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1313140/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -377,7 +377,7 @@
       "Cyberpunk2077.exe",
       "REDprelauncher.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/195.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1091500/header.jpg",
     "typeNames": [
       "CET",
       "archive",
@@ -399,7 +399,7 @@
     "exeNames": [
       "FNGameX.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/66447d161b2ff.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1951220/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -417,7 +417,7 @@
     "exeNames": [
       "Darkest.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/88.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/262060/header.jpg",
     "typeNames": [
       "mods",
       "未知"
@@ -436,7 +436,7 @@
     "exeNames": [
       "Darkest Dungeon II.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/664ef0d003b8a.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1940340/header.jpg",
     "typeNames": [
       "StreamingAssets"
     ],
@@ -454,7 +454,7 @@
     "exeNames": [
       "DOA6.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/182.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/838380/header.jpg",
     "typeNames": [
       "mods",
       "Redelbe",
@@ -475,7 +475,7 @@
     "exeNames": [
       "DRDR.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202410/MOD67077f9f042f5.webp@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2527390/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -493,7 +493,7 @@
     "exeNames": [
       "DevilMayCry5.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/183.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/601150/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -511,7 +511,7 @@
     "exeNames": [
       "EoCApp.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/34.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/435150/header.jpg",
     "typeNames": [
       "pak",
       "未知"
@@ -531,7 +531,7 @@
       "dontstarve_steam.exe",
       "dontstarve_steam_x64.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/14.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/322330/header.jpg",
     "typeNames": [
       "通用类型",
       "未知"
@@ -550,7 +550,7 @@
     "exeNames": [
       "DQIIIHD2DRemake.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202412/MOD675a59d27912a.png@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2701660/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -568,7 +568,7 @@
     "exeNames": [
       "DBFighterZ.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/157.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/678950/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -586,7 +586,7 @@
     "exeNames": [
       "game.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/235.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/758190/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -604,7 +604,7 @@
     "exeNames": [
       "DD2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65f8f21471754.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2054970/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -622,7 +622,7 @@
     "exeNames": [
       "DyingLightGame_x64_rwdi.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61dbf5a660a03.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/534380/header.jpg",
     "typeNames": [
       "dat",
       "未知"
@@ -641,7 +641,7 @@
     "exeNames": [
       "DSPGAME.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/60112fb1bdafa.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1366540/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -659,7 +659,7 @@
     "exeNames": [
       "eldenring.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/620b6924d8c0d.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1245620/header.jpg",
     "typeNames": [
       "通用类型",
       "Engine 2",
@@ -680,7 +680,7 @@
     "exeNames": [
       "Duckov.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68f704683991c.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/3167020/header.jpg",
     "typeNames": [
       "mods",
       "未知"
@@ -699,7 +699,7 @@
     "exeNames": [
       "eurotrucks2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/15.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/227300/header.jpg",
     "typeNames": [
       "scs",
       "manifest",
@@ -721,7 +721,7 @@
     "exeNames": [
       "Expeditions.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6670007e442e8.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2477340/header.jpg",
     "typeNames": [
       "pak",
       "未知"
@@ -742,7 +742,7 @@
       "Fallout4Launcher.exe",
       "f4se_loader.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6b.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/377160/header.jpg",
     "typeNames": [
       "Plugins",
       "Data",
@@ -763,7 +763,7 @@
     "exeNames": [
       "FarmingSimulator2022.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61a9e018c601c.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1248130/header.jpg",
     "typeNames": [
       "通用类型",
       "未知"
@@ -782,7 +782,7 @@
     "exeNames": [
       "ff7rebirth.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_683582d5e4a77.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2909400/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -800,7 +800,7 @@
     "exeNames": [
       "ff7remake.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61c027ed1cbc1.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1462040/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -818,7 +818,7 @@
     "exeNames": [
       "Saltpeter.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202407/MOD669a223b01b15.webp@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1832040/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -836,7 +836,7 @@
     "exeNames": [
       "Frostpunk2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202410/MOD6706347b70717.webp@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1601580/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -875,7 +875,7 @@
     "exeNames": [
       "GhostOfTsushima.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/664703cf381cf.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2215430/header.jpg",
     "typeNames": [
       "psarc",
       "未知"
@@ -894,7 +894,7 @@
     "exeNames": [
       "granblue_fantasy_relink.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65bb62a24e92f.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/881020/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -912,7 +912,7 @@
     "exeNames": [
       "GTA5.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/616cd448533b9.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg",
     "typeNames": [
       "通用类型",
       "脚本",
@@ -934,7 +934,7 @@
     "exeNames": [
       "GTA5_Enhanced.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_692fc8cd5ea06.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/3240220/header.jpg",
     "typeNames": [
       "通用类型",
       "脚本",
@@ -956,7 +956,7 @@
     "exeNames": [
       "Grim Dawn.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/80.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/219990/header.jpg",
     "typeNames": [
       "mods",
       "游戏根目录",
@@ -976,7 +976,7 @@
     "exeNames": [
       "SanAndreas.exe"
     ],
-    "coverUrl": "imgs/gtasade_logo.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1547000/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -994,7 +994,7 @@
     "exeNames": [
       "GuLong.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65bef978b5da4.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2340650/header.jpg",
     "typeNames": [
       "Mods"
     ],
@@ -1012,7 +1012,7 @@
     "exeNames": [
       "GB4.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202410/MOD670635775ec6c.webp@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1672500/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1030,7 +1030,7 @@
     "exeNames": [
       "Hades2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/663add9906fe2.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1145350/header.jpg",
     "typeNames": [
       "Mods",
       "ModImporter",
@@ -1050,7 +1050,7 @@
     "exeNames": [
       "海山.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202407/MOD669638c34fae8.webp@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2180340/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1068,7 +1068,7 @@
     "exeNames": [
       "HogwartsLegacy.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/63e2f9656f092.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/990080/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1086,7 +1086,7 @@
     "exeNames": [
       "hollow_knight.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68ef7e4cbc70c.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/367520/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1104,7 +1104,7 @@
     "exeNames": [
       "Hollow Knight Silksong.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68baa8da077d0.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1030300/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1122,7 +1122,7 @@
     "exeNames": [
       "Homeworld3.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6423ab827ad41.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1840080/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1140,7 +1140,7 @@
     "exeNames": [
       "Humankind.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65a7365985d61.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1124300/header.jpg",
     "typeNames": [
       "mods",
       "未知"
@@ -1159,7 +1159,7 @@
     "exeNames": [
       "inZOI.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202503/MOD67c7ff0ec9f40.webp@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2456740/header.jpg",
     "typeNames": [
       "MODkit"
     ],
@@ -1177,7 +1177,7 @@
     "exeNames": [
       "JA3.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64be23bb84fe3.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1084160/header.jpg",
     "typeNames": [
       "通用类型",
       "未知"
@@ -1196,7 +1196,7 @@
     "exeNames": [
       "JUMP_FORCE.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/181.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/816020/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1214,7 +1214,7 @@
     "exeNames": [
       "JustCause3.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/50.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/225540/header.jpg",
     "typeNames": [
       "dropzone",
       "游戏根目录",
@@ -1234,7 +1234,7 @@
     "exeNames": [
       "kenshi_x64.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/186.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/233860/header.jpg",
     "typeNames": [
       "Mods",
       "未知"
@@ -1253,7 +1253,7 @@
     "exeNames": [
       "KSP_x64.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/62.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/220200/header.jpg",
     "typeNames": [
       "GameData",
       "craft",
@@ -1273,7 +1273,7 @@
     "exeNames": [
       "KingdomCome.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/155.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/379430/header.jpg",
     "typeNames": [
       "Mods",
       "未知"
@@ -1292,7 +1292,7 @@
     "exeNames": [
       "KingdomCome.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202502/MOD67a1ffc3c7198.jpg@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1771300/header.jpg",
     "typeNames": [
       "Mods",
       "未知"
@@ -1311,7 +1311,7 @@
     "exeNames": [
       "left4dead2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/12.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/550/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1329,7 +1329,7 @@
     "exeNames": [
       "ThreeKingdom.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_67eca42846bf0.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/3020510/header.jpg",
     "typeNames": [
       "Data",
       "Portraits"
@@ -1348,7 +1348,7 @@
     "exeNames": [
       "Mortal.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/667126e01ba80.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1859910/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1366,7 +1366,7 @@
     "exeNames": [
       "Lethal Company.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65a0f0fb13a40.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1966720/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1384,7 +1384,7 @@
     "exeNames": [
       "LOP.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65127b4a5041a.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1627720/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1402,7 +1402,7 @@
     "exeNames": [
       "likeadragon8.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65b9e51412790.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2072450/header.jpg",
     "typeNames": [
       "mods",
       "RyuModManager",
@@ -1422,7 +1422,7 @@
     "exeNames": [
       "LOTF2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/664db7b3148f8.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1501750/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1440,7 +1440,7 @@
     "exeNames": [
       "ManorLords.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/662db2a8b4521.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1363080/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1458,7 +1458,7 @@
     "exeNames": [
       "觅长生.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/60d93f98c7462.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1189490/header.jpg",
     "typeNames": [
       "bin",
       "插件",
@@ -1479,7 +1479,7 @@
     "exeNames": [
       "MonsterHunterWilds.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202502/MOD67beca9449633.webp@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2246340/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1497,7 +1497,7 @@
     "exeNames": [
       "MonsterHunterWorld.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/161b.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/582010/header.jpg",
     "typeNames": [
       "Stracker",
       "通用类型",
@@ -1518,7 +1518,7 @@
     "exeNames": [
       "MonsterHunterRise.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61dbdb30cdbce.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1446780/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1537,7 +1537,7 @@
       "Bannerlord.exe",
       "TaleWorlds.MountAndBlade.Launcher.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/225.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/261550/header.jpg",
     "typeNames": [
       "Modules",
       "未知"
@@ -1556,7 +1556,7 @@
     "exeNames": [
       "下一站江湖Ⅱ.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6629b6eff3688.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1606180/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1574,7 +1574,7 @@
     "exeNames": [
       "nioh2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6041c647d7a35.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1325200/header.jpg",
     "typeNames": [
       "Mod Enabler",
       "mods",
@@ -1595,7 +1595,7 @@
     "exeNames": [
       "Nioh3.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_699ec8ac99e3b.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/3681010/header.jpg",
     "typeNames": [
       "tools",
       "fdata",
@@ -1616,7 +1616,7 @@
     "exeNames": [
       "NMS.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/24.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/275850/header.jpg",
     "typeNames": [
       "pak/lua",
       "未知"
@@ -1637,7 +1637,7 @@
       "OblivionRemastered-Win64-Shipping.exe",
       "OblivionRemastered-WinGDK-Shipping.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68084078343d1.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2623190/header.jpg",
     "typeNames": [
       "游戏根目录",
       "Data",
@@ -1657,7 +1657,7 @@
     "exeNames": [
       "Pal7.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6256729d72a41.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1543030/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1676,7 +1676,7 @@
       "Palworld.exe",
       "PalServer.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65ae3cdbc7680.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1623730/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1694,7 +1694,7 @@
     "exeNames": [
       "PlanetZoo.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/653a085c9ddd7.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/703080/header.jpg",
     "typeNames": [
       "Mods",
       "未知"
@@ -1713,7 +1713,7 @@
     "exeNames": [
       "re4.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/63e310bf62591.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2050650/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1731,7 +1731,7 @@
     "exeNames": [
       "RDR.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202410/MOD6721f29b85384.jpg@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2668510/header.jpg",
     "typeNames": [
       "ScriptHookRDR",
       "RedHook",
@@ -1753,7 +1753,7 @@
     "exeNames": [
       "RDR2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/208.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg",
     "typeNames": [
       "asi",
       "lml",
@@ -1776,7 +1776,7 @@
     "exeNames": [
       "re2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/180.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/883710/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1794,7 +1794,7 @@
     "exeNames": [
       "re3.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/224.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/952060/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1812,7 +1812,7 @@
     "exeNames": [
       "re9.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_69a0f03164da1.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/3764200/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1830,7 +1830,7 @@
     "exeNames": [
       "re8.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6095126f96a6d.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1196590/header.jpg",
     "typeNames": [
       "REFramework",
       "autorun",
@@ -1853,7 +1853,7 @@
     "exeNames": [
       "RimWorldWin64.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/19.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/294100/header.jpg",
     "typeNames": [
       "通用类型",
       "未知"
@@ -1872,7 +1872,7 @@
     "exeNames": [
       "Risk of Rain 2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/607926e04c16a.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/632360/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1890,7 +1890,7 @@
     "exeNames": [
       "sekiro.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/185.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/814380/header.jpg",
     "typeNames": [
       "基础类型",
       "ModEngine",
@@ -1910,7 +1910,7 @@
     "exeNames": [
       "Hellblade2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/181.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2461850/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1928,7 +1928,7 @@
     "exeNames": [
       "SOTTR.exe"
     ],
-    "coverUrl": "",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/750920/header.jpg",
     "typeNames": [
       "forger2",
       "游戏根目录",
@@ -1948,7 +1948,7 @@
     "exeNames": [
       "shapez 2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202408/MOD66bf055eb2ba5.webp@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2162800/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -1966,7 +1966,7 @@
     "exeNames": [
       "CivilizationVI.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/5.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/289070/header.jpg",
     "typeNames": [
       "mods",
       "未知"
@@ -1987,7 +1987,7 @@
       "Civ7_Win64_Vulkan_FinalRelease.exe",
       "FiraxisCrashReporter.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_681b310c641ef.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1295660/header.jpg",
     "typeNames": [
       "mods",
       "未知"
@@ -2006,7 +2006,7 @@
     "exeNames": [
       "Sifu.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/62207195e18a2.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2138710/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2024,7 +2024,7 @@
     "exeNames": [
       "SHf.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68d35aebce565.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2947440/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2043,7 +2043,7 @@
       "SkyrimSE.exe",
       "skse64_loader.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/2.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/489830/header.jpg",
     "typeNames": [
       "Data",
       "skse64",
@@ -2064,7 +2064,7 @@
     "exeNames": [
       "SonsOfTheForest.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/63fc08e3ef48b.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1326470/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2082,7 +2082,7 @@
     "exeNames": [
       "SparkingZERO.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202412/MOD675a58a521b54.png@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1790600/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2100,7 +2100,7 @@
     "exeNames": [
       "Stalker2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202412/MOD675955ed444f0.png@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1643320/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2119,7 +2119,7 @@
       "Stardew Valley.exe",
       "StardewModdingAPI.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/10.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/413150/header.jpg",
     "typeNames": [
       "SMAPI",
       "通用",
@@ -2140,7 +2140,7 @@
       "Starfield.exe",
       "sfse_loader.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64db454e9f5c4.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1716740/header.jpg",
     "typeNames": [
       "data",
       "游戏根目录",
@@ -2163,7 +2163,7 @@
     "exeNames": [
       "StateOfDecay2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/238.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/495420/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2181,7 +2181,7 @@
     "exeNames": [
       "SB.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_683eb2f1cdd6b.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/3489700/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2199,7 +2199,7 @@
     "exeNames": [
       "stellaris.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/21.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/281990/header.jpg",
     "typeNames": [
       "Mods",
       "未知"
@@ -2218,7 +2218,7 @@
     "exeNames": [
       "StreetFighter6.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64ad1276b1fca.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1364780/header.jpg",
     "typeNames": [
       "REFramework",
       "autorun",
@@ -2241,7 +2241,7 @@
     "exeNames": [
       "Subnautica.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/105a.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/264710/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2259,7 +2259,7 @@
     "exeNames": [
       "guigubahuang.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/603e05b7aef61.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1468810/header.jpg",
     "typeNames": [
       "通用",
       "未知"
@@ -2278,7 +2278,7 @@
     "exeNames": [
       "TEKKEN 8.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65b9e69f3b61b.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1778820/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2296,7 +2296,7 @@
     "exeNames": [
       "Terraria.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64cc631c336ce.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/105600/header.jpg",
     "typeNames": [
       "pack",
       "tmod",
@@ -2316,7 +2316,7 @@
     "exeNames": [
       "TheCallistoProtocol.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6605404b51bc3.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1544020/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2334,7 +2334,7 @@
     "exeNames": [
       "theHunterCotW_F.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/64e2df9a8310c.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/518790/header.jpg",
     "typeNames": [
       "dropzone",
       "未知"
@@ -2353,7 +2353,7 @@
     "exeNames": [
       "tlou-ii.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_67fdc9247cc4b.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2531310/header.jpg",
     "typeNames": [
       "modloader",
       "mods",
@@ -2373,7 +2373,7 @@
     "exeNames": [
       "tld.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/305620/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2391,7 +2391,7 @@
     "exeNames": [
       "TheLostVillage.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/6629bb7235d50.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1963040/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2409,7 +2409,7 @@
     "exeNames": [
       "daojianjianghulu.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202409/MOD66ee9421978bf.jpg@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2361680/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2427,7 +2427,7 @@
     "exeNames": [
       "The Scroll of Taiwu.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/167.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/838350/header.jpg",
     "typeNames": [
       "通用",
       "未知"
@@ -2446,7 +2446,7 @@
     "exeNames": [
       "TS4_x64.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/8a.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1222670/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2464,7 +2464,7 @@
     "exeNames": [
       "witcher3.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/4a.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/292030/header.jpg",
     "typeNames": [
       "mods",
       "dlc",
@@ -2485,7 +2485,7 @@
       "Titanfall2.exe",
       "NorthstarLauncher.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65a9d3b2453ae.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1237970/header.jpg",
     "typeNames": [
       "mods",
       "Northstar",
@@ -2505,7 +2505,7 @@
     "exeNames": [
       "Three_Kingdoms.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/193.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/779340/header.jpg",
     "typeNames": [
       "pack",
       "UI",
@@ -2525,7 +2525,7 @@
     "exeNames": [
       "Warhammer3.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61dbfe86987ba.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1142710/header.jpg",
     "typeNames": [
       "pack",
       "UI",
@@ -2545,7 +2545,7 @@
     "exeNames": [
       "TPC.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65a74761bb3fe.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1649080/header.jpg",
     "typeNames": [
       "mods",
       "未知"
@@ -2564,7 +2564,7 @@
     "exeNames": [
       "valheim.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/65f1415124b36.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/892970/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2582,7 +2582,7 @@
     "exeNames": [
       "VRising.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/632f15e51ee2c.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1604030/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2600,7 +2600,7 @@
     "exeNames": [
       "JH.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/656d920e5f559.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1876890/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2618,7 +2618,7 @@
     "exeNames": [
       "Warhammer 40000 Space Marine 2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/mod/202410/MOD6707728ca7d89.webp@webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2183900/header.jpg",
     "typeNames": [
       "pak",
       "未知"
@@ -2637,7 +2637,7 @@
     "exeNames": [
       "WarmSnow.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/61eb6d1e3f646.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1296830/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2655,7 +2655,7 @@
     "exeNames": [
       "WO4.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/168.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/831560/header.jpg",
     "typeNames": [
       "bin",
       "未知"
@@ -2674,7 +2674,7 @@
     "exeNames": [
       "EAC.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/176.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/447040/header.jpg",
     "typeNames": [
       "dat",
       "未知"
@@ -2693,7 +2693,7 @@
     "exeNames": [
       "Project_Plague.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/logo/croppedImg_68818e5553d86.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/2277560/header.jpg",
     "typeNames": [
       "通用类型"
     ],
@@ -2711,7 +2711,7 @@
     "exeNames": [
       "Wulin.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/641d08aca63ce.webp",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/1948980/header.jpg",
     "typeNames": [
       "mods"
     ],
@@ -2729,7 +2729,7 @@
     "exeNames": [
       "X4.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/178.png",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/392160/header.jpg",
     "typeNames": [
       "extensions",
       "未知"
@@ -2748,7 +2748,7 @@
     "exeNames": [
       "XCom2.exe"
     ],
-    "coverUrl": "https://assets-mod.3dmgame.com/static/upload/game/38.jpg",
+    "coverUrl": "https://cdn.akamai.steamstatic.com/steam/apps/268500/header.jpg",
     "typeNames": [
       "通用类型",
       "未知"

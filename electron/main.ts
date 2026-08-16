@@ -274,7 +274,7 @@ async function downloadWithAria2(options: {
     "file-allocation": "none",
     split: String(Math.max(1, Math.min(16, Number(options.aria2MaxConnections) || 4))),
     "max-connection-per-server": String(Math.max(1, Math.min(16, Number(options.aria2MaxConnections) || 4))),
-    "user-agent": "Mayfly Mod Manager",
+    "user-agent": "mayflyMods",
     "summary-interval": "1"
   }]);
   const taskState = { gid, cancelled: false };
@@ -388,7 +388,7 @@ function createWindow() {
     ...windowState,
     minWidth: 1024,
     minHeight: 768,
-    title: "Mayfly Mod Manager",
+    title: "mayflyMods",
     icon: getResourcePath("icon.ico"),
     backgroundColor: "#0f1216",
     autoHideMenuBar: true,
@@ -883,7 +883,7 @@ async function checkAppUpdate(options: {
 }
 
 function nexusOAuthPage(success: boolean, message: string) {
-  const title = success ? "Mayfly Mod Manager 登录成功" : "Mayfly Mod Manager 登录失败";
+  const title = success ? "mayflyMods 登录成功" : "mayflyMods 登录失败";
   const color = success ? "#65d6ad" : "#ff7b86";
 
   return `<!doctype html>
@@ -896,7 +896,7 @@ function nexusOAuthPage(success: boolean, message: string) {
     <main style="max-width:520px;padding:32px;text-align:center">
       <h1 style="color:${color};font-size:24px">${title}</h1>
       <p style="color:#b7c0cc">${message}</p>
-      <p style="color:#7f8b99;font-size:13px">可以关闭此页面并返回 Mayfly Mod Manager。</p>
+      <p style="color:#7f8b99;font-size:13px">可以关闭此页面并返回 mayflyMods。</p>
     </main>
   </body>
 </html>`;
@@ -4472,7 +4472,7 @@ electron.ipcMain.handle("downloads:downloadFile", async (_event, options: {
     response = await fetchWithProxy(options.url, {
       signal: controller.signal,
       headers: {
-        "user-agent": "Mayfly Mod Manager",
+        "user-agent": "mayflyMods",
         ...(startingBytes > 0 ? { range: `bytes=${startingBytes}-` } : {})
       },
       proxyUrl: options.proxyUrl

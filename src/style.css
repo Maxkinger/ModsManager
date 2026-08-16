@@ -3442,21 +3442,21 @@ code {
   outline: none;
 }
 
-/* Steam Toggle Switch */
-.steamToggle {
+/* Steam Switch */
+.steamSwitch {
   position: relative;
   display: inline-block;
   width: 44px;
   height: 24px;
 }
 
-.steamToggle input {
+.steamSwitch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.steamToggle .slider {
+.steamSwitch .slider {
   position: absolute;
   cursor: pointer;
   top: 0;
@@ -3468,7 +3468,7 @@ code {
   border-radius: 24px;
 }
 
-.steamToggle .slider:before {
+.steamSwitch .slider:before {
   position: absolute;
   content: "";
   height: 18px;
@@ -3480,11 +3480,11 @@ code {
   border-radius: 50%;
 }
 
-.steamToggle input:checked+.slider {
+.steamSwitch input:checked+.slider {
   background-color: #4f8cff;
 }
 
-.steamToggle input:checked+.slider:before {
+.steamSwitch input:checked+.slider:before {
   transform: translateX(20px);
 }
 
@@ -3878,7 +3878,7 @@ code {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   padding: 4px 0;
   z-index: 1000;
-  min-width: 168px;
+  min-width: 130px;
 }
 
 .steamContextMenu button {

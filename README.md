@@ -1,4 +1,4 @@
-# Mayfly Mod Manager
+# mayflyMods
 
 Electron + Vue 3 + TypeScript 写的本地 Mod 管理器，功能参考 Gloss Mod Manager，当前只保留本地 Mod 管理和 NexusMods 源。
 

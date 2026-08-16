@@ -565,13 +565,13 @@ const fallbackData: AppData = {
     aria2MaxConnections: 4,
     proxyEnabled: false,
     proxyUrl: "",
-    preferDirectoryGamePicker: true,
+    preferDirectoryGamePicker: false,
     launchAtStartup: false,
     allowGameRunningChanges: false,
     debugMode: false,
     showDebugInfo: false,
     autoCheckUpdates: false,
-    appUpdateUrl: "",//更新文件域名
+    appUpdateUrl: "https://version.mayflyyx.com/mayflyModsVersion.json",//更新文件域名
     lastAppUpdateCheckAt: 0,
     lastAutoUpdateCheckAt: 0
   },
@@ -652,13 +652,13 @@ function normalizeAppData(rawData: Partial<AppData> | null | undefined): AppData
       aria2MaxConnections: Math.max(1, Math.min(16, Number(settings.aria2MaxConnections) || 4)),
       proxyEnabled: settings.proxyEnabled ?? false,
       proxyUrl: settings.proxyUrl ?? "",
-      preferDirectoryGamePicker: settings.preferDirectoryGamePicker ?? true,
+      preferDirectoryGamePicker: settings.preferDirectoryGamePicker ?? false,
       launchAtStartup: settings.launchAtStartup ?? false,
       allowGameRunningChanges: settings.allowGameRunningChanges ?? false,
       debugMode: settings.debugMode ?? false,
       showDebugInfo: settings.showDebugInfo ?? false,
       autoCheckUpdates: settings.autoCheckUpdates ?? false,
-      appUpdateUrl: settings.appUpdateUrl ?? "",
+      appUpdateUrl: settings.appUpdateUrl || fallbackData.settings.appUpdateUrl,
       lastAppUpdateCheckAt: Number(settings.lastAppUpdateCheckAt || settings.lastAutoUpdateCheckAt) || 0,
       lastAutoUpdateCheckAt: Number(settings.lastAutoUpdateCheckAt) || 0
     },
@@ -1274,24 +1274,41 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   async function addGame(preset?: GamePreset) {
-    const selected = await window.mayfly.openDirectory();
-    if (!selected) return;
+    let resolvedPath = "";
+    let finalExeNames = preset?.exeNames ?? [];
 
-    let resolvedPath = selected;
+    if (!settings.value.preferDirectoryGamePicker) {
+      const selectedExe = await window.mayfly.openExecutable();
+      if (!selectedExe) return;
 
-    if (preset?.exeNames.length) {
-      const foundExe = await window.mayfly.findFileByName({
-        rootPath: selected,
-        fileNames: preset.exeNames,
-        maxDepth: 5
-      });
+      resolvedPath = dirName(selectedExe);
+      const exeName = fileName(selectedExe);
 
-      if (!foundExe) {
-        error.value = `所选目录没有找到预期主程序：${preset.exeNames.join(", ")}`;
-        return;
+      if (preset?.exeNames.length && !preset.exeNames.includes(exeName)) {
+        finalExeNames = [exeName, ...preset.exeNames];
+      } else if (!preset) {
+        finalExeNames = [exeName];
       }
+    } else {
+      const selected = await window.mayfly.openDirectory();
+      if (!selected) return;
 
-      resolvedPath = dirName(foundExe);
+      resolvedPath = selected;
+
+      if (preset?.exeNames.length) {
+        const foundExe = await window.mayfly.findFileByName({
+          rootPath: selected,
+          fileNames: [...preset.exeNames],
+          maxDepth: 5
+        });
+
+        if (!foundExe) {
+          error.value = `所选目录没有找到预期主程序：${preset.exeNames.join(", ")}`;
+          return;
+        }
+
+        resolvedPath = dirName(foundExe);
+      }
     }
 
     const now = Date.now();
@@ -1302,11 +1319,11 @@ export const useLibraryStore = defineStore("library", () => {
       steamAppId: preset?.steamAppId ?? 0,
       nexusDomain: preset?.nexusDomain ?? "",
       nexusGameId: preset?.nexusGameId ?? 0,
-      name: preset?.name ?? baseName(selected),
+      name: preset?.name ?? baseName(resolvedPath),
       path: resolvedPath,
       installPath: "",
       launchArgs: "",
-      exeNames: preset?.exeNames ?? [],
+      exeNames: finalExeNames,
       coverUrl: preset?.coverUrl ?? "",
       typeNames: preset ? getGameAdapter(preset.id).modTypes.map((type) => type.name) : ["游戏根目录"],
       customAdapterRules: [],
@@ -1535,21 +1552,26 @@ export const useLibraryStore = defineStore("library", () => {
   async function launchActiveGame() {
     if (!activeGame.value) return;
 
-    const exeNames = activeGame.value.exeNames.length > 0
-      ? activeGame.value.exeNames
-      : [`${activeGame.value.name}.exe`];
-    const executablePath = await window.mayfly.findFileByName({
-      rootPath: activeGame.value.path,
-      fileNames: exeNames,
-      maxDepth: 3
-    });
-
-    if (!executablePath) {
-      error.value = `没有找到可启动文件：${exeNames.join(", ")}。可以先选择 exe 更新游戏路径。`;
+    if (!activeGame.value.path) {
+      error.value = "请先在左侧游戏列表右键，进入“高级设置”配置游戏目录。";
       return;
     }
 
     try {
+      const exeNames = activeGame.value.exeNames.length > 0
+        ? [...activeGame.value.exeNames]
+        : [`${activeGame.value.name}.exe`];
+      const executablePath = await window.mayfly.findFileByName({
+        rootPath: activeGame.value.path,
+        fileNames: exeNames,
+        maxDepth: 3
+      });
+
+      if (!executablePath) {
+        error.value = `没有找到可启动文件：${exeNames.join(", ")}。请检查游戏目录是否正确。`;
+        return;
+      }
+
       await window.mayfly.launchExecutable({
         executablePath,
         cwd: dirName(executablePath),
@@ -2131,7 +2153,7 @@ export const useLibraryStore = defineStore("library", () => {
         individualContext,
         hashText(value)
       ].join(":");
-      
+
       const cached = translationCache.value[key];
       if (cached && !force) {
         result.set(value, cached.text);
@@ -2144,7 +2166,7 @@ export const useLibraryStore = defineStore("library", () => {
       try {
         const combinedText = missingValues.join("\n");
         const translatedCombined = await translateTextCached(combinedText, `${context}:batch`, force);
-        
+
         const translatedLines = translatedCombined.split("\n").map(line => line.trim());
 
         for (let i = 0; i < missingValues.length; i++) {

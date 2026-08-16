@@ -1,7 +1,7 @@
 {
   "name": "mayfly-mod-manager-electron",
-  "version": "0.1.0",
-  "description": "Mayfly Mod Manager desktop application",
+  "version": "1.0.0",
+  "description": "mayflyMods desktop application",
   "author": "Mayfly",
   "private": true,
   "type": "module",
@@ -22,7 +22,7 @@
   },
   "build": {
     "appId": "com.mayfly.modmanager",
-    "productName": "Mayfly Mod Manager",
+    "productName": "mayflyMods",
     "directories": {
       "output": "release"
     },
@@ -43,7 +43,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Mayfly Mod Manager"
+      "shortcutName": "mayflyMods"
     }
   },
   "dependencies": {

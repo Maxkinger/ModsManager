@@ -2146,10 +2146,6 @@ async function resumeDownloadBatch() {
                       <Play :size="20" fill="currentColor" />
                       启动游戏
                     </button>
-                    <div class="heroStats">
-                      <span>状态</span>
-                      <strong>{{ library.activeGame.adapterStatus === 'implemented' ? '已接入规则' : '通用规则' }}</strong>
-                    </div>
                   </div>
                 </div>
                 <div class="heroSummary">
@@ -2315,14 +2311,14 @@ async function resumeDownloadBatch() {
                   </div>
                   <div style="width: 1px; height: 16px; background: #3d4450; margin: 0 4px;"></div>
 
-                  <button class="iconButton primary" title="批量安装" :disabled="library.busy" @click="library.installSelectedMods">
-                    <Play :size="16" fill="currentColor" />
+                  <button class="iconButton primary" title="批量安装" :disabled="library.busy" @click="library.installSelectedMods" style="display: flex; align-items: center; gap: 4px; padding: 0 10px; width: auto; font-size: 13px;">
+                    <Play :size="14" fill="currentColor" /> 安装
                   </button>
-                  <button class="iconButton" title="批量卸载" :disabled="library.busy" @click="confirmUninstallSelectedMods">
-                    <Pause :size="16" fill="currentColor" />
+                  <button class="iconButton" title="批量卸载" :disabled="library.busy" @click="confirmUninstallSelectedMods" style="display: flex; align-items: center; gap: 4px; padding: 0 10px; width: auto; font-size: 13px;">
+                    <Pause :size="14" fill="currentColor" /> 卸载
                   </button>
-                  <button class="iconButton danger" title="批量删除" :disabled="library.busy" @click="confirmRemoveSelectedMods">
-                    <Trash2 :size="16" />
+                  <button class="iconButton danger" title="批量删除" :disabled="library.busy" @click="confirmRemoveSelectedMods" style="display: flex; align-items: center; gap: 4px; padding: 0 10px; width: auto; font-size: 13px;">
+                    <Trash2 :size="14" /> 删除
                   </button>
                 </div>
                 
@@ -2969,8 +2965,6 @@ async function resumeDownloadBatch() {
             </div>
             
             <div class="steamCustomDownloadRow">
-              <input v-model="customDownloadUrl" placeholder="输入自定义下载链接 (http/https)..." />
-              <input v-model="customDownloadName" placeholder="重命名文件(可选)" />
               <button class="secondary downloadSettingsButton" title="下载设置" @click="showDownloadSettingsModal = true">
                 <Settings :size="15" />
                 下载设置
@@ -3176,41 +3170,14 @@ async function resumeDownloadBatch() {
               <div class="steamSettingsBlock">
                 <h3>应用偏好</h3>
                 
-                <div class="steamSettingRow">
-                  <div class="settingInfo">
-                    <label>主题</label>
-                  </div>
-                  <div class="settingControl">
-                    <select class="steamSelectBox" :value="library.settings.theme" @change="library.updateSettings({ theme: ($event.target as HTMLSelectElement).value as 'dark' | 'light' })">
-                      <option value="dark">深色 (默认)</option>
-                      <option value="light">浅色</option>
-                    </select>
-                  </div>
-                </div>
 
-                <div class="steamSettingRow">
-                  <div class="settingInfo">
-                    <label>默认启动页</label>
-                  </div>
-                  <div class="settingControl">
-                    <select class="steamSelectBox" :value="library.settings.defaultTab" @change="library.updateSettings({ defaultTab: ($event.target as HTMLSelectElement).value as typeof library.settings.defaultTab })">
-                      <option value="games">游戏</option>
-                      <option value="manager">管理</option>
-                      <option value="nexus">Nexus</option>
-                      <option value="download">下载</option>
-                      <option value="logs">日志</option>
-                      <option value="settings">设置</option>
-                      <option value="about">关于</option>
-                    </select>
-                  </div>
-                </div>
 
                 <div class="steamSettingRow">
                   <div class="settingInfo">
                     <label>开机自启</label>
                   </div>
                   <div class="settingControl">
-                    <label class="steamToggle">
+                    <label class="steamSwitch">
                       <input type="checkbox" :checked="library.settings.launchAtStartup" @change="library.updateSettings({ launchAtStartup: ($event.target as HTMLInputElement).checked })" />
                       <span class="slider"></span>
                     </label>
@@ -3227,7 +3194,7 @@ async function resumeDownloadBatch() {
                     <span>把游戏目录目标文件创建为指向 Mod 的链接；权限不足请关闭。</span>
                   </div>
                   <div class="settingControl">
-                    <label class="steamToggle">
+                    <label class="steamSwitch">
                       <input type="checkbox" :checked="library.settings.useSymlinkInstall" @change="library.updateSettings({ useSymlinkInstall: ($event.target as HTMLInputElement).checked })" />
                       <span class="slider"></span>
                     </label>
@@ -3239,7 +3206,7 @@ async function resumeDownloadBatch() {
                     <label>优先通过目录选择游戏</label>
                   </div>
                   <div class="settingControl">
-                    <label class="steamToggle">
+                    <label class="steamSwitch">
                       <input type="checkbox" :checked="library.settings.preferDirectoryGamePicker" @change="library.updateSettings({ preferDirectoryGamePicker: ($event.target as HTMLInputElement).checked })" />
                       <span class="slider"></span>
                     </label>
@@ -3251,7 +3218,7 @@ async function resumeDownloadBatch() {
                     <label>下载完成后自动导入</label>
                   </div>
                   <div class="settingControl">
-                    <label class="steamToggle">
+                    <label class="steamSwitch">
                       <input type="checkbox" :checked="library.settings.autoImportAfterDownload" @change="library.updateSettings({ autoImportAfterDownload: ($event.target as HTMLInputElement).checked })" />
                       <span class="slider"></span>
                     </label>
@@ -3277,7 +3244,7 @@ async function resumeDownloadBatch() {
                     <span>Nexus 浏览、API Key 校验、下载直链和普通下载都会使用此代理。</span>
                   </div>
                   <div class="settingControl">
-                    <label class="steamToggle">
+                    <label class="steamSwitch">
                       <input type="checkbox" :checked="library.settings.proxyEnabled" @change="library.updateSettings({ proxyEnabled: ($event.target as HTMLInputElement).checked })" />
                       <span class="slider"></span>
                     </label>
@@ -3467,47 +3434,24 @@ async function resumeDownloadBatch() {
                     <label>允许游戏运行时修改 Mod</label>
                   </div>
                   <div class="settingControl">
-                    <label class="steamToggle">
+                    <label class="steamSwitch">
                       <input type="checkbox" :checked="library.settings.allowGameRunningChanges" @change="library.updateSettings({ allowGameRunningChanges: ($event.target as HTMLInputElement).checked })" />
                       <span class="slider"></span>
                     </label>
                   </div>
                 </div>
-                <div class="steamSettingRow">
-                  <div class="settingInfo">
-                    <label>应用更新地址</label>
-                    <span>启动应用时会检查一次，也可以手动点击检查。格式参考 deskPluginsVIP：versionName、downloadUrl、updateLog、forceUpdate。</span>
-                    <span v-if="library.appUpdateMessage">{{ library.appUpdateMessage }}</span>
-                  </div>
-                  <div class="settingControl" style="display: flex; gap: 8px; min-width: 420px;">
-                    <input
-                      class="steamInput"
-                      :value="library.settings.appUpdateUrl"
-                      placeholder="之后填你的更新 JSON 地址"
-                      @change="library.updateSettings({ appUpdateUrl: ($event.target as HTMLInputElement).value.trim() })"
-                    />
-                    <button
-                      class="secondary"
-                      :disabled="library.appUpdateChecking"
-                      @click="library.checkAppUpdate()"
-                    >
-                      <LoaderCircle v-if="library.appUpdateChecking" :size="14" class="spin" />
-                      <RotateCcw v-else :size="14" />
-                      检查
-                    </button>
-                  </div>
-                </div>
+
 
                 <div class="steamSettingRow">
                   <div class="settingInfo">
                     <label>显示调试信息 / 调试模式</label>
                   </div>
                   <div class="settingControl" style="display: flex; gap: 12px;">
-                    <label class="steamToggle" title="调试模式">
+                    <label class="steamSwitch" title="调试模式">
                       <input type="checkbox" :checked="library.settings.debugMode" @change="library.updateSettings({ debugMode: ($event.target as HTMLInputElement).checked })" />
                       <span class="slider"></span>
                     </label>
-                    <label class="steamToggle" title="显示调试信息">
+                    <label class="steamSwitch" title="显示调试信息">
                       <input type="checkbox" :checked="library.settings.showDebugInfo" @change="library.updateSettings({ showDebugInfo: ($event.target as HTMLInputElement).checked })" />
                       <span class="slider"></span>
                     </label>
@@ -3523,7 +3467,7 @@ async function resumeDownloadBatch() {
       <section v-else class="page steamDownloadsPage">
         <div class="steamDownloadsWrapper">
           <div class="steamDownloadsHeader" style="justify-content: center;">
-            <h2>关于 Mayfly Mod Manager</h2>
+            <h2>关于 mayflyMods</h2>
           </div>
           <div class="steamDownloadsList" style="align-items: center;">
             <div class="steamSettingsContainer">
@@ -3560,7 +3504,7 @@ async function resumeDownloadBatch() {
         <Settings :size="14" /> 高级设置
       </button>
       <button @click.stop="openContextGameCustomRules">
-        <Wrench :size="14" /> 自定义适配规则
+        <Wrench :size="14" /> 定制规则
       </button>
       <button @click.stop="launchContextGame">
         <Play :size="14" /> 启动游戏
