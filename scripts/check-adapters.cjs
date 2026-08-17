@@ -1,22 +1,13 @@
 const { readFileSync } = require("node:fs");
-const vm = require("node:vm");
 
 function loadPresets() {
-  const text = readFileSync("src/data/game-presets.ts", "utf-8");
-  const script = text
-    .replace(/^import[^\n]+\n/gm, "")
-    .replace(/export const gamePresets[^=]*=\s*/, "module.exports = ")
-    .replace(/\s+satisfies\s+GamePreset\[\];?\s*$/u, ";");
-  const sandbox = { module: { exports: [] } };
-
-  vm.runInNewContext(script, sandbox);
-  return sandbox.module.exports;
+  return JSON.parse(readFileSync("src/data/game-presets.json", "utf-8"));
 }
 
 function getExplicitAdapterIds() {
   const text = readFileSync("src/adapters/index.ts", "utf-8");
-  const engineText = readFileSync("src/adapters/gloss-engine-definitions.ts", "utf-8");
-  const ruleText = readFileSync("src/adapters/gloss-rule-definitions.ts", "utf-8");
+  const engineText = readFileSync("src/adapters/engine-definitions.ts", "utf-8");
+  const ruleText = readFileSync("src/adapters/catalog-rule-definitions.ts", "utf-8");
   const factoryIds = [...text.matchAll(/create(?:Gta5|ReEngine|Unreal|Unity|MelonLoader)Adapter\("([^"]+)"/gu)]
     .map((match) => match[1]);
   const engineIds = [...engineText.matchAll(/^\s*([a-z0-9]+):\s*\{\s*kind:/gmu)]

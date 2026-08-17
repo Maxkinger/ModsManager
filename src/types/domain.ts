@@ -1,7 +1,7 @@
 export interface ManagedGame {
   id: string;
   presetId: string;
-  glossGameId: number;
+  catalogGameId: number;
   steamAppId: number;
   nexusDomain: string;
   nexusGameId: number;
@@ -194,7 +194,7 @@ export interface GamePreset {
   name: string;
   zhName?: string;
   sourceFile: string;
-  glossGameId: number;
+  catalogGameId: number;
   steamAppId: number;
   nexusDomain: string;
   nexusGameId: number;

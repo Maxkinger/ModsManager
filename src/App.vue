@@ -62,6 +62,7 @@ function getGameEnglishName(item: { presetId?: string; id?: string; name: string
 const library = useLibraryStore();
 type AppTab = "games" | "manager" | "nexus" | "download" | "logs" | "backup" | "settings" | "about";
 
+const ABOUT_NOTICE_URL = "https://version.mayflyyx.com/mayflyModsToast.json";
 const activeTab = ref<AppTab>("manager");
 const showAddGameModal = ref(false);
 const showGameInfoModal = ref(false);
@@ -150,7 +151,7 @@ const showModEditModal = ref(false);
 const coverUrls = ref<Record<string, string>>({});
 const gameCoverUrls = ref<Record<string, string>>({});
 const showBatchEdit = ref(false);
-const showGmmExport = ref(false);
+const showPackageExport = ref(false);
 const showCustomGameForm = ref(false);
 const selectedDownloadIds = ref<string[]>([]);
 const showDownloadDeleteModal = ref(false);
@@ -164,10 +165,10 @@ const quickTagName = ref("");
 // selectedProfileId moved to library store
 const showProfileInput = ref(false);
 const newProfileName = ref("");
-const gmmName = ref("");
-const gmmAuthor = ref("");
-const gmmVersion = ref("");
-const gmmDescription = ref("");
+const packageNameInput = ref("");
+const packageAuthorInput = ref("");
+const packageVersionInput = ref("");
+const packageDescriptionInput = ref("");
 const customGameName = ref("");
 const customGamePath = ref("");
 const customGameExeNames = ref("");
@@ -191,6 +192,13 @@ const customRuleKeepPath = ref(true);
 const customRulePreviewSource = ref("");
 const customRulePreviewFiles = ref<string[]>([]);
 const customRulePreviewLoading = ref(false);
+const aboutNotice = ref({
+  loading: false,
+  error: "",
+  title: "关于 mayflyMods",
+  html: "",
+  fetchedAt: 0
+});
 
 const storageLabel = computed(
   () => library.settings.storagePath || "还没有选择 Mod 存储路径"
@@ -615,6 +623,15 @@ watch(
   }
 );
 
+watch(
+  () => activeTab.value,
+  (tab) => {
+    if (tab === "about") {
+      void loadAboutNotice();
+    }
+  }
+);
+
 onMounted(async () => {
   await library.initialize();
   activeTab.value = library.settings.defaultTab === "backup"
@@ -622,6 +639,9 @@ onMounted(async () => {
     : library.settings.defaultTab;
   editingInstallPath.value = library.activeGame?.installPath ?? "";
   nexusApiKeyInput.value = library.settings.nexusApiKey;
+  if (activeTab.value === "about") {
+    void loadAboutNotice();
+  }
   window.mayfly.onNxmOpen((url) => {
     activeTab.value = "nexus";
     void library.handleNxmUrl(url);
@@ -796,6 +816,258 @@ function splitCommaList(value: string) {
     .filter(Boolean);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function firstString(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return "";
+}
+
+function escapeRemoteHtml(value: string) {
+  return value
+    .replace(/&/gu, "&amp;")
+    .replace(/</gu, "&lt;")
+    .replace(/>/gu, "&gt;")
+    .replace(/"/gu, "&quot;")
+    .replace(/'/gu, "&#39;");
+}
+
+function renderRemoteSections(value: unknown) {
+  if (!Array.isArray(value)) return "";
+
+  return value
+    .map((item) => {
+      if (typeof item === "string") {
+        return `<p>${escapeRemoteHtml(item)}</p>`;
+      }
+
+      if (!isRecord(item)) return "";
+
+      const title = firstString(item.title, item.label, item.name);
+      const content = firstString(item.html, item.richText, item.content, item.body, item.message, item.text);
+
+      return [
+        title ? `<h3>${escapeRemoteHtml(title)}</h3>` : "",
+        content || ""
+      ].join("");
+    })
+    .join("");
+}
+
+function sanitizeInlineStyle(styleText: string) {
+  if (/url\s*\(|expression\s*\(|javascript:|behavior\s*:|@import/iu.test(styleText)) {
+    return "";
+  }
+
+  const allowed = new Set([
+    "color",
+    "background",
+    "background-color",
+    "font-weight",
+    "font-style",
+    "text-decoration",
+    "text-align",
+    "margin",
+    "margin-top",
+    "margin-right",
+    "margin-bottom",
+    "margin-left",
+    "padding",
+    "padding-top",
+    "padding-right",
+    "padding-bottom",
+    "padding-left",
+    "border",
+    "border-radius",
+    "box-shadow",
+    "display",
+    "font-size",
+    "letter-spacing",
+    "line-height"
+  ]);
+
+  return styleText
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) => {
+      const [name] = part.split(":");
+      return allowed.has((name || "").trim().toLowerCase());
+    })
+    .join("; ");
+}
+
+function isAllowedExternalUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return ["http:", "https:", "mailto:"].includes(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeRemoteHtml(html: string) {
+  const parser = new DOMParser();
+  const document = parser.parseFromString(`<div>${html}</div>`, "text/html");
+  const root = document.body.firstElementChild;
+  if (!root) return "";
+
+  const allowedTags = new Set([
+    "a",
+    "b",
+    "blockquote",
+    "br",
+    "code",
+    "div",
+    "em",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "hr",
+    "i",
+    "img",
+    "li",
+    "ol",
+    "p",
+    "pre",
+    "s",
+    "span",
+    "strong",
+    "table",
+    "tbody",
+    "td",
+    "th",
+    "thead",
+    "tr",
+    "u",
+    "ul"
+  ]);
+
+  for (const element of Array.from(root.querySelectorAll("*"))) {
+    const tagName = element.tagName.toLowerCase();
+
+    if (["script", "style", "iframe", "object", "embed", "form", "input", "button", "meta", "link"].includes(tagName)) {
+      element.remove();
+      continue;
+    }
+
+    if (!allowedTags.has(tagName)) {
+      element.replaceWith(...Array.from(element.childNodes));
+      continue;
+    }
+
+    for (const attribute of Array.from(element.attributes)) {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value.trim();
+
+      if (tagName === "a" && name === "href" && isAllowedExternalUrl(value)) {
+        element.setAttribute("target", "_blank");
+        element.setAttribute("rel", "noreferrer noopener");
+        continue;
+      }
+
+      if (tagName === "img" && name === "src" && /^https?:\/\//iu.test(value)) {
+        continue;
+      }
+
+      if (["alt", "title"].includes(name)) {
+        continue;
+      }
+
+      if (name === "style") {
+        const nextStyle = sanitizeInlineStyle(value);
+        if (nextStyle) {
+          element.setAttribute("style", nextStyle);
+        } else {
+          element.removeAttribute("style");
+        }
+        continue;
+      }
+
+      element.removeAttribute(attribute.name);
+    }
+  }
+
+  return root.innerHTML.trim();
+}
+
+function normalizeAboutNoticePayload(payload: Record<string, unknown>) {
+  const root = isRecord(payload.data)
+    ? payload.data
+    : isRecord(payload.notice)
+    ? payload.notice
+    : isRecord(payload.toast)
+      ? payload.toast
+      : isRecord(payload.about)
+        ? payload.about
+        : payload;
+  const title = firstString(root.title, root.name, root.header) || "关于 mayflyMods";
+  const html =
+    firstString(root.html, root.richText, root.content, root.body, root.message, root.text) ||
+    renderRemoteSections(root.sections) ||
+    renderRemoteSections(root.items) ||
+    renderRemoteSections(root.list);
+
+  return {
+    title,
+    html: sanitizeRemoteHtml(html)
+  };
+}
+
+async function loadAboutNotice(force = false) {
+  if (aboutNotice.value.loading) return;
+  if (!force && aboutNotice.value.html && Date.now() - aboutNotice.value.fetchedAt < 10 * 60 * 1000) {
+    return;
+  }
+
+  aboutNotice.value = {
+    ...aboutNotice.value,
+    loading: true,
+    error: ""
+  };
+
+  try {
+    const payload = await window.mayfly.fetchRemoteJson({
+      url: ABOUT_NOTICE_URL,
+      proxyUrl: library.settings.proxyEnabled ? library.settings.proxyUrl : ""
+    });
+    const normalized = normalizeAboutNoticePayload(payload);
+
+    aboutNotice.value = {
+      loading: false,
+      error: normalized.html ? "" : "远程内容为空。",
+      title: normalized.title,
+      html: normalized.html,
+      fetchedAt: Date.now()
+    };
+  } catch (caught) {
+    aboutNotice.value = {
+      ...aboutNotice.value,
+      loading: false,
+      error: caught instanceof Error ? caught.message : "读取远程内容失败"
+    };
+  }
+}
+
+async function handleAboutContentClick(event: MouseEvent) {
+  const target = event.target instanceof Element ? event.target : null;
+  const link = target?.closest("a[href]") as HTMLAnchorElement | null;
+  if (!link) return;
+
+  const href = link.getAttribute("href") || "";
+  if (!isAllowedExternalUrl(href)) return;
+
+  event.preventDefault();
+  await window.mayfly.openExternal(href);
+}
+
 function dirName(path: string) {
   const parts = path.replace(/\\/g, "/").split("/").filter(Boolean);
   parts.pop();
@@ -942,21 +1214,21 @@ async function addQuickTagToSelected() {
   quickTagName.value = "";
 }
 
-async function exportSelectedGmm() {
-  await library.exportModsToGmm({
+async function exportSelectedPackage() {
+  await library.exportModsToPackage({
     targetMods: library.selectedMods,
-    name: gmmName.value,
-    author: gmmAuthor.value,
-    version: gmmVersion.value,
-    description: gmmDescription.value
+    name: packageNameInput.value,
+    author: packageAuthorInput.value,
+    version: packageVersionInput.value,
+    description: packageDescriptionInput.value
   });
 
   if (!library.error) {
-    showGmmExport.value = false;
-    gmmName.value = "";
-    gmmAuthor.value = "";
-    gmmVersion.value = "";
-    gmmDescription.value = "";
+    showPackageExport.value = false;
+    packageNameInput.value = "";
+    packageAuthorInput.value = "";
+    packageVersionInput.value = "";
+    packageDescriptionInput.value = "";
   }
 }
 
@@ -2440,12 +2712,12 @@ async function resumeDownloadBatch() {
               </button>
             </div>
 
-            <div v-if="showGmmExport" class="batchEditPanel gmmExportPanel">
-              <input v-model="gmmName" placeholder="包名，留空用 Mod 名称" />
-              <input v-model="gmmAuthor" placeholder="作者" />
-              <input v-model="gmmVersion" placeholder="版本" />
-              <input v-model="gmmDescription" placeholder="描述" />
-              <button class="primary" :disabled="library.busy || library.selectedMods.length === 0" @click="exportSelectedGmm">
+            <div v-if="showPackageExport" class="batchEditPanel packageExportPanel">
+              <input v-model="packageNameInput" placeholder="包名，留空用 Mod 名称" />
+              <input v-model="packageAuthorInput" placeholder="作者" />
+              <input v-model="packageVersionInput" placeholder="版本" />
+              <input v-model="packageDescriptionInput" placeholder="描述" />
+              <button class="primary" :disabled="library.busy || library.selectedMods.length === 0" @click="exportSelectedPackage">
                 导出
               </button>
             </div>
@@ -3467,22 +3739,31 @@ async function resumeDownloadBatch() {
       <section v-else class="page steamDownloadsPage">
         <div class="steamDownloadsWrapper">
           <div class="steamDownloadsHeader" style="justify-content: center;">
-            <h2>关于 mayflyMods</h2>
+            <h2>{{ aboutNotice.title || "关于 mayflyMods" }}</h2>
           </div>
           <div class="steamDownloadsList" style="align-items: center;">
             <div class="steamSettingsContainer">
-              <div class="steamSettingsBlock">
-                <div class="steamSettingRow">
-                  <div class="settingInfo">
-                    <label>项目状态</label>
-                    <span>目前已完成 Nexus-only 本地管理的构建。</span>
-                  </div>
+              <div class="steamSettingsBlock aboutRemoteBlock">
+                <div v-if="aboutNotice.loading" class="aboutNoticeState">
+                  <LoaderCircle :size="18" class="spin" />
+                  <span>正在读取远程内容...</span>
                 </div>
-                <div class="steamSettingRow">
-                  <div class="settingInfo">
-                    <label>开发范围</label>
-                    <span>参考文档: docs/reference-feature-map.md。AI/MCP/Skills 和非 Nexus 线上源已取消开发。</span>
+                <div v-else-if="aboutNotice.error" class="aboutNoticeState error">
+                  <AlertTriangle :size="18" />
+                  <div>
+                    <strong>远程内容读取失败</strong>
+                    <span>{{ aboutNotice.error }}</span>
                   </div>
+                  <button class="secondary" @click="loadAboutNotice(true)">重试</button>
+                </div>
+                <div
+                  v-else-if="aboutNotice.html"
+                  class="aboutRichText"
+                  @click="handleAboutContentClick"
+                  v-html="aboutNotice.html"
+                ></div>
+                <div v-else class="aboutNoticeState">
+                  <span>暂无公告内容。</span>
                 </div>
               </div>
             </div>

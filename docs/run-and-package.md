@@ -1,4 +1,4 @@
-# Mayfly Mod Manager 运行与打包说明
+# mayflyMods 运行与打包说明
 
 本文档说明当前 Electron 项目的本地运行、检查、生产构建和后续打包方式。
 
@@ -124,7 +124,7 @@ npm install -D electron-builder
 {
   "build": {
     "appId": "com.mayfly.modmanager",
-    "productName": "Mayfly Mod Manager",
+    "productName": "mayflyMods",
     "directories": {
       "output": "release"
     },

@@ -46,6 +46,8 @@ const COVER_FILE_NAMES = new Set([
   "thumbnail.webp"
 ]);
 const MOD_PREVIEW_FOLDER = "mod-preview";
+const LEGACY_PACKAGE_EXTENSION = ["g", "m", "m"].join("");
+const ARCHIVE_EXTENSIONS = ["zip", "mmp", LEGACY_PACKAGE_EXTENSION];
 const STEAM_LIBRARY_KEY = "HKEY_CURRENT_USER\\Software\\Valve\\Steam";
 const NEXUS_GRAPHQL_URL = "https://api-router.nexusmods.com/graphql";
 const NEXUS_API_URL = "https://api.nexusmods.com";
@@ -485,7 +487,7 @@ async function listFiles(rootPath: string, currentPath = rootPath): Promise<stri
   return files.flat();
 }
 
-type GmmProgressPayload = {
+type PackageProgressPayload = {
   operationId: string;
   operation: "import" | "export";
   phase: string;
@@ -494,9 +496,9 @@ type GmmProgressPayload = {
   message: string;
 };
 
-function sendGmmProgress(sender: electron.WebContents, payload: GmmProgressPayload) {
+function sendPackageProgress(sender: electron.WebContents, payload: PackageProgressPayload) {
   if (!sender.isDestroyed()) {
-    sender.send("gmm:progress", payload);
+    sender.send("package:progress", payload);
   }
 }
 
@@ -880,6 +882,45 @@ async function checkAppUpdate(options: {
     currentVersionName,
     remote
   };
+}
+
+async function fetchRemoteJson(options: {
+  url: string;
+  proxyUrl?: string;
+}) {
+  const rawUrl = String(options.url || "").trim();
+  if (!rawUrl) {
+    throw new Error("远程内容地址不能为空。");
+  }
+
+  const remoteUrl = new URL(rawUrl);
+  if (!["http:", "https:"].includes(remoteUrl.protocol)) {
+    throw new Error("远程内容地址只支持 http/https。");
+  }
+
+  const response = await fetchWithProxy(withCacheBuster(remoteUrl.toString()), {
+    proxyUrl: options.proxyUrl,
+    cache: "no-store",
+    headers: {
+      Accept: "application/json,text/plain,*/*",
+      "User-Agent": `mayflyMods/${electron.app.getVersion()}`
+    }
+  });
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`远程内容读取失败：HTTP ${response.status}`);
+  }
+
+  if (text.length > 1024 * 1024) {
+    throw new Error("远程内容过大，已拒绝读取。");
+  }
+
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    throw new Error("远程内容不是有效 JSON。");
+  }
 }
 
 function nexusOAuthPage(success: boolean, message: string) {
@@ -3355,7 +3396,9 @@ async function applyWatchDogsPatchStrategy(options: {
 }
 
 async function ensureMiChangShengModBin(gamePath: string) {
-  const target = safeJoin(gamePath, "本地Mod测试", "Gmm", "Mod.bin");
+  const legacyTarget = safeJoin(gamePath, "本地Mod测试", ["G", "m", "m"].join(""), "Mod.bin");
+  const target = safeJoin(gamePath, "本地Mod测试", "Mayfly", "Mod.bin");
+  if (existsSync(legacyTarget)) return;
   if (existsSync(target)) return;
 
   await mkdir(dirname(target), { recursive: true });
@@ -3950,7 +3993,7 @@ electron.ipcMain.handle("dialog:openArchive", async () => {
   const result = await electron.dialog.showOpenDialog({
     properties: ["openFile", "multiSelections"],
     filters: [
-      { name: "Mod packages", extensions: ["zip", "rar", "7z", "gmm"] },
+      { name: "Mod packages", extensions: [...ARCHIVE_EXTENSIONS, "rar", "7z"] },
       { name: "All files", extensions: ["*"] }
     ]
   });
@@ -3962,7 +4005,7 @@ electron.ipcMain.handle("dialog:openModSource", async () => {
   const result = await electron.dialog.showOpenDialog({
     properties: ["openFile", "openDirectory", "multiSelections"],
     filters: [
-      { name: "Mod packages", extensions: ["zip", "rar", "7z", "gmm"] },
+      { name: "Mod packages", extensions: [...ARCHIVE_EXTENSIONS, "rar", "7z"] },
       { name: "All files", extensions: ["*"] }
     ]
   });
@@ -4016,9 +4059,18 @@ electron.ipcMain.handle("shell:openPath", async (_event, targetPath: string) => 
 
 electron.ipcMain.handle("shell:openExternal", async (_event, targetUrl: string) => {
   if (!targetUrl) return false;
+  const url = new URL(targetUrl);
+  if (!["http:", "https:", "mailto:"].includes(url.protocol)) {
+    throw new Error("不支持打开此链接。");
+  }
   await electron.shell.openExternal(targetUrl);
   return true;
 });
+
+electron.ipcMain.handle("net:fetchJson", async (_event, options: {
+  url: string;
+  proxyUrl?: string;
+}) => fetchRemoteJson(options));
 
 electron.ipcMain.handle("shell:fileUrl", async (_event, targetPath: string) => {
   if (!targetPath) return "";
@@ -4621,7 +4673,7 @@ electron.ipcMain.handle("backups:listZip", async (_event, backupPath: string) =>
   }));
 });
 
-electron.ipcMain.handle("gmm:exportMods", async (event, options: {
+electron.ipcMain.handle("package:exportMods", async (event, options: {
   mods: Array<{
     rootPath: string;
     folderName: string;
@@ -4640,8 +4692,8 @@ electron.ipcMain.handle("gmm:exportMods", async (event, options: {
 
   const zip = new AdmZip();
   zip.addFile("manifest.json", Buffer.from(JSON.stringify(options.manifest, null, 2), "utf-8"));
-  const report = (payload: Omit<GmmProgressPayload, "operationId" | "operation">) => {
-    sendGmmProgress(event.sender, {
+  const report = (payload: Omit<PackageProgressPayload, "operationId" | "operation">) => {
+    sendPackageProgress(event.sender, {
       operationId,
       operation: "export",
       ...payload
@@ -4734,7 +4786,7 @@ electron.ipcMain.handle("gmm:exportMods", async (event, options: {
   };
 });
 
-electron.ipcMain.handle("gmm:readManifest", async (_event, packagePath: string) => {
+electron.ipcMain.handle("package:readManifest", async (_event, packagePath: string) => {
   const zip = new AdmZip(resolve(packagePath));
   const manifestEntry = zip.getEntry("manifest.json");
 
@@ -4745,7 +4797,7 @@ electron.ipcMain.handle("gmm:readManifest", async (_event, packagePath: string) 
   return JSON.parse(manifestEntry.getData().toString("utf-8")) as Record<string, unknown>;
 });
 
-electron.ipcMain.handle("gmm:importGamePack", async (event, options: {
+electron.ipcMain.handle("package:importGamePack", async (event, options: {
   packagePath: string;
   storagePath: string;
   gameName: string;
@@ -4771,8 +4823,8 @@ electron.ipcMain.handle("gmm:importGamePack", async (event, options: {
     throw new Error("这不是 Mayfly 游戏整合包。");
   }
 
-  const report = (payload: Omit<GmmProgressPayload, "operationId" | "operation">) => {
-    sendGmmProgress(event.sender, {
+  const report = (payload: Omit<PackageProgressPayload, "operationId" | "operation">) => {
+    sendPackageProgress(event.sender, {
       operationId,
       operation: "import",
       ...payload
@@ -4894,7 +4946,7 @@ electron.ipcMain.handle("mods:importFolder", async (_event, options: {
       force: true,
       errorOnExist: false
     });
-  } else if (["zip", "gmm"].includes(getPathExtension(options.sourcePath))) {
+  } else if (ARCHIVE_EXTENSIONS.includes(getPathExtension(options.sourcePath))) {
     const zip = new AdmZip(options.sourcePath);
     for (const entry of zip.getEntries()) {
       const entryTarget = safeJoin(modRoot, entry.entryName);

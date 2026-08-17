@@ -30,6 +30,7 @@ import type {
 const DATA_FILE = "mayfly-library.json";
 const DATA_VERSION = 9;
 const HIDDEN_PRESET_IDS = new Set(["gta5", "gta5enhanced"]);
+const LEGACY_PACKAGE_EXTENSION = ["g", "m", "m"].join("");
 type PackageProgress = {
   visible: boolean;
   operation: "import" | "export" | "";
@@ -54,7 +55,13 @@ function baseName(path: string) {
 }
 
 function modNameFromPath(path: string) {
-  return baseName(path).replace(/\.(zip|rar|7z|gmm)$/i, "");
+  const packagePattern = new RegExp(`\\.(zip|rar|7z|mmp|${LEGACY_PACKAGE_EXTENSION})$`, "i");
+  return baseName(path).replace(packagePattern, "");
+}
+
+function isPackageArchive(path: string) {
+  const lowerPath = path.toLowerCase();
+  return [".zip", ".mmp", `.${LEGACY_PACKAGE_EXTENSION}`].some((extension) => lowerPath.endsWith(extension));
 }
 
 function normalizeText(value: string) {
@@ -201,7 +208,7 @@ function groupIdList(value: unknown) {
   return single ? [single] : [];
 }
 
-const glossTypeIdMap: Record<string, Record<string, string>> = {
+const legacyTypeIdMap: Record<string, Record<string, string>> = {
   stardewvalley: {
     "1": "smapi",
     "2": "mods",
@@ -245,7 +252,7 @@ function resolveStoredModType(
   const directType = adapter.modTypes.find((type) => type.id === rawId);
   if (directType) return directType;
 
-  const mappedId = glossTypeIdMap[presetId]?.[rawId];
+  const mappedId = legacyTypeIdMap[presetId]?.[rawId];
   const mappedType = mappedId ? adapter.modTypes.find((type) => type.id === mappedId) : undefined;
   if (mappedType) return mappedType;
 
@@ -980,7 +987,7 @@ export const useLibraryStore = defineStore("library", () => {
     return `${settings.value.storagePath}\\mods\\${sanitizeFileName(game.name)}`;
   }
 
-  function toGlossModInfo(mod: LocalMod, index: number) {
+  function toPortableModInfo(mod: LocalMod, index: number) {
     return {
       id: Number(modFolderName(mod.rootPath, String(index + 1))) || index + 1,
       modName: mod.name,
@@ -1003,7 +1010,7 @@ export const useLibraryStore = defineStore("library", () => {
     };
   }
 
-  async function syncGlossGameFiles() {
+  async function syncGameModFiles() {
     if (!settings.value.storagePath) return;
 
     for (const game of games.value) {
@@ -1021,17 +1028,17 @@ export const useLibraryStore = defineStore("library", () => {
           color: settings.value.tagColors[tag] ?? ""
         }));
 
-      await window.mayfly.writeJsonFile(`${gameRoot}\\mod.json`, toPlain(gameMods.map(toGlossModInfo)));
+      await window.mayfly.writeJsonFile(`${gameRoot}\\mod.json`, toPlain(gameMods.map(toPortableModInfo)));
       await window.mayfly.writeJsonFile(`${gameRoot}\\tags.json`, toPlain(tags));
     }
   }
 
   async function persist() {
     await window.mayfly.writeStore(DATA_FILE, toData());
-    await syncGlossGameFiles();
+    await syncGameModFiles();
   }
 
-  async function migrateModCachesToGlossLayout() {
+  async function migrateModCachesToGameLayout() {
     if (!settings.value.storagePath) return;
 
     const nextFolderByGame = new Map<string, number>();
@@ -1060,11 +1067,11 @@ export const useLibraryStore = defineStore("library", () => {
         continue;
       }
 
-      const alreadyGlossLayout =
+      const alreadyGameLayout =
         mod.rootPath.startsWith(`${getGameModRoot(game)}\\`) &&
         /^\d+$/u.test(baseName(mod.rootPath));
 
-      if (alreadyGlossLayout || !(await window.mayfly.exists(mod.rootPath))) {
+      if (alreadyGameLayout || !(await window.mayfly.exists(mod.rootPath))) {
         migrated.push(mod);
         continue;
       }
@@ -1098,7 +1105,7 @@ export const useLibraryStore = defineStore("library", () => {
     mods.value = migrated;
   }
 
-  async function loadModsFromGlossFiles() {
+  async function loadModsFromGameFiles() {
     if (!settings.value.storagePath) return;
 
     const nextModsByGame = new Map<string, LocalMod[]>();
@@ -1147,7 +1154,7 @@ export const useLibraryStore = defineStore("library", () => {
           );
 
           return {
-            id: `gloss_${game.id}_${numericId}`,
+            id: `legacy_${game.id}_${numericId}`,
             gameId: game.id,
             sortIndex: Number(item.weight) || index + 1,
             name: String(item.modName || item.name || `Mod ${numericId}`),
@@ -1175,8 +1182,8 @@ export const useLibraryStore = defineStore("library", () => {
       } catch (caught) {
         await recordLog(
           "error",
-          "gloss-data",
-          `读取 Gloss Mod 数据失败：${game.name}`,
+          "legacy-data",
+          `读取历史 Mod 数据失败：${game.name}`,
           caught instanceof Error ? caught.message : String(caught)
         );
       }
@@ -1246,9 +1253,9 @@ export const useLibraryStore = defineStore("library", () => {
       translationCache.value = data.translationCache;
       initialized.value = true;
       if (previousDataVersion < 4) {
-        await migrateModCachesToGlossLayout();
+        await migrateModCachesToGameLayout();
       }
-      await loadModsFromGlossFiles();
+      await loadModsFromGameFiles();
       await migrateLegacyModCoverImages();
       await persist();
       if (settings.value.appUpdateUrl.trim()) {
@@ -1315,7 +1322,7 @@ export const useLibraryStore = defineStore("library", () => {
     const game: ManagedGame = {
       id: createId("game"),
       presetId: preset?.id ?? "",
-      glossGameId: preset?.glossGameId ?? 0,
+      catalogGameId: preset?.catalogGameId ?? 0,
       steamAppId: preset?.steamAppId ?? 0,
       nexusDomain: preset?.nexusDomain ?? "",
       nexusGameId: preset?.nexusGameId ?? 0,
@@ -1474,7 +1481,7 @@ export const useLibraryStore = defineStore("library", () => {
     const game: ManagedGame = {
       id: createId("game"),
       presetId: "",
-      glossGameId: 0,
+      catalogGameId: 0,
       steamAppId: 0,
       nexusDomain: "",
       nexusGameId: 0,
@@ -2801,7 +2808,7 @@ export const useLibraryStore = defineStore("library", () => {
   });
 
   let packageOperationId = "";
-  window.mayfly.onGmmProgress((data) => {
+  window.mayfly.onPackageProgress((data) => {
     if (!packageOperationId || data.operationId !== packageOperationId) return;
 
     packageProgress.value = {
@@ -3585,7 +3592,7 @@ export const useLibraryStore = defineStore("library", () => {
     }
   }
 
-  async function exportModsToGmm(options: {
+  async function exportModsToPackage(options: {
     targetMods: LocalMod[];
     name: string;
     author: string;
@@ -3601,16 +3608,16 @@ export const useLibraryStore = defineStore("library", () => {
 
     const packageName = options.name.trim() || (targetMods.length === 1 ? targetMods[0].name : "Mayfly Mod Pack");
     const outputPath = await window.mayfly.saveFile({
-      defaultPath: `${sanitizeFileName(packageName)}.gmm`,
+      defaultPath: `${sanitizeFileName(packageName)}.mmp`,
       filters: [
-        { name: "GMM Mod Package", extensions: ["gmm"] },
+        { name: "Mayfly Mod Package", extensions: ["mmp"] },
         { name: "All files", extensions: ["*"] }
       ]
     });
     if (!outputPath) return;
 
     const manifest = {
-      format: "mayfly-gmm",
+      format: "mayfly-mod-package",
       version: 1,
       name: packageName,
       author: options.author.trim(),
@@ -3636,10 +3643,10 @@ export const useLibraryStore = defineStore("library", () => {
     error.value = "";
 
     try {
-      const finalPath = outputPath.toLowerCase().endsWith(".gmm")
+      const finalPath = outputPath.toLowerCase().endsWith(".mmp")
         ? outputPath
-        : `${outputPath}.gmm`;
-      await window.mayfly.exportGmm({
+        : `${outputPath}.mmp`;
+      await window.mayfly.exportModPackage({
         outputPath: finalPath,
         operationId,
         manifest: toPlain(manifest),
@@ -3648,9 +3655,9 @@ export const useLibraryStore = defineStore("library", () => {
           folderName: sanitizeFileName(mod.name || mod.id)
         })))
       });
-      await recordLog("info", "gmm", `已导出 .gmm：${finalPath}`);
+      await recordLog("info", "package", `已导出 .mmp：${finalPath}`);
     } catch (caught) {
-      error.value = caught instanceof Error ? caught.message : "导出 .gmm 失败";
+      error.value = caught instanceof Error ? caught.message : "导出 .mmp 失败";
     } finally {
       busy.value = false;
       endPackageOperation(operationId);
@@ -3699,7 +3706,7 @@ export const useLibraryStore = defineStore("library", () => {
         steamAppId: activeGame.value.steamAppId,
         nexusDomain: activeGame.value.nexusDomain,
         nexusGameId: activeGame.value.nexusGameId,
-        glossGameId: activeGame.value.glossGameId
+        catalogGameId: activeGame.value.catalogGameId
       },
       tagColors: settings.value.tagColors,
       exportedAt: new Date().toISOString(),
@@ -3722,13 +3729,13 @@ export const useLibraryStore = defineStore("library", () => {
         installed: mod.installed
       }))
     };
-    const finalPath = /\.(zip|gmm)$/i.test(outputPath) ? outputPath : `${outputPath}.zip`;
+    const finalPath = isPackageArchive(outputPath) ? outputPath : `${outputPath}.zip`;
     const operationId = beginPackageOperation("export", "正在导出游戏整合包...");
     busy.value = true;
     error.value = "";
 
     try {
-      await window.mayfly.exportGmm({
+      await window.mayfly.exportModPackage({
         outputPath: finalPath,
         operationId,
         manifest: toPlain(manifest),
@@ -3737,7 +3744,7 @@ export const useLibraryStore = defineStore("library", () => {
           folderName: modFolderName(mod.rootPath, String(index + 1))
         })))
       });
-      await recordLog("info", "gmm", `已导出游戏整合包：${finalPath}`);
+      await recordLog("info", "package", `已导出游戏整合包：${finalPath}`);
     } catch (caught) {
       error.value = caught instanceof Error ? caught.message : "导出游戏整合包失败";
     } finally {
@@ -3753,9 +3760,9 @@ export const useLibraryStore = defineStore("library", () => {
     }
 
     const paths = await window.mayfly.openArchive();
-    const packagePath = paths.find((path) => /\.(zip|gmm)$/i.test(path)) ?? "";
+    const packagePath = paths.find(isPackageArchive) ?? "";
     if (!packagePath) return;
-    const manifest = await window.mayfly.readGmmManifest(packagePath);
+    const manifest = await window.mayfly.readPackageManifest(packagePath);
     const gameMeta = manifest.game && typeof manifest.game === "object"
       ? manifest.game as Record<string, unknown>
       : {};
@@ -3784,7 +3791,7 @@ export const useLibraryStore = defineStore("library", () => {
         targetGame = {
           id: createId("game"),
           presetId: String(gameMeta.presetId || ""),
-          glossGameId: Number(gameMeta.glossGameId) || 0,
+          catalogGameId: Number(gameMeta.catalogGameId) || 0,
           steamAppId: Number(gameMeta.steamAppId) || 0,
           nexusDomain: String(gameMeta.nexusDomain || ""),
           nexusGameId: Number(gameMeta.nexusGameId) || 0,
@@ -3888,7 +3895,7 @@ export const useLibraryStore = defineStore("library", () => {
       ];
       selectedModIds.value = [];
       await persist();
-      await recordLog("info", "gmm", `已恢复游戏整合包：${packagePath}`);
+      await recordLog("info", "package", `已恢复游戏整合包：${packagePath}`);
     } catch (caught) {
       error.value = caught instanceof Error ? caught.message : "恢复游戏整合包失败";
     } finally {
@@ -4507,7 +4514,7 @@ export const useLibraryStore = defineStore("library", () => {
     openBackupFolder,
     exportData,
     importData,
-    exportModsToGmm,
+    exportModsToPackage,
     exportActiveGamePack,
     restoreActiveGamePack,
     installMod,

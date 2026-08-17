@@ -5,8 +5,8 @@ import { commonAdapter } from "@/adapters/common";
 import { cyberpunk2077Adapter } from "@/adapters/cyberpunk2077";
 import { eldenRingAdapter } from "@/adapters/eldenring";
 import { createGta5Adapter } from "@/adapters/gta5";
-import { glossEngineDefinitions } from "@/adapters/gloss-engine-definitions";
-import { createGlossRuleAdapter, glossRuleDefinitions } from "@/adapters/gloss-rule-definitions";
+import { catalogEngineDefinitions } from "@/adapters/engine-definitions";
+import { createCatalogRuleAdapter, catalogRuleDefinitions } from "@/adapters/catalog-rule-definitions";
 import { inzoiAdapter } from "@/adapters/inzoi";
 import { legendOfHerosAdapter } from "@/adapters/legendofheros";
 import { createReEngineAdapter, monsterHunterWorldAdapter } from "@/adapters/monsterhunter";
@@ -46,10 +46,10 @@ const explicitAdapters: GameAdapter[] = [
 ];
 
 const explicitAdapterMap = new Map(explicitAdapters.map((adapter) => [adapter.presetId, adapter]));
-const glossEngineAdapterMap = new Map(
+const engineAdapterMap = new Map(
   gamePresets
     .map((preset): [string, GameAdapter] | null => {
-      const definition = glossEngineDefinitions[preset.id];
+      const definition = catalogEngineDefinitions[preset.id];
       if (!definition) return null;
 
       switch (definition.kind) {
@@ -70,17 +70,17 @@ const glossEngineAdapterMap = new Map(
 const catalogAdapterMap = new Map(
   gamePresets.map((preset) => [preset.id, createCatalogAdapter(preset)])
 );
-const glossRuleAdapterMap = new Map(
-  Object.entries(glossRuleDefinitions).map(([presetId, definition]) => [
+const ruleAdapterMap = new Map(
+  Object.entries(catalogRuleDefinitions).map(([presetId, definition]) => [
     presetId,
-    createGlossRuleAdapter(presetId, definition)
+    createCatalogRuleAdapter(presetId, definition)
   ])
 );
 
 export function getGameAdapter(presetId: string): GameAdapter {
   return explicitAdapterMap.get(presetId) ??
-    glossEngineAdapterMap.get(presetId) ??
-    glossRuleAdapterMap.get(presetId) ??
+    engineAdapterMap.get(presetId) ??
+    ruleAdapterMap.get(presetId) ??
     catalogAdapterMap.get(presetId) ??
     commonAdapter;
 }

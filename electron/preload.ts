@@ -28,6 +28,10 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
   openDevTools: () => electron.ipcRenderer.invoke("app:openDevTools") as Promise<void>,
   setLaunchAtStartup: (enabled: boolean) =>
     electron.ipcRenderer.invoke("app:setLaunchAtStartup", enabled) as Promise<boolean>,
+  fetchRemoteJson: (options: {
+    url: string;
+    proxyUrl?: string;
+  }) => electron.ipcRenderer.invoke("net:fetchJson", options) as Promise<Record<string, unknown>>,
   checkAppUpdate: (options: {
     updateUrl: string;
     currentVersion?: string;
@@ -142,7 +146,7 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
       isDirectory: boolean;
       size: number;
     }>>,
-  exportGmm: (options: {
+  exportModPackage: (options: {
     mods: Array<{
       rootPath: string;
       folderName: string;
@@ -150,11 +154,11 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
     manifest: Record<string, unknown>;
     outputPath: string;
     operationId?: string;
-  }) => electron.ipcRenderer.invoke("gmm:exportMods", options) as Promise<{
+  }) => electron.ipcRenderer.invoke("package:exportMods", options) as Promise<{
     outputPath: string;
     size: number;
   }>,
-  onGmmProgress: (callback: (data: {
+  onPackageProgress: (callback: (data: {
     operationId: string;
     operation: "import" | "export";
     phase: string;
@@ -162,7 +166,7 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
     total: number;
     message: string;
   }) => void) => {
-    electron.ipcRenderer.on("gmm:progress", (_event, data) => callback(data as {
+    electron.ipcRenderer.on("package:progress", (_event, data) => callback(data as {
       operationId: string;
       operation: "import" | "export";
       phase: string;
@@ -171,15 +175,15 @@ electron.contextBridge.exposeInMainWorld("mayfly", {
       message: string;
     }));
   },
-  readGmmManifest: (packagePath: string) =>
-    electron.ipcRenderer.invoke("gmm:readManifest", packagePath) as Promise<Record<string, unknown>>,
+  readPackageManifest: (packagePath: string) =>
+    electron.ipcRenderer.invoke("package:readManifest", packagePath) as Promise<Record<string, unknown>>,
   importGamePack: (options: {
     packagePath: string;
     storagePath: string;
     gameName: string;
     overwrite?: boolean;
     operationId?: string;
-  }) => electron.ipcRenderer.invoke("gmm:importGamePack", options) as Promise<{
+  }) => electron.ipcRenderer.invoke("package:importGamePack", options) as Promise<{
     manifest: Record<string, unknown>;
     mods: Array<{ folder: string; rootPath: string; files: string[]; coverImage?: string }>;
   }>,

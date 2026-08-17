@@ -12,7 +12,7 @@ interface DetectRule {
   value: string;
 }
 
-interface GlossRuleDefinition {
+interface CatalogRuleDefinition {
   name: string;
   modTypes: ModTypeRule[];
   detect: DetectRule[];
@@ -64,7 +64,7 @@ function fileOnly(id: string, name: string, installPath: string, fileName: strin
 const documents = "documents" as const;
 const appData = "appData" as const;
 
-export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
+export const catalogRuleDefinitions: Record<string, CatalogRuleDefinition> = {
   "7daystodie": {
     name: "7 Days to Die",
     modTypes: [
@@ -255,11 +255,11 @@ export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
     name: "Genshin Impact",
     modTypes: [
       file("1", "mods", "Mods", "ini", true, true),
-      sibling("2", "GIMI", "", "3DMigoto Loader.exe"),
+      sibling("2", "GIMI", "", "d3d11.dll"),
       manual()
     ],
     detect: [
-      { typeId: "2", kind: "fileName", value: "3DMigoto Loader.exe" },
+      { typeId: "2", kind: "fileName", value: "d3d11.dll" },
       { typeId: "1", kind: "extension", value: "ini" }
     ]
   },
@@ -360,7 +360,7 @@ export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
         name: "插件",
         install: {
           kind: "michangshengDllPlugins",
-          installPath: "本地Mod测试/Gmm/plugins"
+          installPath: "本地Mod测试/Mayfly/plugins"
         }
       },
       {
@@ -368,7 +368,7 @@ export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
         name: "Next类",
         install: {
           kind: "michangshengLinkedFolder",
-          installPath: "本地Mod测试/Gmm/plugins/Next",
+          installPath: "本地Mod测试/Mayfly/plugins/Next",
           rootFile: "modconfig.json"
         }
       },
@@ -638,7 +638,7 @@ export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
   },
   thesims4: {
     name: "The Sims 4",
-    modTypes: [folderRoot("1", "通用类型", "Electronic Arts/The Sims 4/Mods/Gloss Mod Manager", documents)],
+    modTypes: [folderRoot("1", "通用类型", "Electronic Arts/The Sims 4/Mods/mayflyMods", documents)],
     detect: []
   },
   thewitcher3: {
@@ -719,7 +719,7 @@ export const glossRuleDefinitions: Record<string, GlossRuleDefinition> = {
   }
 };
 
-export function createGlossRuleAdapter(presetId: string, definition: GlossRuleDefinition): GameAdapter {
+export function createCatalogRuleAdapter(presetId: string, definition: CatalogRuleDefinition): GameAdapter {
   return {
     presetId,
     name: definition.name,

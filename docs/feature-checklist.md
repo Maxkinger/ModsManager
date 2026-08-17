@@ -1,20 +1,18 @@
-# Mayfly Mod Manager 任务单
+# mayflyMods 任务单
 
-参考项目：<https://github.com/GlossMod/Gloss-Mod-Manager>
-
-目标：用 Electron 重写一个新的 Mod 管理器，产品能力参考 Gloss Mod Manager，但代码按 Electron 主进程、preload IPC、Vue 渲染进程重新实现。
+目标：用 Electron 构建一个桌面端 Mod 管理器，代码按 Electron 主进程、preload IPC、Vue 渲染进程组织。
 
 当前范围：
 
 - 保留：本地 Mod 管理、游戏库、游戏适配、NexusMods 浏览/授权/下载、下载队列、备份、设置、关于。
-- 不做：3DM/Gloss Mod 站、Thunderstore、mod.io、CurseForge、GameBanana、AI 对话、MCP、Skills、上传 Mod 包到平台。
+- 不做：第三方 Mod 站、Thunderstore、mod.io、CurseForge、GameBanana、AI 对话、MCP、Skills、上传 Mod 包到平台。
 
 使用规则：
 
 - `[x]` 表示已完成并通过当前项目验证。
 - `[ ]` 表示未完成。
 - 每做完一个任务，就在这里打钩。
-- 不急着迁移所有游戏，先按阶段把基础能力打稳。
+- 不急着补齐所有游戏的特殊规则，先按阶段把基础能力打稳。
 
 ## 0. 项目基础
 
@@ -34,12 +32,12 @@
 
 ## 1. 文档与范围控制
 
-- [x] 梳理 Gloss Mod Manager 功能范围
+- [x] 梳理 Mod 管理器功能范围
 - [x] 将调研文档改成任务单
 - [x] 明确第一阶段先做本地 Mod 管理
-- [x] 明确暂缓大规模游戏规则迁移
+- [x] 明确暂缓大规模游戏特殊规则补齐
 - [x] 明确线上源只保留 NexusMods
-- [x] 明确排除 3DM/Gloss Mod 站
+- [x] 明确排除 第三方 Mod 站
 - [x] 明确排除 AI/MCP/Skills
 - [x] 明确排除 Thunderstore/mod.io/CurseForge/GameBanana
 - [x] 每完成一个任务同步更新本任务单
@@ -83,7 +81,7 @@
 - [x] 保存 Mod 安装状态
 - [x] 兼容旧 Mod 数据缺少 `modTypeId` 的情况
 - [x] 将数据按游戏拆分成独立 `mod.json`
-- [x] 兼容 Gloss 数字 `modType` 到当前 adapter 类型
+- [x] 兼容 历史数字 `modType` 到当前 adapter 类型
 - [x] 增加数据版本号
 - [x] 增加数据迁移机制
 - [x] 增加数据导入/导出
@@ -99,7 +97,7 @@
 - [x] 支持删除游戏配置
 - [x] 生成 144 个游戏预设入口
 - [x] 前台隐藏 `GTA5` / `GTA5 Enhanced`，当前可添加游戏显示为 142 个
-- [x] 预设包含游戏名、GlossGameId、Steam AppID、exe、封面、类型名
+- [x] 预设包含游戏名、内部目录 ID、Steam AppID、exe、封面、类型名
 - [x] 预设包含 NexusMods domain 和 Nexus game_id
 - [x] 统计并保留带 Nexus 配置的游戏入口
 - [x] 补充 `GTA5`（当前隐藏）
@@ -132,7 +130,7 @@
 - [x] 支持 zip 解压导入
 - [x] 支持 7z 解压导入
 - [x] 支持 rar 解压导入
-- [x] 支持 `.gmm` 包导入
+- [x] 支持 `.mmp` 包导入
 - [x] 导入时读取 `manifest.json`
 - [x] 导入时读取封面图
 - [x] 导入时自动识别版本号
@@ -236,31 +234,31 @@
 - [x] 已给 `ELDEN RING` 接入 Unreal 规则占位
 - [x] 已给 `Hogwarts Legacy` 接入 Unreal 规则
 - [x] 已给 `Stellar Blade` 接入 Unreal 规则
-- [x] 已给 Unreal/`Stellar Blade` 补齐 Gloss 风格 `LogicMods` 类型
+- [x] 已给 Unreal/`Stellar Blade` 补齐 `LogicMods` 类型
 - [x] 已给 `Tekken 8` 接入 Unreal 规则
 - [x] 已给 `Risk of Rain 2` 接入 Unity 规则
 - [x] 已给 `Valheim` 接入 Unity 规则
 - [x] 已给 `Lethal Company` 接入 Unity 规则
 - [x] 逐个核对 144 个游戏预设 ID 是否和 adapter 匹配
-- [x] 批量迁移 Gloss 中数据化安装规则
-- [x] 迁移剩余 63 个 catalogued 游戏的 Gloss 数据化安装规则
+- [x] 批量补齐数据化安装规则
+- [x] 补齐剩余 63 个 catalogued 游戏的数据化安装规则
 - [x] adapter 校验达到 144 / 144
-- [x] 迁移 `Elden Ring` 专属规则
-- [x] 迁移 `Black Myth Wukong` 专属规则
-- [x] 迁移 `Monster Hunter World` 专属规则
+- [x] 实现 `Elden Ring` 专属规则
+- [x] 实现 `Black Myth Wukong` 专属规则
+- [x] 实现 `Monster Hunter World` 专属规则
 - [x] 修正 `Monster Hunter World` 插件安装到 `nativePC/plugins`
-- [x] 迁移 `Monster Hunter Rise` 专属规则
-- [x] 迁移 `Monster Hunter Wilds` 专属规则
-- [x] 迁移 `Skyrim Special Edition` 专属规则
-- [x] 迁移 `Stardew Valley` 专属规则
-- [x] 迁移 `Tale of Immortal` 专属规则
-- [x] 迁移 `Baldur's Gate 3` 专属规则
-- [x] 迁移 `GTA5` 专属规则（当前隐藏）
-- [x] 迁移 `GTA5 Enhanced` 专属规则（当前隐藏）
-- [x] 迁移 RE Engine 通用适配
-- [x] 迁移 GTA5 `dlc.rpf` DLC 包落位规则
-- [ ] 迁移 GTA5 `update.rpf` 内部 XML 写入规则（GTA5 当前隐藏，暂不做）
-- [x] 迁移游戏专属排序
+- [x] 实现 `Monster Hunter Rise` 专属规则
+- [x] 实现 `Monster Hunter Wilds` 专属规则
+- [x] 实现 `Skyrim Special Edition` 专属规则
+- [x] 实现 `Stardew Valley` 专属规则
+- [x] 实现 `Tale of Immortal` 专属规则
+- [x] 实现 `Baldur's Gate 3` 专属规则
+- [x] 实现 `GTA5` 专属规则（当前隐藏）
+- [x] 实现 `GTA5 Enhanced` 专属规则（当前隐藏）
+- [x] 实现 RE Engine 通用适配
+- [x] 实现 GTA5 `dlc.rpf` DLC 包落位规则
+- [ ] 实现 GTA5 `update.rpf` 内部 XML 写入规则（GTA5 当前隐藏，暂不做）
+- [x] 实现游戏专属排序
 - [x] 支持用户自定义 adapter
 - [x] 自定义 adapter 添加时提供文件夹风格的规则模拟页面
 - [x] 可视化显示识别条件和识别出的 Mod 类型
@@ -273,7 +271,7 @@
 说明：`144 / 144` 表示所有预设游戏都有基础 adapter，且不会退回 `common` 通用兜底；前台当前隐藏 `GTA5` / `GTA5 Enhanced`，用户可添加列表显示 142 个。前置检测按当前需求暂不做，不计入 adapter 未完成项。
 
 - [ ] `GTA5` / `GTA5 Enhanced`：已隐藏；`gameconfig.xml` 写入 `update.rpf/common/data/gameconfig.xml`、车辆/人物文件写入 RPF 容器、`oiv` 脚本执行、RPF 工具链接入暂不做。
-- [x] `Baldur's Gate 3`：已按 Gloss 方案还原 `.pak` 安装到用户 AppData，并通过已导入的 `BaldursGate3.dll` 读取 `.pak` 元数据、维护 `modsettings.lsx`。
+- [x] `Baldur's Gate 3`：已按 专属方案还原 `.pak` 安装到用户 AppData，并通过已导入的 `BaldursGate3.dll` 读取 `.pak` 元数据、维护 `modsettings.lsx`。
 - [x] `Dying Light 2`：已还原 `.pak -> dataN.pak` 编号安装，并维护本地 `pakList.txt` 映射。
 - [x] `Watch Dogs 2`：已还原 `.dat/.fat -> patchN.dat/fat` 成对编号安装，并维护本地 `pakList.txt` 映射。
 - [x] `Starfield`：已写 `Starfield.ini`、维护 AppData `plugins.txt`、处理 `sTestFile`；安装前前置检测当前不做。
@@ -284,14 +282,14 @@
 - [x] `Red Dead Redemption 2`：已还原 `install.xml` 读取和 `lml/mods.xml` 写入，支持 `lml` 与带 `install.xml` 的 `asi` 启用/关闭同步。
 - [x] `InZOI`：已修改 `mod_manifest.json` 启用 Mod。
 - [x] `MiChangSheng`：已生成/补齐 `Mod.bin`，并按类型创建目录链接或复制 dll。
-- [x] `Armored Core 6`：已迁移 `ArmoredCore6Dictionary.txt` 字典映射，普通 Mod 会按 Gloss 字典落位到 `mods`；安装前前置检测当前不做。
-- [x] `Elden Ring`：已迁移 `EldenRingDictionary.txt` 字典映射；安装前前置检测当前不做。
-- [x] `Monster Hunter World`：专属安装规则已迁移；安装前前置检测当前不做。
-- [x] `Resident Evil Village` / `Street Fighter 6`：RE Engine 安装规则已迁移；安装前前置检测当前不做。
-- [x] `Sekiro`：已迁移 `SekiroDictionary.txt` 字典映射，基础类型会按 Gloss 字典落位到 `mods`；安装前前置检测当前不做。
-- [x] `Legend of Heroes Three Kingdoms`：已迁移 `ThreeKingdomDictionary.txt` Data 字典映射，并支持 Portraits 头像目录软链到 `ThreeKingdom_Data/StreamingAssets/Portraits`。
-- [x] `Nioh 2`：安装规则已迁移；安装前前置检测当前不做。
-- [x] `Like A Dragon 8`：安装规则已迁移；安装前前置检测当前不做。
+- [x] `Armored Core 6`：已实现 `ArmoredCore6Dictionary.txt` 字典映射，普通 Mod 会按字典落位到 `mods`；安装前前置检测当前不做。
+- [x] `Elden Ring`：已实现 `EldenRingDictionary.txt` 字典映射；安装前前置检测当前不做。
+- [x] `Monster Hunter World`：专属安装规则已实现；安装前前置检测当前不做。
+- [x] `Resident Evil Village` / `Street Fighter 6`：RE Engine 安装规则已实现；安装前前置检测当前不做。
+- [x] `Sekiro`：已实现 `SekiroDictionary.txt` 字典映射，基础类型会按字典落位到 `mods`；安装前前置检测当前不做。
+- [x] `Legend of Heroes Three Kingdoms`：已实现 `ThreeKingdomDictionary.txt` Data 字典映射，并支持 Portraits 头像目录软链到 `ThreeKingdom_Data/StreamingAssets/Portraits`。
+- [x] `Nioh 2`：安装规则已实现；安装前前置检测当前不做。
+- [x] `Like A Dragon 8`：安装规则已实现；安装前前置检测当前不做。
 
 ## 9. 设置
 
@@ -308,7 +306,7 @@
 - [x] 支持调试模式
 - [x] 支持显示调试信息
 - [x] 支持启动时检查应用更新
-- [x] 参考 `deskPluginsVIP` 接入应用更新 JSON 检查
+- [x] 接入应用更新 JSON 检查
 - [x] 支持设置应用更新地址，地址后续可直接填写
 - [x] 支持比较本地版本与线上 `versionName`
 - [x] 支持显示更新弹窗、更新日志和强制更新提示
@@ -377,24 +375,24 @@
 
 排除项：
 
-- [x] 不接入 Gloss/3DM Mod 列表
-- [x] 不接入 Gloss/3DM Mod 详情
-- [x] 不接入 Gloss/3DM 下载资源
+- [x] 不接入 其它第三方 Mod 列表
+- [x] 不接入 其它第三方 Mod 详情
+- [x] 不接入 其它第三方 下载资源
 - [x] 不接入 Thunderstore
 - [x] 不接入 mod.io
 - [x] 不接入 CurseForge
 - [x] 不接入 GameBanana
 
-## 13. `.gmm` 包
+## 13. `.mmp` 包
 
-- [x] 定义 `.gmm` 包结构
-- [x] 支持读取 `.gmm` 包信息
-- [ ] 支持选择 `.gmm` 子包（暂缓）
-- [x] 支持导入 `.gmm` 包
-- [ ] 支持导出单个 Mod 为 `.gmm`（暂缓）
-- [ ] 支持导出多个 Mod 为 `.gmm`（暂缓）
-- [ ] 支持填写 `.gmm` 包名、作者、版本、描述（暂缓）
-- [x] 支持 `.gmm` 包重复检测
+- [x] 定义 `.mmp` 包结构
+- [x] 支持读取 `.mmp` 包信息
+- [ ] 支持选择 `.mmp` 子包（暂缓）
+- [x] 支持导入 `.mmp` 包
+- [ ] 支持导出单个 Mod 为 `.mmp`（暂缓）
+- [ ] 支持导出多个 Mod 为 `.mmp`（暂缓）
+- [ ] 支持填写 `.mmp` 包名、作者、版本、描述（暂缓）
+- [x] 支持 `.mmp` 包重复检测
 
 ## 14. AI 与 MCP
 
@@ -420,7 +418,7 @@
 - [x] 清除 NexusMods 授权
 - [x] 保存 NexusMods API Key
 - [x] 校验 NexusMods API Key
-- [x] 不做 Gloss/3DM Key 配置
+- [x] 不做 其它第三方 Key 配置
 - [x] 不做平台账号密码登录
 - [x] 不做上传 Mod 包到平台
 
@@ -459,7 +457,7 @@
 - 安装前本地前置依赖检测。
 - GTA5 / GTA5 Enhanced 的 RPF 深层写入规则（当前隐藏）。
 - aria2 任务快照和软件重启后的历史任务恢复。
-- `.gmm` 子包选择、单个/多个 Mod 导出和包信息编辑。
+- `.mmp` 子包选择、单个/多个 Mod 导出和包信息编辑。
 - 非 Nexus 来源 Mod 更新识别。
 - 完全无人值守 Mod 更新。
 - Nexus OAuth 长期 Token 刷新。

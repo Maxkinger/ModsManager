@@ -1,11 +1,11 @@
-export type GlossEngineKind = "unreal" | "unity" | "melon" | "reengine";
+export type CatalogEngineKind = "unreal" | "unity" | "melon" | "reengine";
 
-export interface GlossEngineDefinition {
-  kind: GlossEngineKind;
+export interface CatalogEngineDefinition {
+  kind: CatalogEngineKind;
   basePath: string;
 }
 
-export const glossEngineDefinitions: Record<string, GlossEngineDefinition> = {
+export const catalogEngineDefinitions: Record<string, CatalogEngineDefinition> = {
   ace7game: { kind: "unreal", basePath: "Game" },
   atomicheart: { kind: "unreal", basePath: "AtomicHeart" },
   borderlands3: { kind: "unreal", basePath: "OakGame" },

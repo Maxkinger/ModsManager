@@ -25,6 +25,10 @@ declare global {
       }) => Promise<boolean>;
       openDevTools: () => Promise<void>;
       setLaunchAtStartup: (enabled: boolean) => Promise<boolean>;
+      fetchRemoteJson: (options: {
+        url: string;
+        proxyUrl?: string;
+      }) => Promise<Record<string, unknown>>;
       checkAppUpdate: (options: {
         updateUrl: string;
         currentVersion?: string;
@@ -144,7 +148,7 @@ declare global {
         isDirectory: boolean;
         size: number;
       }>>;
-      exportGmm: (options: {
+      exportModPackage: (options: {
         mods: Array<{
           rootPath: string;
           folderName: string;
@@ -156,7 +160,7 @@ declare global {
         outputPath: string;
         size: number;
       }>;
-      onGmmProgress: (callback: (data: {
+      onPackageProgress: (callback: (data: {
         operationId: string;
         operation: "import" | "export";
         phase: string;
@@ -164,7 +168,7 @@ declare global {
         total: number;
         message: string;
       }) => void) => void;
-      readGmmManifest: (packagePath: string) => Promise<Record<string, unknown>>;
+      readPackageManifest: (packagePath: string) => Promise<Record<string, unknown>>;
       importGamePack: (options: {
         packagePath: string;
         storagePath: string;
