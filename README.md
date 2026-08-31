@@ -5,7 +5,7 @@ mayflyMods 是一个基于 Electron + Vue 3 + TypeScript 的桌面端 Mod 管理
 当前项目聚焦本地 Mod 管理和 NexusMods 源，不接入其它第三方 Mod 站、AI、MCP、Skills 等模块。
 
 ## 功能特性
-
+1
 - 游戏库管理：支持预设游戏、自定义游戏、Steam 路径识别、手动选择目录、启动游戏、打开游戏目录。
 - 本地 Mod 导入：支持文件夹、单文件、zip、7z、rar包导入。
 - Mod 安装卸载：基于游戏 adapter 规则安装，支持软链接安装、安装计划预览、覆盖风险检测、失败回滚、部署文件记录。
