@@ -8,6 +8,11 @@ jobs:
   build:
     runs-on: windows-latest # 指定在 Windows 云服务器上编译
 
+    # 设置所有命令默认进入子目录执行
+    defaults:
+      run:
+        working-directory: mayfly-mod-manager-electron
+
     steps:
     - name: 获取源码
       uses: actions/checkout@v4
@@ -15,17 +20,16 @@ jobs:
     - name: 配置 Node.js 环境
       uses: actions/setup-node@v4
       with:
-        node-version: '24' # 可修改为你本地使用的 Node 版本
+        node-version: '20' # 推荐使用稳定的 LTS 版本
 
     - name: 安装依赖
       run: npm install
 
     - name: 执行打包编译
-      run: npm run build # 确保 package.json 中有这个指令，通常会调用 electron-builder
+      run: npm run dist
 
     - name: 提取编译生成的 EXE 文件
       uses: actions/upload-artifact@v4
       with:
         name: ModManager-Electron-Release
-        # 【修改这里】加上 **/ 让系统去你的 mayfly-mod-manager-electron 子目录里找
-        path: '**/release/*.exe'
+        path: mayfly-mod-manager-electron/release/*.exe
