@@ -27,4 +27,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ModManager-Electron-Release
-        path: release/*.exe # 根据 electron-builder 实际输出的路径修改（如 dist, build, release）
+        # 【修改这里】加上 **/ 让系统去你的 mayfly-mod-manager-electron 子目录里找
+        path: '**/release/*.exe'
