@@ -15,7 +15,7 @@ jobs:
     - name: 配置 Node.js 环境
       uses: actions/setup-node@v4
       with:
-        node-version: '20' # 可修改为你本地使用的 Node 版本
+        node-version: '24' # 可修改为你本地使用的 Node 版本
 
     - name: 安装依赖
       run: npm install
@@ -27,4 +27,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ModManager-Electron-Release
-        path: dist/*.exe # 根据 electron-builder 实际输出的路径修改（如 dist, build, release）
+        path: release/*.exe # 根据 electron-builder 实际输出的路径修改（如 dist, build, release）
