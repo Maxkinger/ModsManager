@@ -2,7 +2,6 @@
 
 mayflyMods 是一个基于 Electron + Vue 3 + TypeScript 的桌面端 Mod 管理器，目标是提供本地 Mod 导入、安装、卸载、排序、配置档案、备份恢复、NexusMods 浏览与下载等能力。
 
-当前项目聚焦本地 Mod 管理和 NexusMods 源，不接入其它第三方 Mod 站、AI、MCP、Skills 等模块。
 
 ## 功能特性
 1
@@ -12,7 +11,6 @@ mayflyMods 是一个基于 Electron + Vue 3 + TypeScript 的桌面端 Mod 管理
 - Mod 管理：支持搜索、类型筛选、标签筛选、排序、多选、批量安装、批量卸载、批量删除、批量编辑。
 - 配置档案：支持保存一套 Mod 启用状态和排序，并一键切换整套 Mod 配置。
 - 冲突检测：可检测多个 Mod 写入同一目标路径的覆盖冲突。
-- 游戏适配：内置 144 个游戏预设基础 adapter，用户可添加列表显示 142 个。
 - NexusMods：支持网页 OAuth 登录、API Key 备用登录、Mod 列表、详情、文件列表、下载链接解析、NXM 深链。
 - Mod 更新：支持 Nexus 来源 Mod 更新检查、手动更新和批量更新。
 - 下载队列：支持自定义 URL 下载、Nexus 下载、进度、暂停、继续、删除、下载完成自动导入。
@@ -66,8 +64,6 @@ npm install
 ```powershell
 npm run dev
 ```
-
-如果 Windows 环境变量里存在 `ELECTRON_RUN_AS_NODE=1`，开发脚本会处理 Electron 被当作 Node 运行的问题。
 
 ## 类型检查
 
