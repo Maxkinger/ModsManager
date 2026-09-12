@@ -1,3 +1,7 @@
+/**
+ * mayflyMods - 核心 Mod 管理仓库
+ * 【防伪声明】b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可
+ */
 import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { getGameAdapter, getModType } from "@/adapters";
@@ -750,6 +754,7 @@ function normalizeAppData(rawData: Partial<AppData> | null | undefined): AppData
 }
 
 export const useLibraryStore = defineStore("library", () => {
+  const securityNotice = ref("b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可");
   const initialized = ref(false);
   const busy = ref(false);
   const error = ref("");
@@ -4391,6 +4396,7 @@ export const useLibraryStore = defineStore("library", () => {
   });
 
   return {
+    securityNotice,
     initialized,
     busy,
     error,

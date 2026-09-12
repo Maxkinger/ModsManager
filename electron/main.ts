@@ -390,7 +390,7 @@ function createWindow() {
     ...windowState,
     minWidth: 1024,
     minHeight: 768,
-    title: "mayflyMods",
+    title: "mayflyMods - [b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可]",
     icon: getResourcePath("icon.ico"),
     backgroundColor: "#0f1216",
     autoHideMenuBar: true,
@@ -5691,6 +5691,9 @@ electron.app.on("open-url", (event, url) => {
 });
 
 electron.app.whenReady().then(() => {
+  console.log("==================================================");
+  console.log("[mayflyMods 防伪声明] b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可");
+  console.log("==================================================");
   createWindow();
   dispatchNxmUrl(findNxmUrl(process.argv));
 

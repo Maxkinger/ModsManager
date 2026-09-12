@@ -3,6 +3,7 @@ export {};
 declare global {
   interface Window {
     mayfly: {
+      securityNotice?: string;
       openDirectory: () => Promise<string>;
       openExecutable: () => Promise<string>;
       openImage: () => Promise<string>;

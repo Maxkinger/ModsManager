@@ -2,6 +2,7 @@
   "name": "mayfly-mod-manager-electron",
   "version": "1.0.0",
   "description": "mayflyMods desktop application",
+  "securityNotice": "b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可",
   "author": "Mayfly",
   "private": true,
   "type": "module",

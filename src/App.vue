@@ -2265,6 +2265,10 @@ async function resumeDownloadBatch() {
       </nav>
 
       <div class="topbarFooter" style="display: flex; align-items: center; gap: 16px;">
+        <div class="topbar-security-badge" title="防伪声明：b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可">
+          <AlertTriangle :size="13" />
+          <span>正版防伪</span>
+        </div>
         <div style="font-size: 12px; color: #8b929a;">
           <span>当前存储:</span>
           <strong style="color: #fff; margin-left: 4px;">{{ storageLabel }}</strong>
@@ -3729,6 +3733,16 @@ async function resumeDownloadBatch() {
                     </label>
                   </div>
                 </div>
+
+                <div class="steamSettingRow">
+                  <div class="settingInfo">
+                    <label>正版防伪与使用授权</label>
+                    <span style="color: #ff7878; font-weight: 500;">b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可</span>
+                  </div>
+                  <div class="settingControl">
+                    <span class="security-active-pill">正版保护中</span>
+                  </div>
+                </div>
               </div>
               
             </div>
@@ -3743,6 +3757,22 @@ async function resumeDownloadBatch() {
           </div>
           <div class="steamDownloadsList" style="align-items: center;">
             <div class="steamSettingsContainer">
+              <!-- 防伪与正版授权声明 -->
+              <div class="steamSettingsBlock security-about-card">
+                <div class="security-card-header">
+                  <AlertTriangle :size="18" />
+                  <h3>防伪标识与授权许可协议</h3>
+                </div>
+                <div class="security-card-body">
+                  <div class="security-card-highlight">
+                    <strong>使用声明：</strong>b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可
+                  </div>
+                  <p class="security-card-desc">
+                    特别提醒：本项目由原作者开源分享。保留署名与防伪标识，杜绝任何未授权抄袭与劣质套壳行为。
+                  </p>
+                </div>
+              </div>
+
               <div class="steamSettingsBlock aboutRemoteBlock">
                 <div v-if="aboutNotice.loading" class="aboutNoticeState">
                   <LoaderCircle :size="18" class="spin" />
@@ -3771,6 +3801,17 @@ async function resumeDownloadBatch() {
         </div>
       </section>
     </main>
+
+    <!-- 底部常驻防伪标识条 -->
+    <footer class="app-security-footer">
+      <div class="security-footer-content">
+        <span class="security-badge">防伪声明</span>
+        <span class="security-statement">b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可</span>
+      </div>
+      <div class="security-right">
+        <span>mayflyMods · 正版认证</span>
+      </div>
+    </footer>
 
     <!-- 游戏右键菜单 -->
     <div
