@@ -3,10 +3,10 @@
 > [!CAUTION]
 > **防伪与授权声明**：b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可。
 
-mayflyMods 是一个基于 Electron + Vue 3 + TypeScript 的桌面端 Mod 管理器，目标是提供本地 Mod 导入、安装、卸载、排序、配置档案、备份恢复、NexusMods 浏览与下载等能力。
+mayflyMods 是一个基于 Electron + Vue 3 + TypeScript 的桌面端 Mod 管理器。本仓库在 [aojiangfuyou1/mayflyMods](https://github.com/aojiangfuyou1/mayflyMods) 基础上增加 macOS 通用游戏管理支持；原作者与本移植版本的归属和声明保留在此。
 
 
-## 功能特性
+## 项目功能（支持范围因平台而异）
 1
 - 游戏库管理：支持预设游戏、自定义游戏、Steam 路径识别、手动选择目录、启动游戏、打开游戏目录。
 - 本地 Mod 导入：支持文件夹、单文件、zip、7z、rar包导入。
@@ -21,21 +21,30 @@ mayflyMods 是一个基于 Electron + Vue 3 + TypeScript 的桌面端 Mod 管理
 - 翻译：支持 Nexus 页面实验性翻译，包含 Google 免费接口、百度、有道、腾讯云、火山引擎、Ollama 本地模型。
 - 备份恢复：支持游戏目录/存档目录备份、恢复、删除、重命名和查看备份内容。
 
-## 当前状态
+## macOS 首版范围
 
-当前核心本地 Mod 管理流程已经可用：
+macOS 版本面向 Apple silicon 和 Intel Mac，允许用户手动添加游戏目录并为该游戏管理 Mod。首版实测流程包括：
 
-- 添加游戏
-- 导入 Mod
-- 识别 Mod 类型
-- 安装/卸载 Mod
-- 查看部署文件
-- 检测冲突
-- 标签管理
-- 配置档案一键切换
-- Nexus 浏览、下载、更新检查
-- 备份与恢复
-- Windows 构建和打包
+- 添加自定义游戏目录、导入 Mod 并预览目标文件
+- 使用符号链接或复制方式安装，再卸载 Mod
+
+macOS 首版不会使用 Windows 专用游戏预设，也不承诺 Windows `.exe` 游戏启动、aria2 或现有游戏 adapter 规则已适配 macOS。通用规则需要由用户按游戏实际目录设置。
+macOS 首版暂不包含下载队列和备份/恢复的用户界面，因此这些功能不属于 Mac 支持范围。
+
+## 下载 macOS 版本
+
+从 [GitHub Releases](https://github.com/Maxkinger/ModsManager/releases) 下载对应架构的 DMG：
+
+- `arm64`：Apple silicon（M 系列）Mac
+- `x64`：Intel Mac
+
+将 DMG 中的 `mayflyMods.app` 拖到“应用程序”文件夹。此版本未使用 Apple Developer ID 签名，也未经过 Apple 公证。首次打开时，macOS 可能阻止应用启动；如果确认下载自本仓库的 Releases，可先尝试打开一次，然后进入“系统设置 → 隐私与安全性”，在安全性区域选择“仍要打开”，并在提示中确认。此按钮约在首次尝试打开后一小时内可用。请仅对信任来源的软件执行此操作，详见 [Apple：打开来自身份不明开发者的 Mac App](https://support.apple.com/en-mo/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac) 和 [安全地在 Mac 上打开 App](https://support.apple.com/en-au/102445)。
+
+由于没有 Developer ID 签名和公证，Gatekeeper 仍可能显示警告或要求手动批准；本项目不保证首次打开可以一键完成。
+
+## Windows 功能
+
+Windows 版本保留上游的游戏预设、adapter、NexusMods 和其他现有功能。不同平台的功能支持范围不同；上方 macOS 首版范围是本仓库对 Mac 的承诺。
 
 
 ## 技术栈
@@ -52,9 +61,9 @@ mayflyMods 是一个基于 Electron + Vue 3 + TypeScript 的桌面端 Mod 管理
 
 - Node.js 20 或更高版本
 - npm
-- Windows 10/11
+- Windows 10/11（Windows 开发）或 macOS（macOS 开发）
 
-当前打包配置主要面向 Windows，其他平台未做完整验证。
+macOS CI 使用 Node.js 20，通过 `npm ci` 安装锁定依赖并构建 arm64 与 x64 DMG。
 
 ## 安装依赖
 
@@ -107,6 +116,18 @@ release/
 - 可选择安装目录
 - 桌面快捷方式
 - 开始菜单快捷方式
+
+## macOS 打包
+
+在 macOS 上运行：
+
+```sh
+npm ci
+npm run check:all
+npm run dist:mac
+```
+
+DMG 输出到 `release/`，文件名带有 `arm64` 或 `x64` 架构标识。`.github/workflows/macos.yml` 会在 `main`/`master` 分支推送时上传构建产物，在推送 `v*` 标签时把 DMG 附加到 GitHub Release。构建默认跳过签名与公证。
 
 ## 常用检查命令
 
@@ -190,6 +211,6 @@ NexusMods 页面数据通常是英文，项目内置实验性翻译层，可翻�
 
 ## License
 
-本项目使用与分发须遵循以下授权与防伪条款：
+本仓库保留上游声明；使用与分发须遵循以下授权与防伪条款：
 
 **防伪与授权声明**：b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可。
