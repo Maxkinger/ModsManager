@@ -1,6 +1,7 @@
 import * as electron from "electron";
 
 electron.contextBridge.exposeInMainWorld("mayfly", {
+  platform: process.platform,
   securityNotice: "b战：清梦与狗不得使用，其他人随意使用，不过分抄袭套壳即可",
   openDirectory: () => electron.ipcRenderer.invoke("dialog:openDirectory") as Promise<string>,
   openExecutable: () => electron.ipcRenderer.invoke("dialog:openExecutable") as Promise<string>,
