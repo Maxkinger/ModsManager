@@ -1,8 +1,26 @@
-const { cp, mkdir, readdir, readFile, rm, symlink, writeFile } = require("node:fs/promises");
+const assert = require("node:assert/strict");
+const { cp, lstat, mkdir, readdir, readFile, rm, symlink, writeFile } = require("node:fs/promises");
 const { existsSync } = require("node:fs");
+const { readFileSync } = require("node:fs");
 const { mkdtemp } = require("node:fs/promises");
 const { tmpdir } = require("node:os");
 const { basename, dirname, isAbsolute, join, relative, resolve } = require("node:path");
+const ts = require("typescript");
+
+const safetySource = readFileSync(join(__dirname, "../electron/fs-safety.ts"), "utf8");
+const safetyCompiled = ts.transpileModule(safetySource, {
+  compilerOptions: {
+    module: ts.ModuleKind.CommonJS,
+    target: ts.ScriptTarget.ES2020
+  }
+}).outputText;
+const safetyModule = { exports: {} };
+new Function("exports", "require", "module", safetyCompiled)(
+  safetyModule.exports,
+  require,
+  safetyModule
+);
+const { assertSafeTarget } = safetyModule.exports;
 
 const PASS_FILE_NAMES = new Set(["readme.md", "manifest.json", "icon.png", "changelog.md", "license"]);
 
@@ -54,6 +72,12 @@ async function deleteEmptyParents(gamePath, startFolder) {
   let current = startFolder;
 
   while (isPathInside(gamePath, current) && resolve(current) !== resolve(gamePath)) {
+    await assertSafeTarget(gamePath, current, { allowTargetSymlink: true });
+    try {
+      if ((await lstat(current)).isSymbolicLink()) return;
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
     if (!(await isDirectoryEmpty(current))) return;
     await rm(current, { force: true, recursive: true });
     current = dirname(current);
@@ -66,6 +90,7 @@ async function deleteRelativeFiles(gamePath, files) {
 
   for (const file of uniqueFiles) {
     const target = safeJoin(gamePath, file);
+    await assertSafeTarget(gamePath, target, { allowTargetSymlink: true });
     await rm(target, { force: true, recursive: true });
     await deleteEmptyParents(gamePath, dirname(target));
   }
@@ -74,6 +99,8 @@ async function deleteRelativeFiles(gamePath, files) {
 async function copyOrRemoveFile(source, target, isInstall, gamePath, useSymlink = false) {
   const deployedFile = relative(gamePath, target).replace(/\\/g, "/");
   safeJoin(gamePath, deployedFile);
+  await assertSafeTarget(gamePath, dirname(target));
+  await assertSafeTarget(gamePath, target, { allowTargetSymlink: !isInstall });
 
   if (isInstall) {
     if (existsSync(target)) {
@@ -121,6 +148,7 @@ async function applyFolderRootStrategy(options) {
   const deployedFolder = relative(options.gamePath, target).replace(/\\/g, "/");
 
   if (options.isInstall) {
+    await assertSafeTarget(options.gamePath, target, { allowTargetSymlink: true });
     if (existsSync(target)) {
       if (!options.useSymlink) throw new Error(`目标目录已存在，已阻止覆盖：${deployedFolder}`);
       await rm(target, { recursive: true, force: true });
@@ -135,6 +163,7 @@ async function applyFolderRootStrategy(options) {
     return [deployedFolder];
   }
 
+  await assertSafeTarget(options.gamePath, target, { allowTargetSymlink: true });
   await rm(target, { recursive: true, force: true });
   await deleteEmptyParents(options.gamePath, dirname(target));
   return [];
@@ -193,12 +222,29 @@ async function main() {
       throw new Error("目录 Mod 部署记录不正确。");
     }
     await assertFile(join(gamePath, "Mods", "My Mod", "content.txt"), "folder");
-    await deleteRelativeFiles(gamePath, folderDeployed);
-    if (existsSync(join(gamePath, "Mods", "My Mod"))) {
-      throw new Error("目录软链卸载后目标目录仍然存在。");
-    }
+  await deleteRelativeFiles(gamePath, folderDeployed);
+  if (existsSync(join(gamePath, "Mods", "My Mod"))) {
+    throw new Error("目录软链卸载后目标目录仍然存在。");
+  }
+  await assertFile(join(folderModRoot, "content.txt"), "folder");
 
-    console.log("安装/卸载安全样例: 3");
+  const outsideRoot = join(root, "outside");
+  await mkdir(outsideRoot, { recursive: true });
+  await writeFile(join(outsideRoot, "sentinel.txt"), "unchanged", "utf-8");
+  await symlink(outsideRoot, join(gamePath, "escape"), "dir");
+  const escapeModRoot = join(root, "escape-mod");
+  await mkdir(escapeModRoot, { recursive: true });
+  await writeFile(join(escapeModRoot, "evil.txt"), "blocked", "utf-8");
+  await assert.rejects(() => applyGeneralStrategy({
+    modRoot: escapeModRoot,
+    gamePath,
+    installPath: "escape",
+    keepPath: true,
+    isInstall: true
+  }));
+  await assertFile(join(outsideRoot, "sentinel.txt"), "unchanged");
+
+  console.log("安装/卸载安全样例: 4");
   } finally {
     await rm(root, { recursive: true, force: true });
   }

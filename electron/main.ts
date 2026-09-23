@@ -7,15 +7,20 @@ import * as http from "node:http";
 import * as net from "node:net";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { existsSync, readFileSync } from "node:fs";
+import { constants, existsSync, readFileSync } from "node:fs";
 import { path7za } from "7zip-bin";
 import { assertPlatformInstallStrategy } from "../src/utils/platform-support";
+import { parseSevenZipListing } from "./archive-tools";
+import { assertPathsDisjoint, assertSafeTarget } from "./fs-safety";
 import {
+  access,
   cp,
   copyFile,
   mkdir,
+  lstat,
   open,
   readdir,
+  realpath,
   readFile,
   rename,
   rm,
@@ -524,9 +529,50 @@ function assertPathInside(rootPath: string, targetPath: string, label = "目标�
 }
 
 function safeJoin(rootPath: string, ...paths: string[]) {
+  if (paths.some((path) => {
+    const normalized = path.replace(/\\/gu, "/");
+    return normalized.startsWith("/") || /^[A-Za-z]:($|\/)/u.test(normalized) ||
+      normalized.split("/").includes("..");
+  })) {
+    throw new Error("目标路径必须是允许目录下的相对路径。");
+  }
   const target = join(rootPath, ...paths);
   assertPathInside(rootPath, target);
   return target;
+}
+
+async function assertSafeDirectoryTarget(rootPath: string, targetPath: string) {
+  await assertSafeTarget(rootPath, targetPath);
+  if (resolve(rootPath) === resolve(targetPath)) return;
+  try {
+    if ((await lstat(targetPath)).isSymbolicLink()) {
+      throw new Error(`Target directory cannot be a symbolic link: ${targetPath}`);
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+}
+
+function isSymbolicLinkArchiveEntry(entry: { header: { attr: number } }) {
+  const unixMode = (entry.header.attr >>> 16) & 0xffff;
+  return (unixMode & 0o170000) === 0o120000;
+}
+
+function assertRegularArchiveEntry(entry: { entryName: string; header: { attr: number } }) {
+  if (isSymbolicLinkArchiveEntry(entry)) {
+    throw new Error(`Archive contains an unsupported symbolic link: ${entry.entryName}`);
+  }
+}
+
+async function validateArchiveEntries(rootPath: string, entries: Array<{
+  entryName: string;
+  header: { attr: number };
+}>) {
+  for (const entry of entries) {
+    assertRegularArchiveEntry(entry);
+    const targetPath = safeJoin(rootPath, entry.entryName);
+    await assertSafeTarget(rootPath, targetPath);
+  }
 }
 
 type InstallTargetScope = "game" | "documents" | "appData";
@@ -674,19 +720,30 @@ async function invokeManagedTool<T = unknown>(options: {
   return (raw.trim() ? JSON.parse(raw) : null) as T;
 }
 
-async function extractWith7za(sourcePath: string, targetPath: string) {
-  const listing = await runProcess(path7za, ["l", "-slt", sourcePath]);
-  const paths = listing
-    .split(/\r?\n/u)
-    .filter((line) => line.startsWith("Path = "))
-    .map((line) => line.slice("Path = ".length).trim())
-    .filter((entryPath) => entryPath && entryPath !== sourcePath);
-
-  for (const entryPath of paths) {
-    safeJoin(targetPath, entryPath);
+async function extractWith7za(sourcePath: string, outputRoot: string) {
+  const sevenZipPath = electron.app.isPackaged
+    ? path7za.replace(/app\.asar([\\/])/u, "app.asar.unpacked$1")
+    : path7za;
+  if (electron.app.isPackaged && process.platform === "darwin") {
+    try {
+      await access(sevenZipPath, constants.X_OK);
+    } catch {
+      throw new Error(`打包的 7-Zip 工具不可执行：${sevenZipPath}`);
+    }
   }
 
-  await runProcess(path7za, ["x", "-y", `-o${targetPath}`, sourcePath]);
+  const listing = await runProcess(sevenZipPath, ["l", "-slt", sourcePath]);
+  const entries = parseSevenZipListing(listing);
+
+  for (const entry of entries) {
+    if (entry.isLink) {
+      throw new Error(`Archive contains an unsupported symbolic link: ${entry.path}`);
+    }
+    const entryTarget = safeJoin(outputRoot, entry.path);
+    await assertSafeTarget(outputRoot, entryTarget);
+  }
+
+  await runProcess(sevenZipPath, ["x", "-y", `-o${outputRoot}`, sourcePath]);
 }
 
 function parseVdfStringValue(raw: string, key: string) {
@@ -2045,6 +2102,13 @@ async function deleteEmptyParents(gamePath: string, startFolder: string) {
   let current = startFolder;
 
   while (isPathInside(gamePath, current) && resolve(current) !== resolve(gamePath)) {
+    await assertSafeTarget(gamePath, current, { allowTargetSymlink: true });
+    try {
+      if ((await lstat(current)).isSymbolicLink()) return;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+
     if (!(await isDirectoryEmpty(current))) {
       return;
     }
@@ -2062,6 +2126,7 @@ async function deleteRelativeFiles(gamePath: string, files: string[]) {
     const scoped = parseScopedFile(file);
     const targetRoot = getTargetScopeRoot(gamePath, scoped.scope);
     const target = safeJoin(targetRoot, scoped.path);
+    await assertSafeTarget(targetRoot, target, { allowTargetSymlink: true });
     await rm(target, { force: true, recursive: true });
     await deleteEmptyParents(targetRoot, dirname(target));
   }
@@ -2404,6 +2469,12 @@ async function copyOrRemoveFile(
   useSymlink = false
 ) {
   assertPathInside(gamePath, target);
+  if (isInstall) {
+    await assertSafeDirectoryTarget(gamePath, dirname(target));
+    await assertSafeDirectoryTarget(gamePath, target);
+  } else {
+    await assertSafeTarget(gamePath, target, { allowTargetSymlink: true });
+  }
   const deployedFile = relative(gamePath, target).replace(/\\/g, "/");
 
   if (isInstall) {
@@ -2511,6 +2582,7 @@ async function applyFolderRootStrategy(options: {
   const deployedFolder = relative(options.gamePath, target).replace(/\\/g, "/");
 
   if (options.isInstall) {
+    await assertSafeTarget(options.gamePath, target, { allowTargetSymlink: true });
     if (existsSync(target)) {
       if (!options.useSymlink) {
         throw new Error(`目标目录已存在，已阻止覆盖：${deployedFolder}`);
@@ -2519,6 +2591,7 @@ async function applyFolderRootStrategy(options: {
       await rm(target, { recursive: true, force: true });
     }
 
+    await assertSafeDirectoryTarget(options.gamePath, dirname(target));
     await mkdir(dirname(target), { recursive: true });
 
     if (options.useSymlink) {
@@ -2534,6 +2607,7 @@ async function applyFolderRootStrategy(options: {
     return [deployedFolder];
   }
 
+  await assertSafeTarget(options.gamePath, target, { allowTargetSymlink: true });
   await rm(target, { recursive: true, force: true });
   await deleteEmptyParents(options.gamePath, dirname(target));
   return [];
@@ -2563,6 +2637,8 @@ async function applyFileStrategy(options: {
     const target = join(targetRoot, basename(folder));
 
     if (options.isInstall) {
+      await assertSafeDirectoryTarget(options.gamePath, dirname(target));
+      await assertSafeDirectoryTarget(options.gamePath, target);
       if (existsSync(target)) {
         throw new Error(`目标目录已存在，已阻止覆盖：${relative(options.gamePath, target).replace(/\\/g, "/")}`);
       }
@@ -2585,6 +2661,7 @@ async function applyFileStrategy(options: {
         );
       }
     } else {
+      await assertSafeTarget(options.gamePath, target, { allowTargetSymlink: true });
       await rm(target, { recursive: true, force: true });
       await deleteEmptyParents(options.gamePath, dirname(target));
     }
@@ -4651,15 +4728,20 @@ electron.ipcMain.handle("backups:restoreZip", async (_event, options: {
 
   await mkdir(target, { recursive: true });
   const zip = new AdmZip(backup);
+  const archiveEntries = zip.getEntries();
+  await validateArchiveEntries(target, archiveEntries);
+  const preparedEntries = archiveEntries.map((entry) => ({
+    entry,
+    targetPath: safeJoin(target, entry.entryName),
+    data: entry.isDirectory ? null : entry.getData()
+  }));
 
-  for (const entry of zip.getEntries()) {
-    const entryTarget = safeJoin(target, entry.entryName);
-
-    if (entry.isDirectory) {
-      await mkdir(entryTarget, { recursive: true });
+  for (const prepared of preparedEntries) {
+    if (prepared.entry.isDirectory) {
+      await mkdir(prepared.targetPath, { recursive: true });
     } else {
-      await mkdir(dirname(entryTarget), { recursive: true });
-      await writeFile(entryTarget, entry.getData());
+      await mkdir(dirname(prepared.targetPath), { recursive: true });
+      await writeFile(prepared.targetPath, prepared.data!);
     }
   }
 
@@ -4814,9 +4896,17 @@ electron.ipcMain.handle("package:importGamePack", async (event, options: {
   operationId?: string;
 }) => {
   const packagePath = resolve(options.packagePath);
-  const gameRoot = join(resolve(options.storagePath), "mods", sanitizeFileName(options.gameName));
+  const storageRoot = resolve(options.storagePath);
+  const gameRoot = join(storageRoot, "mods", sanitizeFileName(options.gameName));
+  const stagingRoot = join(storageRoot, `.mayfly-gamepack-import-${randomUUID()}`);
   const operationId = options.operationId || randomUUID();
   const zip = new AdmZip(packagePath);
+  const archiveEntries = zip.getEntries();
+  await assertSafeDirectoryTarget(storageRoot, gameRoot);
+  for (const entry of archiveEntries) {
+    assertRegularArchiveEntry(entry);
+    await assertSafeTarget(storageRoot, safeJoin(gameRoot, entry.entryName));
+  }
   const manifestEntry = zip.getEntry("manifest.json");
 
   if (!manifestEntry) {
@@ -4840,7 +4930,7 @@ electron.ipcMain.handle("package:importGamePack", async (event, options: {
     });
   };
 
-  const fileEntries = zip.getEntries().filter((entry) => !entry.isDirectory);
+  const fileEntries = archiveEntries.filter((entry) => !entry.isDirectory);
   const entriesByFolder = new Map<string, typeof fileEntries>();
   for (const entry of fileEntries) {
     const separatorIndex = entry.entryName.indexOf("/");
@@ -4871,58 +4961,100 @@ electron.ipcMain.handle("package:importGamePack", async (event, options: {
   });
   await yieldToRenderer();
 
-  await mkdir(gameRoot, { recursive: true });
-  const importedMods: Array<{ folder: string; rootPath: string; files: string[]; coverImage?: string }> = [];
+  await assertSafeDirectoryTarget(storageRoot, stagingRoot);
+  await mkdir(stagingRoot, { recursive: true });
+  const stagedMods: Array<{ folder: string; stagedRoot: string; rootPath: string; files: string[]; coverImage?: string }> = [];
 
-  for (const mod of manifest.mods) {
-    const folder = sanitizeFileName(String(mod.folder || mod.id || mod.name || ""));
-    if (!folder) continue;
+  try {
+    for (const mod of manifest.mods) {
+      const folder = sanitizeFileName(String(mod.folder || mod.id || mod.name || ""));
+      if (!folder) continue;
 
-    const prefix = `${folder}/`;
-    const rootPath = safeJoin(gameRoot, folder);
-    const entries = (entriesByFolder.get(folder) ?? []).filter((entry) =>
-      entry.entryName.startsWith(prefix) && !entry.entryName.includes("..")
-    );
+      const prefix = `${folder}/`;
+      const rootPath = safeJoin(gameRoot, folder);
+      const stagedRoot = safeJoin(stagingRoot, folder);
+      const entries = (entriesByFolder.get(folder) ?? []).filter((entry) => entry.entryName.startsWith(prefix));
+      if (entries.length === 0) continue;
 
-    if (entries.length === 0) continue;
-
-    if (existsSync(rootPath)) {
-      if (!options.overwrite) {
+      await assertSafeDirectoryTarget(storageRoot, rootPath);
+      if (existsSync(rootPath) && !options.overwrite) {
         throw new Error(`整合包恢复失败：目标 Mod 目录已存在：${folder}`);
       }
 
-      await rm(rootPath, { recursive: true, force: true });
-    }
+      await mkdir(stagedRoot, { recursive: true });
+      for (const entry of entries) {
+        const relativeEntry = entry.entryName.slice(prefix.length);
+        if (!relativeEntry) continue;
+        const target = safeJoin(stagedRoot, relativeEntry);
+        await assertSafeTarget(stagingRoot, target);
+        if (entry.isDirectory) {
+          await mkdir(target, { recursive: true });
+        } else {
+          await mkdir(dirname(target), { recursive: true });
+          await writeFile(target, entry.getData());
+          processedFiles += 1;
 
-    for (const entry of entries) {
-      const relativeEntry = entry.entryName.slice(prefix.length);
-      if (!relativeEntry) continue;
-      const target = safeJoin(rootPath, relativeEntry);
-      await mkdir(dirname(target), { recursive: true });
-      await writeFile(target, entry.getData());
-      processedFiles += 1;
-
-      const now = Date.now();
-      if (processedFiles === totalFiles || now - lastReportAt >= 100) {
-        report({
-          phase: "写入文件",
-          current: processedFiles,
-          total: progressTotal,
-          message: `已导入 ${processedFiles} / ${totalFiles || 0} 个文件`
-        });
-        lastReportAt = now;
-        await yieldToRenderer();
+          const now = Date.now();
+          if (processedFiles === totalFiles || now - lastReportAt >= 100) {
+            report({
+              phase: "写入文件",
+              current: processedFiles,
+              total: progressTotal,
+              message: `已导入 ${processedFiles} / ${totalFiles || 0} 个文件`
+            });
+            lastReportAt = now;
+            await yieldToRenderer();
+          }
+        }
       }
+
+      const files = await listFiles(stagedRoot);
+      stagedMods.push({
+        folder,
+        stagedRoot,
+        rootPath,
+        files,
+        coverImage: findCoverImage(files)
+      });
     }
 
-    const files = await listFiles(rootPath);
-    importedMods.push({
-      folder,
-      rootPath,
-      files,
-      coverImage: findCoverImage(files)
-    });
+    const backupRoot = join(stagingRoot, ".previous");
+    await mkdir(backupRoot, { recursive: true });
+    await mkdir(gameRoot, { recursive: true });
+    const movedPrevious: Array<{ rootPath: string; backupPath: string }> = [];
+    const movedNew: string[] = [];
+
+    try {
+      for (const item of stagedMods) {
+        if (existsSync(item.rootPath)) {
+          const backupPath = safeJoin(backupRoot, item.folder);
+          await rename(item.rootPath, backupPath);
+          movedPrevious.push({ rootPath: item.rootPath, backupPath });
+        }
+        await rename(item.stagedRoot, item.rootPath);
+        movedNew.push(item.rootPath);
+      }
+    } catch (error) {
+      for (const rootPath of movedNew.reverse()) {
+        await rm(rootPath, { recursive: true, force: true });
+      }
+      for (const item of movedPrevious.reverse()) {
+        if (existsSync(item.backupPath)) await rename(item.backupPath, item.rootPath);
+      }
+      throw error;
+    }
+  } catch (error) {
+    await rm(stagingRoot, { recursive: true, force: true });
+    throw error;
   }
+
+  const importedMods = stagedMods.map(({ folder, rootPath, files, coverImage }) => ({
+    folder,
+    rootPath,
+    files,
+    coverImage
+  }));
+  await rm(stagingRoot, { recursive: true, force: true });
 
   report({
     phase: "完成",
@@ -4945,35 +5077,72 @@ electron.ipcMain.handle("mods:importFolder", async (_event, options: {
   modId: string;
 }) => {
   const sourceStat = await stat(options.sourcePath);
+  const storageRoot = resolve(options.storagePath);
   const gameFolderName = sanitizeFileName(options.gameName || options.gameId);
-  const modRoot = join(options.storagePath, "mods", gameFolderName, options.modId);
-  await mkdir(modRoot, { recursive: true });
-
+  const modId = sanitizeFileName(options.modId);
+  if (!modId) throw new Error("Mod ID 无效。");
+  const gameRoot = join(storageRoot, "mods", gameFolderName);
+  const modRoot = join(gameRoot, modId);
+  const stagingRoot = join(gameRoot, `.${modId}.import-${randomUUID()}`);
+  const gameRootExisted = existsSync(gameRoot);
   if (sourceStat.isDirectory()) {
-    await cp(options.sourcePath, modRoot, {
-      recursive: true,
-      force: true,
-      errorOnExist: false
-    });
-  } else if (ARCHIVE_EXTENSIONS.includes(getPathExtension(options.sourcePath))) {
-    const zip = new AdmZip(options.sourcePath);
-    for (const entry of zip.getEntries()) {
-      const entryTarget = safeJoin(modRoot, entry.entryName);
+    const [sourceRoot, storageRealRoot] = await Promise.all([
+      realpath(options.sourcePath),
+      realpath(storageRoot)
+    ]);
+    assertPathsDisjoint(sourceRoot, join(storageRealRoot, "mods", gameFolderName));
+  }
+  await assertSafeDirectoryTarget(storageRoot, gameRoot);
+  await assertSafeDirectoryTarget(storageRoot, modRoot);
+  if (existsSync(modRoot)) throw new Error(`Mod 缓存目录已存在：${modRoot}`);
 
-      if (entry.isDirectory) {
-        await mkdir(entryTarget, { recursive: true });
-      } else {
-        await mkdir(dirname(entryTarget), { recursive: true });
-        await writeFile(entryTarget, entry.getData());
+  try {
+    await mkdir(gameRoot, { recursive: true });
+    await assertSafeDirectoryTarget(storageRoot, stagingRoot);
+    await mkdir(stagingRoot, { recursive: true });
+
+    if (sourceStat.isDirectory()) {
+      await cp(options.sourcePath, stagingRoot, {
+        recursive: true,
+        force: true,
+        errorOnExist: false
+      });
+    } else if (ARCHIVE_EXTENSIONS.includes(getPathExtension(options.sourcePath))) {
+      const zip = new AdmZip(options.sourcePath);
+      const archiveEntries = zip.getEntries();
+      await validateArchiveEntries(stagingRoot, archiveEntries);
+      const preparedEntries = archiveEntries.map((entry) => ({
+        entry,
+        targetPath: safeJoin(stagingRoot, entry.entryName),
+        data: entry.isDirectory ? null : entry.getData()
+      }));
+
+      for (const prepared of preparedEntries) {
+        if (prepared.entry.isDirectory) {
+          await mkdir(prepared.targetPath, { recursive: true });
+        } else {
+          await mkdir(dirname(prepared.targetPath), { recursive: true });
+          await writeFile(prepared.targetPath, prepared.data!);
+        }
       }
+    } else if (["7z", "rar"].includes(getPathExtension(options.sourcePath))) {
+      await extractWith7za(options.sourcePath, stagingRoot);
+    } else {
+      const targetPath = safeJoin(stagingRoot, basename(options.sourcePath));
+      await assertSafeTarget(stagingRoot, targetPath);
+      await cp(options.sourcePath, targetPath, {
+        force: true,
+        errorOnExist: false
+      });
     }
-  } else if (["7z", "rar"].includes(getPathExtension(options.sourcePath))) {
-    await extractWith7za(options.sourcePath, modRoot);
-  } else {
-    await cp(options.sourcePath, join(modRoot, basename(options.sourcePath)), {
-      force: true,
-      errorOnExist: false
-    });
+
+    await rename(stagingRoot, modRoot);
+  } catch (error) {
+    await rm(stagingRoot, { recursive: true, force: true });
+    if (!gameRootExisted && await isDirectoryEmpty(gameRoot)) {
+      await rm(gameRoot, { recursive: true, force: true });
+    }
+    throw error;
   }
 
   const files = await listFiles(modRoot);
@@ -5094,6 +5263,7 @@ electron.ipcMain.handle("mods:install", async (_event, options: {
   installPath: string;
 }) => {
   const targetRoot = safeJoin(options.gamePath, options.installPath || ".");
+  await assertSafeDirectoryTarget(options.gamePath, targetRoot);
   await mkdir(targetRoot, { recursive: true });
   await cp(options.modRoot, targetRoot, {
     recursive: true,
@@ -5112,9 +5282,11 @@ electron.ipcMain.handle("mods:uninstall", async (_event, options: {
   const targetRoot = safeJoin(options.gamePath, options.installPath || ".");
   const files = await listFiles(options.modRoot);
 
-  await Promise.all(
-    files.map((file) => rm(safeJoin(targetRoot, file), { force: true }))
-  );
+  for (const file of files) {
+    const target = safeJoin(targetRoot, file);
+    await assertSafeTarget(options.gamePath, target, { allowTargetSymlink: true });
+    await rm(target, { force: true });
+  }
 
   return true;
 });
@@ -5353,6 +5525,12 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
       throw new Error(options.strategy.reason || "该 Mod 类型需要手动安装。");
     default:
       throw new Error(`未知安装策略: ${options.strategy.kind}`);
+  }
+
+  if (process.platform === "darwin") {
+    for (const file of targetFiles) {
+      await assertSafeTarget(options.gamePath, safeJoin(options.gamePath, file));
+    }
   }
 
   return {
