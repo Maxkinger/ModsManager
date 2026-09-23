@@ -5,6 +5,7 @@
 import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { getGameAdapter, getModType } from "@/adapters";
+import { dirnamePlatformPath, joinGameRelativePath, joinPlatformPath } from "@/utils/platform-path";
 import gamePresetsFromJson from "@/data/game-presets.json";
 const gamePresets = gamePresetsFromJson as GamePreset[];
 import type {
@@ -86,33 +87,6 @@ function nextDuplicateName(name: string, existingNames: Set<string>) {
   }
 
   return candidate;
-}
-
-function dirName(path: string) {
-  const parts = path.replace(/\\/g, "/").split("/").filter(Boolean);
-  parts.pop();
-  const prefix = /^[a-z]:/i.test(parts[0] ?? "") ? "" : "/";
-  return `${prefix}${parts.join("/")}`.replace(/\//g, "\\");
-}
-
-function joinGameRelativePath(gamePath: string, relativePath: string) {
-  const parts = relativePath.replace(/\\/g, "/").split("/").filter(Boolean);
-
-  if (parts.length === 0 || parts.some((part) => part === ".." || /^[a-z]:$/i.test(part))) {
-    return "";
-  }
-
-  return `${gamePath.replace(/[\\/]+$/u, "")}\\${parts.join("\\")}`;
-}
-
-function joinRelativePath(rootPath: string, relativePath: string) {
-  const parts = relativePath.replace(/\\/g, "/").split("/").filter(Boolean);
-
-  if (parts.length === 0 || parts.some((part) => part === ".." || /^[a-z]:$/i.test(part))) {
-    return "";
-  }
-
-  return `${rootPath.replace(/[\\/]+$/u, "")}\\${parts.join("\\")}`;
 }
 
 function fileName(path: string) {
@@ -658,7 +632,7 @@ function normalizeAppData(rawData: Partial<AppData> | null | undefined): AppData
         ? "manager"
         : settings.defaultTab ?? "manager",
       autoImportAfterDownload: settings.autoImportAfterDownload ?? true,
-      downloadEngine: settings.downloadEngine === "aria2" ? "aria2" : "builtin",
+      downloadEngine: window.mayfly.platform !== "darwin" && settings.downloadEngine === "aria2" ? "aria2" : "builtin",
       aria2ExecutablePath: settings.aria2ExecutablePath ?? "",
       aria2MaxConnections: Math.max(1, Math.min(16, Number(settings.aria2MaxConnections) || 4)),
       proxyEnabled: settings.proxyEnabled ?? false,
@@ -959,7 +933,7 @@ export const useLibraryStore = defineStore("library", () => {
     return activeMods.value
       .flatMap((mod) => mod.files
         .filter((file) => fileName(file).toLowerCase() === normalizedFileName)
-        .map((file) => joinRelativePath(mod.rootPath, file))
+        .map((file) => joinGameRelativePath(window.mayfly.platform, mod.rootPath, file))
       )
       .filter(Boolean);
   }
@@ -989,7 +963,7 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   function getGameModRoot(game: ManagedGame) {
-    return `${settings.value.storagePath}\\mods\\${sanitizeFileName(game.name)}`;
+    return joinPlatformPath(window.mayfly.platform, settings.value.storagePath, "mods", sanitizeFileName(game.name));
   }
 
   function toPortableModInfo(mod: LocalMod, index: number) {
@@ -1033,8 +1007,8 @@ export const useLibraryStore = defineStore("library", () => {
           color: settings.value.tagColors[tag] ?? ""
         }));
 
-      await window.mayfly.writeJsonFile(`${gameRoot}\\mod.json`, toPlain(gameMods.map(toPortableModInfo)));
-      await window.mayfly.writeJsonFile(`${gameRoot}\\tags.json`, toPlain(tags));
+      await window.mayfly.writeJsonFile(joinPlatformPath(window.mayfly.platform, gameRoot, "mod.json"), toPlain(gameMods.map(toPortableModInfo)));
+      await window.mayfly.writeJsonFile(joinPlatformPath(window.mayfly.platform, gameRoot, "tags.json"), toPlain(tags));
     }
   }
 
@@ -1072,8 +1046,10 @@ export const useLibraryStore = defineStore("library", () => {
         continue;
       }
 
+      const normalizedGameRoot = getGameModRoot(game).replace(/\\/gu, "/").replace(/\/+$/u, "");
+      const normalizedModRoot = mod.rootPath.replace(/\\/gu, "/").replace(/\/+$/u, "");
       const alreadyGameLayout =
-        mod.rootPath.startsWith(`${getGameModRoot(game)}\\`) &&
+        normalizedModRoot.startsWith(`${normalizedGameRoot}/`) &&
         /^\d+$/u.test(baseName(mod.rootPath));
 
       if (alreadyGameLayout || !(await window.mayfly.exists(mod.rootPath))) {
@@ -1118,7 +1094,7 @@ export const useLibraryStore = defineStore("library", () => {
 
     for (const game of games.value) {
       const gameRoot = getGameModRoot(game);
-      const modJsonPath = `${gameRoot}\\mod.json`;
+      const modJsonPath = joinPlatformPath(window.mayfly.platform, gameRoot, "mod.json");
 
       if (!(await window.mayfly.exists(modJsonPath))) {
         continue;
@@ -1126,7 +1102,7 @@ export const useLibraryStore = defineStore("library", () => {
 
       try {
         const rawMods = await window.mayfly.readJsonFile<Array<Record<string, unknown>>>(modJsonPath);
-        const rawTagsPath = `${gameRoot}\\tags.json`;
+        const rawTagsPath = joinPlatformPath(window.mayfly.platform, gameRoot, "tags.json");
 
         if (await window.mayfly.exists(rawTagsPath)) {
           const rawTags = await window.mayfly.readJsonFile<Array<Record<string, unknown>>>(rawTagsPath);
@@ -1144,7 +1120,7 @@ export const useLibraryStore = defineStore("library", () => {
         const adapter = adapterForGame(game);
         const parsedMods: LocalMod[] = rawMods.map((item, index) => {
           const numericId = String(item.id || index + 1);
-          const rootPath = `${gameRoot}\\${sanitizeFileName(numericId)}`;
+          const rootPath = joinPlatformPath(window.mayfly.platform, gameRoot, sanitizeFileName(numericId));
           const advanced = item.advanced && typeof item.advanced === "object"
             ? item.advanced as Record<string, unknown>
             : {};
@@ -1263,7 +1239,7 @@ export const useLibraryStore = defineStore("library", () => {
       await loadModsFromGameFiles();
       await migrateLegacyModCoverImages();
       await persist();
-      if (settings.value.appUpdateUrl.trim()) {
+      if (window.mayfly.platform !== "darwin" && settings.value.appUpdateUrl.trim()) {
         settings.value.lastAppUpdateCheckAt = Date.now();
         await persist();
         window.setTimeout(() => {
@@ -1289,11 +1265,16 @@ export const useLibraryStore = defineStore("library", () => {
     let resolvedPath = "";
     let finalExeNames = preset?.exeNames ?? [];
 
-    if (!settings.value.preferDirectoryGamePicker) {
+    if (window.mayfly.platform === "darwin" && preset) {
+      error.value = "macOS 首版只支持手动添加游戏目录，Windows 预设尚未适配。";
+      return;
+    }
+
+    if (window.mayfly.platform !== "darwin" && !settings.value.preferDirectoryGamePicker) {
       const selectedExe = await window.mayfly.openExecutable();
       if (!selectedExe) return;
 
-      resolvedPath = dirName(selectedExe);
+      resolvedPath = dirnamePlatformPath(window.mayfly.platform, selectedExe);
       const exeName = fileName(selectedExe);
 
       if (preset?.exeNames.length && !preset.exeNames.includes(exeName)) {
@@ -1319,7 +1300,7 @@ export const useLibraryStore = defineStore("library", () => {
           return;
         }
 
-        resolvedPath = dirName(foundExe);
+        resolvedPath = dirnamePlatformPath(window.mayfly.platform, foundExe);
       }
     }
 
@@ -1354,7 +1335,7 @@ export const useLibraryStore = defineStore("library", () => {
   async function openActiveGameModFolder() {
     if (!activeGame.value || !settings.value.storagePath) return;
 
-    const modPath = `${settings.value.storagePath}\\mods\\${activeGame.value.id}`;
+    const modPath = joinPlatformPath(window.mayfly.platform, settings.value.storagePath, "mods", activeGame.value.id);
     await window.mayfly.openPath(modPath);
   }
 
@@ -1547,6 +1528,7 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   async function chooseActiveGameExecutable() {
+    if (window.mayfly.platform === "darwin") return;
     if (!activeGame.value) return;
 
     const selected = await window.mayfly.openExecutable();
@@ -1556,12 +1538,16 @@ export const useLibraryStore = defineStore("library", () => {
     const exeNames = [...new Set([exeName, ...activeGame.value.exeNames])];
 
     await updateGame(activeGame.value.id, {
-      path: dirName(selected),
+      path: dirnamePlatformPath(window.mayfly.platform, selected),
       exeNames
     });
   }
 
   async function launchActiveGame() {
+    if (window.mayfly.platform === "darwin") {
+      error.value = "macOS 首版不提供 Windows EXE 启动功能。";
+      return;
+    }
     if (!activeGame.value) return;
 
     if (!activeGame.value.path) {
@@ -1586,7 +1572,7 @@ export const useLibraryStore = defineStore("library", () => {
 
       await window.mayfly.launchExecutable({
         executablePath,
-        cwd: dirName(executablePath),
+        cwd: dirnamePlatformPath(window.mayfly.platform, executablePath),
         args: activeGame.value.launchArgs
           .split(/\s+/u)
           .map((arg) => arg.trim())
@@ -1917,6 +1903,11 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   async function checkAppUpdate(options: { silent?: boolean } = {}): Promise<AppUpdateCheckResult | null> {
+    if (window.mayfly.platform === "darwin") {
+      if (!options.silent) appUpdateMessage.value = "macOS 版本更新请从 GitHub Releases 获取。";
+      return null;
+    }
+
     const updateUrl = settings.value.appUpdateUrl.trim();
 
     if (!updateUrl) {
@@ -2601,7 +2592,7 @@ export const useLibraryStore = defineStore("library", () => {
       fileId: check.latestFileId,
       fileName: check.latestFileName || check.latestFileId,
       url: "",
-      outputPath: `${settings.value.storagePath}\\downloads\\updates\\${outputFile}${extension}`,
+      outputPath: joinPlatformPath(window.mayfly.platform, settings.value.storagePath, "downloads", "updates", `${outputFile}${extension}`),
       coverImage: latestSource.coverImage || mod.coverImage,
       updateSource: nextUpdateSource,
       updateTargetModId: mod.id,
@@ -2879,7 +2870,7 @@ export const useLibraryStore = defineStore("library", () => {
 
     const previousActiveGameId = activeGameId.value;
     const wasInstalled = targetMod.installed;
-    const backupPath = `${settings.value.storagePath}\\mod-update-backups\\${sanitizeFileName(targetGame.name)}\\${sanitizeFileName(targetMod.name)}-${Date.now()}.zip`;
+    const backupPath = joinPlatformPath(window.mayfly.platform, settings.value.storagePath, "mod-update-backups", sanitizeFileName(targetGame.name), `${sanitizeFileName(targetMod.name)}-${Date.now()}.zip`);
     let backupCreated = false;
 
     try {
@@ -3139,7 +3130,7 @@ export const useLibraryStore = defineStore("library", () => {
       fileId: file.id,
       fileName: file.name,
       url: "",
-      outputPath: `${settings.value.storagePath}\\downloads\\nexus-${nexusPreset.value.id}\\${outputFile}${extension}`,
+      outputPath: joinPlatformPath(window.mayfly.platform, settings.value.storagePath, `downloads`, `nexus-${nexusPreset.value.id}`, `${outputFile}${extension}`),
       coverImage: mod.cover || "",
       updateSource,
       status: "queued",
@@ -3210,7 +3201,7 @@ export const useLibraryStore = defineStore("library", () => {
 
   async function openDownloadFolder(task: DownloadTask) {
     if (!task.outputPath) return;
-    await window.mayfly.openPath(dirName(task.outputPath));
+    await window.mayfly.openPath(dirnamePlatformPath(window.mayfly.platform, task.outputPath));
   }
 
   async function downloadCustomUrl(url: string, fileNameInput = "") {
@@ -3242,7 +3233,7 @@ export const useLibraryStore = defineStore("library", () => {
       fileId: "",
       fileName: safeName,
       url: normalizedUrl,
-      outputPath: `${settings.value.storagePath}\\downloads\\custom\\${safeName}`,
+      outputPath: joinPlatformPath(window.mayfly.platform, settings.value.storagePath, "downloads", "custom", safeName),
       status: "queued",
       receivedBytes: 0,
       totalBytes: 0,
@@ -3357,7 +3348,7 @@ export const useLibraryStore = defineStore("library", () => {
     try {
       const now = Date.now();
       const name = sanitizeFileName(nameInput.trim() || `${activeGame.value.name}-${new Date(now).toISOString().slice(0, 10)}`);
-      const outputPath = `${settings.value.storagePath}\\backups\\${activeGame.value.id}\\${name}.zip`;
+      const outputPath = joinPlatformPath(window.mayfly.platform, settings.value.storagePath, "backups", activeGame.value.id, `${name}.zip`);
       const result = await window.mayfly.createBackupZip({
         sourcePath: activeGame.value.path,
         outputPath
@@ -3406,7 +3397,7 @@ export const useLibraryStore = defineStore("library", () => {
     try {
       const now = Date.now();
       const name = sanitizeFileName(nameInput.trim() || `${activeGame.value.name}-存档-${new Date(now).toISOString().slice(0, 10)}`);
-      const outputPath = `${settings.value.storagePath}\\backups\\${activeGame.value.id}\\saves\\${name}.zip`;
+      const outputPath = joinPlatformPath(window.mayfly.platform, settings.value.storagePath, "backups", activeGame.value.id, "saves", `${name}.zip`);
       const result = await window.mayfly.createBackupZip({
         sourcePath: savePath,
         outputPath
@@ -3531,12 +3522,12 @@ export const useLibraryStore = defineStore("library", () => {
 
   async function openBackupFolder(backup?: BackupEntry) {
     if (backup?.outputPath) {
-      await window.mayfly.openPath(dirName(backup.outputPath));
+      await window.mayfly.openPath(dirnamePlatformPath(window.mayfly.platform, backup.outputPath));
       return;
     }
 
     if (!settings.value.storagePath) return;
-    await window.mayfly.openPath(`${settings.value.storagePath}\\backups`);
+    await window.mayfly.openPath(joinPlatformPath(window.mayfly.platform, settings.value.storagePath, "backups"));
   }
 
   async function exportData() {
@@ -4016,7 +4007,7 @@ export const useLibraryStore = defineStore("library", () => {
     }
 
     for (const file of files) {
-      const targetPath = joinGameRelativePath(gamePath, file);
+      const targetPath = joinGameRelativePath(window.mayfly.platform, gamePath, file);
       if (!targetPath) continue;
       await window.mayfly.remove(targetPath);
     }
@@ -4289,13 +4280,17 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   async function updateSettings(patch: Partial<typeof settings.value>) {
+    const safePatch = window.mayfly.platform === "darwin" && patch.downloadEngine === "aria2"
+      ? { ...patch, downloadEngine: "builtin" as const }
+      : patch;
+
     if (typeof patch.launchAtStartup === "boolean") {
       patch.launchAtStartup = await window.mayfly.setLaunchAtStartup(patch.launchAtStartup);
     }
 
     settings.value = {
       ...settings.value,
-      ...patch
+      ...safePatch
     };
     await persist();
   }

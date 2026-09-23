@@ -44,6 +44,7 @@ import {
   ArrowDownUp
 } from "lucide-vue-next";
 import { useLibraryStore } from "@/stores/library";
+import { dirnamePlatformPath, joinPlatformPath } from "@/utils/platform-path";
 import type { CustomAdapterRule, LocalMod, ModUpdateSource } from "@/types/domain";
 import gamePresetsFromJson from "@/data/game-presets.json";
 
@@ -60,6 +61,7 @@ function getGameEnglishName(item: { presetId?: string; id?: string; name: string
 }
 
 const library = useLibraryStore();
+const isMac = window.mayfly.platform === "darwin";
 type AppTab = "games" | "manager" | "nexus" | "download" | "logs" | "backup" | "settings" | "about";
 
 const ABOUT_NOTICE_URL = "https://version.mayflyyx.com/mayflyModsToast.json";
@@ -152,7 +154,7 @@ const coverUrls = ref<Record<string, string>>({});
 const gameCoverUrls = ref<Record<string, string>>({});
 const showBatchEdit = ref(false);
 const showPackageExport = ref(false);
-const showCustomGameForm = ref(false);
+const showCustomGameForm = ref(isMac);
 const selectedDownloadIds = ref<string[]>([]);
 const showDownloadDeleteModal = ref(false);
 const showDownloadSettingsModal = ref(false);
@@ -680,7 +682,7 @@ watch(
 
       try {
         nextCoverUrls[mod.id] = await window.mayfly.fileUrl(
-          `${mod.rootPath}\\${coverImage.replace(/[\\/]+/gu, "\\")}`
+          joinPlatformPath(window.mayfly.platform, mod.rootPath, coverImage)
         );
       } catch {
         // Keep the Mod row usable when an old local preview file is missing.
@@ -1068,13 +1070,6 @@ async function handleAboutContentClick(event: MouseEvent) {
   await window.mayfly.openExternal(href);
 }
 
-function dirName(path: string) {
-  const parts = path.replace(/\\/g, "/").split("/").filter(Boolean);
-  parts.pop();
-  const prefix = /^[a-z]:/i.test(parts[0] ?? "") ? "" : "/";
-  return `${prefix}${parts.join("/")}`.replace(/\//g, "\\");
-}
-
 function tagColor(tag: string) {
   return library.settings.tagColors[tag] || "#4f8cff";
 }
@@ -1090,11 +1085,12 @@ async function chooseCustomGamePath() {
 }
 
 async function chooseCustomGameExe() {
+  if (isMac) return;
   const selected = await window.mayfly.openExecutable();
   if (!selected) return;
 
   const exeName = selected.replace(/\\/g, "/").split("/").pop() ?? "";
-  customGamePath.value = dirName(selected);
+  customGamePath.value = dirnamePlatformPath(window.mayfly.platform, selected);
   customGameExeNames.value = [...new Set([...splitCommaList(customGameExeNames.value), exeName])].join(", ");
 
   if (!customGameName.value.trim()) {
@@ -1122,7 +1118,7 @@ async function chooseActiveGameCover() {
 
 async function createCustomGameFromForm() {
   if (!customGamePath.value.trim()) {
-    library.setError("请先选择自定义游戏目录或 exe。");
+    library.setError("请先选择自定义游戏目录。");
     return;
   }
 
@@ -1142,6 +1138,12 @@ async function createCustomGameFromForm() {
   customGameLaunchArgs.value = "";
   customGameCoverUrl.value = "";
   showCustomGameForm.value = false;
+}
+
+async function submitCustomGameForm() {
+  const gameCount = library.games.length;
+  await createCustomGameFromForm();
+  if (library.games.length > gameCount) showAddGameModal.value = false;
 }
 
 async function applyBatchEdit() {
@@ -1804,7 +1806,7 @@ async function resumeDownloadBatch() {
           </button>
         </div>
         <div class="steam-modal-content gameModalContent">
-          <label class="modalField">
+          <label v-if="!isMac" class="modalField">
             下载引擎
             <select
               class="steamSelectBox"
@@ -1816,7 +1818,7 @@ async function resumeDownloadBatch() {
             </select>
           </label>
 
-          <template v-if="library.settings.downloadEngine === 'aria2'">
+          <template v-if="!isMac && library.settings.downloadEngine === 'aria2'">
             <label class="modalField">
               aria2c.exe 路径
               <span class="modalHint">不填写时会尝试查找项目资源目录或系统 PATH。</span>
@@ -1878,7 +1880,7 @@ async function resumeDownloadBatch() {
               游戏目录
               <span>{{ library.activeGame.path || "未设置" }}</span>
             </label>
-            <label>
+            <label v-if="!isMac">
               EXE
               <span>{{ library.activeGame.exeNames.length ? library.activeGame.exeNames.join(", ") : "未设置" }}</span>
             </label>
@@ -1917,7 +1919,7 @@ async function resumeDownloadBatch() {
               游戏目录
               <small style="display: block; font-weight: 400; opacity: 0.6; font-size: 11px; margin-top: 2px;">手动指定游戏安装路径</small>
             </button>
-            <button class="secondary" :disabled="library.busy" @click="library.chooseActiveGameExecutable">
+            <button v-if="!isMac" class="secondary" :disabled="library.busy" @click="library.chooseActiveGameExecutable">
               选择 exe
               <small style="display: block; font-weight: 400; opacity: 0.6; font-size: 11px; margin-top: 2px;">指定游戏主程序文件</small>
             </button>
@@ -1937,7 +1939,7 @@ async function resumeDownloadBatch() {
               </button>
             </div>
           </label>
-          <label class="modalField">
+          <label v-if="!isMac" class="modalField">
             启动参数
             <small style="font-weight: 400; opacity: 0.6; margin-left: 6px;">启动游戏时附加的命令行参数</small>
             <input
@@ -2293,7 +2295,7 @@ async function resumeDownloadBatch() {
                 <h2>游戏库</h2>
                 <span>{{ library.games.length }} 个游戏</span>
               </div>
-              <button class="iconButton" @click="showAddGameModal = true" title="添加游戏" style="color: #4f8cff;">
+              <button class="iconButton" @click="showCustomGameForm = isMac; showAddGameModal = true" title="添加游戏" style="color: #4f8cff;">
                 <Plus :size="18" />
               </button>
             </div>
@@ -2307,7 +2309,7 @@ async function resumeDownloadBatch() {
                 </div>
                 
                 <div class="steam-modal-body" style="overflow-y: auto;">
-                  <div v-if="!showCustomGameForm" class="presetPicker" style="border: none; padding: 0;">
+                  <div v-if="!isMac && !showCustomGameForm" class="presetPicker" style="border: none; padding: 0;">
                     <div class="steamSearchBox" style="margin-bottom: 12px; min-width: 0;">
                       <input v-model="library.presetSearch" placeholder="搜索支持游戏、中文名、英文名、Steam ID 或 exe" />
                       <div class="searchBtn" style="pointer-events: none;"><Search :size="15" /></div>
@@ -2341,23 +2343,23 @@ async function resumeDownloadBatch() {
                       <input class="steamInput" v-model="customGamePath" placeholder="游戏目录" />
                       <button class="secondary" @click="chooseCustomGamePath">选择目录</button>
                     </div>
-                    <div class="pathPicker" style="margin-bottom: 8px; display: flex; gap: 8px;">
+                    <div v-if="!isMac" class="pathPicker" style="margin-bottom: 8px; display: flex; gap: 8px;">
                       <input class="steamInput" v-model="customGameExeNames" placeholder="exe 名称，逗号分隔" />
                       <button class="secondary" @click="chooseCustomGameExe">选择 exe</button>
                     </div>
                     <input class="steamInput" v-model="customGameInstallPath" placeholder="安装相对路径(空为根目录)" style="margin-bottom: 8px;" />
-                    <input class="steamInput" v-model="customGameLaunchArgs" placeholder="启动参数" style="margin-bottom: 8px;" />
+                    <input v-if="!isMac" class="steamInput" v-model="customGameLaunchArgs" placeholder="启动参数" style="margin-bottom: 8px;" />
                     <div class="pathPicker" style="margin-bottom: 8px; display: flex; gap: 8px;">
                       <input class="steamInput" v-model="customGameCoverUrl" placeholder="封面图片路径(可选)" />
                       <button class="secondary" @click="chooseCustomGameCover">选择封面</button>
                     </div>
-                    <button class="primary fullWidth" @click="createCustomGameFromForm(); showAddGameModal = false;">保存自定义游戏</button>
+                    <button class="primary fullWidth" @click="submitCustomGameForm">保存自定义游戏</button>
                   </div>
                 </div>
 
                 <div class="steam-modal-footer">
-                  <button class="secondary" v-if="!showCustomGameForm" @click="showCustomGameForm = true">不在列表里，手动添加</button>
-                  <button class="secondary" v-else @click="showCustomGameForm = false">返回预设列表</button>
+                  <button class="secondary" v-if="!isMac && !showCustomGameForm" @click="showCustomGameForm = true">不在列表里，手动添加</button>
+                  <button class="secondary" v-else-if="!isMac" @click="showCustomGameForm = false">返回预设列表</button>
                 </div>
               </div>
             </div>
@@ -2418,7 +2420,7 @@ async function resumeDownloadBatch() {
                 <div class="heroMain">
                   <h1 class="heroTitle">{{ getGameName(library.activeGame) }}</h1>
                   <div class="heroActions">
-                    <button class="steamPlayBtn" @click="library.launchActiveGame()">
+                    <button v-if="!isMac" class="steamPlayBtn" @click="library.launchActiveGame()">
                       <Play :size="20" fill="currentColor" />
                       启动游戏
                     </button>
@@ -3477,7 +3479,7 @@ async function resumeDownloadBatch() {
                   </div>
                 </div>
 
-                <div class="steamSettingRow">
+                <div v-if="!isMac" class="steamSettingRow">
                   <div class="settingInfo">
                     <label>优先通过目录选择游戏</label>
                   </div>
@@ -3828,7 +3830,7 @@ async function resumeDownloadBatch() {
       <button @click.stop="openContextGameCustomRules">
         <Wrench :size="14" /> 定制规则
       </button>
-      <button @click.stop="launchContextGame">
+      <button v-if="!isMac" @click.stop="launchContextGame">
         <Play :size="14" /> 启动游戏
       </button>
       <button @click.stop="openContextGameFolder">

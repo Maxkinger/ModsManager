@@ -67,3 +67,24 @@ export function dirnamePlatformPath(platform: string, input: string): string {
 
   return parent;
 }
+
+export function joinGameRelativePath(platform: string, root: string, relativePath: string): string {
+  const value = relativePath.trim();
+  const parts = value.replace(/\\/gu, "/").split("/").filter((part) => part && part !== ".");
+
+  if (
+    !value ||
+    /^[\\/]/u.test(value) ||
+    /^[a-z]:/iu.test(value) ||
+    parts.length === 0 ||
+    parts.some((part) => part === ".." || /^[a-z]:/iu.test(part))
+  ) {
+    return "";
+  }
+
+  try {
+    return joinPlatformPath(platform, root, ...parts);
+  } catch {
+    return "";
+  }
+}

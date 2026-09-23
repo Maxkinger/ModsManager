@@ -18,7 +18,7 @@ new Function("exports", "require", "module", compiled)(
   moduleRecord
 );
 
-const { dirnamePlatformPath, joinPlatformPath } = moduleRecord.exports;
+const { dirnamePlatformPath, joinGameRelativePath, joinPlatformPath } = moduleRecord.exports;
 assert.equal(joinPlatformPath("darwin", "/tmp/游戏 Mods", "mods", "角色.zip"), "/tmp/游戏 Mods/mods/角色.zip");
 assert.equal(dirnamePlatformPath("darwin", "/Users/a/Game.app"), "/Users/a");
 assert.equal(joinPlatformPath("win32", "C:\\Games", "mods", "a.zip"), "C:\\Games\\mods\\a.zip");
@@ -27,5 +27,10 @@ assert.equal(joinPlatformPath("win32", "C:\\", "mods"), "C:\\mods");
 assert.equal(dirnamePlatformPath("win32", "C:\\Games\\game.exe"), "C:\\Games");
 assert.equal(dirnamePlatformPath("win32", "C:\\game.exe"), "C:\\");
 assert.throws(() => joinPlatformPath("darwin", "", "mods"), /root path/i);
+assert.equal(joinGameRelativePath("darwin", "/tmp/game", "Mods/角色/manifest.json"), "/tmp/game/Mods/角色/manifest.json");
+assert.equal(joinGameRelativePath("darwin", "/tmp/game", "../outside"), "");
+assert.equal(joinGameRelativePath("darwin", "/tmp/game", "/absolute"), "");
+assert.equal(joinGameRelativePath("win32", "C:\\Games", "Mods\\角色\\manifest.json"), "C:\\Games\\Mods\\角色\\manifest.json");
+assert.equal(joinGameRelativePath("win32", "C:\\Games", "C:\\outside"), "");
 
 process.stdout.write("platform path checks passed\n");

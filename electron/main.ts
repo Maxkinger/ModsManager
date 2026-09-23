@@ -9,6 +9,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve } from "node:pat
 import { pathToFileURL } from "node:url";
 import { existsSync, readFileSync } from "node:fs";
 import { path7za } from "7zip-bin";
+import { assertPlatformInstallStrategy } from "../src/utils/platform-support";
 import {
   cp,
   copyFile,
@@ -535,6 +536,10 @@ function normalizeTargetScope(scope: unknown): InstallTargetScope {
 }
 
 function getTargetScopeRoot(gamePath: string, scope: InstallTargetScope) {
+  if (process.platform === "darwin" && scope !== "game") {
+    throw new Error("macOS installs are currently limited to the selected game directory.");
+  }
+
   switch (scope) {
     case "documents":
       return electron.app.getPath("documents");
@@ -4494,6 +4499,10 @@ electron.ipcMain.handle("downloads:downloadFile", async (_event, options: {
   aria2ExecutablePath?: string;
   aria2MaxConnections?: number;
 }) => {
+  if (process.platform === "darwin" && options.engine === "aria2") {
+    throw new Error("aria2 is not available in the macOS build; use the built-in downloader.");
+  }
+
   if (options.engine === "aria2") {
     return downloadWithAria2({
       taskId: options.taskId,
@@ -5146,6 +5155,7 @@ electron.ipcMain.handle("mods:createInstallPlan", async (_event, options: {
 }) => {
   const installPath = options.strategy.installPath ?? "";
   const targetScope = normalizeTargetScope(options.strategy.targetScope);
+  assertPlatformInstallStrategy(process.platform, options.strategy.kind, targetScope);
   const targetRoot = getTargetScopeRoot(options.gamePath, targetScope);
   let targetFiles: string[] = [];
 
@@ -5393,6 +5403,7 @@ electron.ipcMain.handle("mods:applyStrategy", async (_event, options: {
 }) => {
   const installPath = options.strategy.installPath ?? "";
   const targetScope = normalizeTargetScope(options.strategy.targetScope);
+  assertPlatformInstallStrategy(process.platform, options.strategy.kind, targetScope);
   const targetRoot = getTargetScopeRoot(options.gamePath, targetScope);
   let deployedFiles: string[] = [];
 
